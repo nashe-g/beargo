@@ -90,7 +90,7 @@ export function LeadIntro({
   if (step === "great") {
     return (
       <ScannerShell progress={{ filledToes: 1 }}>
-        <div className="flex flex-1 flex-col justify-between py-4">
+        <div className="flex min-h-0 flex-1 flex-col justify-between overflow-y-auto py-4">
           <div className="space-y-6">
             <BearGuide state="reactCorrect" size="md" />
             <h1 className="font-display text-4xl">Great.</h1>
@@ -113,7 +113,7 @@ export function LeadIntro({
 
   return (
     <ScannerShell progress={{ filledToes: 1 }}>
-      <form className="flex flex-1 flex-col justify-between py-4" onSubmit={submit}>
+      <form className="flex min-h-0 flex-1 flex-col justify-between overflow-y-auto py-4" onSubmit={submit}>
         <div className="space-y-5">
           <BearGuide state="idle" size="sm" />
           <h1 className="font-display text-4xl">Your details</h1>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { BearGuide } from "@/components/bear/BearGuide";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
 import { StampSession } from "@/components/scanner/StampSession";
 import {
@@ -40,25 +39,26 @@ export function SponsorCard({
         event="sponsor_viewed"
         campaignId={campaign.id}
       />
-      <div className="flex flex-1 flex-col gap-5 py-2 sm:gap-6">
-        <BearGuide state="idle" size="sm" />
-        <p className="text-sm tracking-[0.22em] text-honey uppercase">
+      <div className="flex min-h-0 flex-1 flex-col">
+        <p className="text-xs tracking-[0.22em] text-honey uppercase">
           {campaign.headline}
         </p>
-        <div className="rounded-3xl bg-paper px-5 py-6 text-ink shadow-[0_16px_40px_rgba(0,0,0,0.18)]">
-          <h1 className="font-display text-3xl sm:text-4xl">{campaign.name}</h1>
-          <p className="mt-3 text-lg text-ink-soft">
+        <div className="mt-3 rounded-3xl bg-paper px-4 py-4 text-ink shadow-[0_16px_40px_rgba(0,0,0,0.18)]">
+          <h1 className="font-display text-2xl leading-tight sm:text-3xl">
+            {campaign.name}
+          </h1>
+          <p className="mt-2 text-base leading-snug text-ink-soft">
             {campaign.valueProposition}
           </p>
         </div>
-        <h2 className="font-display text-2xl">How does that sound?</h2>
-        <div className="flex flex-col gap-3">
+        <h2 className="mt-4 font-display text-xl">How does that sound?</h2>
+        <div className="mt-3 flex min-h-0 flex-1 flex-col justify-end gap-2 pb-1">
           {INTEREST_OPTIONS.map((option) => (
             <button
               key={option.id}
               type="button"
               onClick={() => choose(option.id, option.kind)}
-              className="min-h-14 rounded-2xl border border-paper/15 bg-paper/8 px-4 text-left text-base transition active:scale-[0.99] sm:text-lg"
+              className="flex min-h-11 shrink-0 items-center rounded-2xl border border-paper/15 bg-paper/8 px-4 text-left text-base transition active:scale-[0.99]"
             >
               {option.label}
             </button>

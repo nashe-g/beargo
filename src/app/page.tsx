@@ -1,18 +1,15 @@
 import Link from "next/link";
-import { PawMark } from "@/components/paw/PawMark";
 import { PublicShell } from "@/components/public/PublicShell";
 
 export default function Home() {
   return (
     <PublicShell>
       <div className="relative">
-        <PawMark className="pointer-events-none absolute -right-10 -top-6 h-36 w-36 text-honey/25 sm:-right-8 sm:h-52 sm:w-52" />
         <h1 className="relative max-w-2xl font-display text-4xl leading-[1.08] sm:text-6xl">
           Scan the paw. Three questions. How do you rank here today?
         </h1>
         <p className="relative mt-5 max-w-xl text-lg text-ink-soft sm:text-xl">
-          BearGo is a daily challenge at real places. Optional introductions
-          come after you see your rank. No account to play.
+          BearGo is a daily challenge at real places. No account to play.
         </p>
         <div className="relative mt-10 flex flex-col gap-3 sm:flex-row">
           <Link

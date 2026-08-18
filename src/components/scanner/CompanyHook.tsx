@@ -8,7 +8,7 @@ export function CompanyHook({ paw }: { paw: PawRecord }) {
 
   return (
     <ScannerShell>
-      <div className="flex flex-1 flex-col justify-between py-4">
+      <div className="flex min-h-0 flex-1 flex-col justify-between py-4">
         <div className="space-y-6">
           <BearGuide state="idle" size="sm" />
           <h1 className="font-display text-3xl leading-tight">
@@ -24,8 +24,9 @@ export function CompanyHook({ paw }: { paw: PawRecord }) {
               them.
             </p>
             <p>
-              If you do, the sponsor pays {host} for the introduction.
+              If you do, the company pays {host} for the introduction.
             </p>
+            <p>Think of it as an extra tip to {host}.</p>
             <p className="text-honey">You pay $0.</p>
           </div>
         </div>

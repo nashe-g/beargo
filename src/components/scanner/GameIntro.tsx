@@ -8,7 +8,7 @@ export function GameIntro({ paw }: { paw: PawRecord }) {
   return (
     <ScannerShell>
       <StampSession pawToken={paw.token} event="scanned" />
-      <div className="flex flex-1 flex-col items-center justify-between py-4 sm:py-6">
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-between py-4 sm:py-6">
         <div className="flex flex-col items-center gap-4 text-center">
           <BearGuide state="arrive" size="lg" />
           <p className="text-sm tracking-[0.22em] text-honey uppercase">

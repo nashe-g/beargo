@@ -123,7 +123,7 @@ export function QuestionPlay({
   return (
     <ScannerShell>
       <StampSession pawToken={paw.token} event="game_started" />
-      <div className="flex flex-1 flex-col gap-4 pt-2 sm:gap-5">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pt-2 sm:gap-5">
         <div className="flex items-center justify-between">
           <p className="text-sm tracking-[0.2em] text-paper/55 uppercase">
             {index + 1} / {challenge.questions.length}

@@ -80,7 +80,7 @@ export function QualifyConsent({
 
   return (
     <ScannerShell progress={{ filledToes: 3 }}>
-      <form className="flex flex-1 flex-col justify-between gap-6 py-4" onSubmit={submit}>
+      <form className="flex min-h-0 flex-1 flex-col justify-between gap-6 overflow-y-auto py-4" onSubmit={submit}>
         <div className="space-y-6">
           <BearGuide state="idle" size="sm" />
           <h1 className="font-display text-4xl">Almost done</h1>

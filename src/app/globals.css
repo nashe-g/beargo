@@ -59,7 +59,9 @@ body {
 }
 
 .pointing-finger {
-  color: var(--color-honey);
+  display: block;
+  font-size: 2.75rem;
+  line-height: 1;
   filter: drop-shadow(0 8px 16px rgba(232, 163, 26, 0.35));
   animation: finger-pulse 1.15s ease-in-out infinite;
   transform-origin: 50% 0%;

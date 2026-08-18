@@ -11,7 +11,7 @@ const STEPS = [
   },
   {
     title: "See how you rank.",
-    body: "That’s the game. Optional introductions only after that.",
+    body: "That’s the game.",
   },
 ];
 
@@ -33,10 +33,11 @@ export default function HowItWorksPage() {
           </li>
         ))}
       </ol>
-      <p className="mt-8 max-w-xl text-ink-soft">
-        If a sponsor is on the floor, you can choose to connect. You pay
-        nothing. The venue may earn from a qualified introduction.
-      </p>
+      <div className="mt-8 max-w-xl space-y-3 text-lg text-ink-soft">
+        <p>If a company is on the floor, you can choose to connect.</p>
+        <p>Think of it as an extra tip to the venue.</p>
+        <p className="font-semibold text-ink">You pay $0.</p>
+      </div>
     </PublicShell>
   );
 }

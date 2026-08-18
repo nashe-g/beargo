@@ -58,12 +58,14 @@ export function ApplyForm({ kind }: { kind: "host" | "startup" }) {
         placeholder="City"
         className="h-14 w-full rounded-full border border-ink/15 bg-pad/80 px-5 outline-none focus:border-honey"
       />
-      <input
-        value={oneLiner}
-        onChange={(event) => setOneLiner(event.target.value)}
-        placeholder={kind === "host" ? "Neighborhood or type" : "One-liner"}
-        className="h-14 w-full rounded-full border border-ink/15 bg-pad/80 px-5 outline-none focus:border-honey"
-      />
+      {kind === "startup" ? (
+        <input
+          value={oneLiner}
+          onChange={(event) => setOneLiner(event.target.value)}
+          placeholder="One-liner"
+          className="h-14 w-full rounded-full border border-ink/15 bg-pad/80 px-5 outline-none focus:border-honey"
+        />
+      ) : null}
       <button
         type="submit"
         className="btn-honey flex h-14 w-full items-center justify-center rounded-full bg-honey text-lg font-semibold text-ink"
