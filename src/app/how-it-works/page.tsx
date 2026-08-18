@@ -35,7 +35,6 @@ export default function HowItWorksPage() {
       </ol>
       <div className="mt-8 max-w-xl space-y-3 text-lg text-ink-soft">
         <p>If a company is on the floor, you can choose to connect.</p>
-        <p>Think of it as an extra tip to the venue.</p>
         <p className="font-semibold text-ink">You pay $0.</p>
       </div>
     </PublicShell>
