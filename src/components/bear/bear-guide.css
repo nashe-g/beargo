@@ -1,0 +1,208 @@
+.bear-guide {
+  overflow: visible;
+}
+
+.bear-guide .bear-root,
+.bear-guide .head,
+.bear-guide .pupil,
+.bear-guide .mouth,
+.bear-guide .sparkle,
+.bear-guide .eye-lid {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.bear-guide .mouth,
+.bear-guide .sparkle,
+.bear-guide .eye-lid {
+  opacity: 0;
+}
+
+.bear-guide .mouth-idle {
+  opacity: 1;
+}
+
+.bear-guide[data-state="arrive"] .bear-root {
+  animation: bear-arrive 700ms cubic-bezier(0.22, 1, 0.36, 1) both,
+    bear-breathe 2.8s ease-in-out 700ms infinite;
+}
+
+.bear-guide[data-state="idle"] .bear-root {
+  animation: bear-breathe 2.8s ease-in-out infinite;
+}
+
+.bear-guide[data-state="reactCorrect"] .bear-root {
+  animation: bear-pop 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.bear-guide[data-state="reactCorrect"] .mouth-idle,
+.bear-guide[data-state="celebrate"] .mouth-idle,
+.bear-guide[data-state="lookDown"] .mouth-idle,
+.bear-guide[data-state="completeHappy"] .mouth-idle,
+.bear-guide[data-state="thanks"] .mouth-idle {
+  opacity: 0;
+}
+
+.bear-guide[data-state="reactCorrect"] .mouth-smile,
+.bear-guide[data-state="lookDown"] .mouth-smile,
+.bear-guide[data-state="thanks"] .mouth-smile {
+  opacity: 1;
+}
+
+.bear-guide[data-state="reactWrong"] .head {
+  animation: bear-shake 320ms ease-in-out;
+}
+
+.bear-guide[data-state="reactWrong"] .mouth-idle {
+  opacity: 0;
+}
+
+.bear-guide[data-state="reactWrong"] .mouth-oh {
+  opacity: 1;
+}
+
+.bear-guide[data-state="celebrate"] .bear-root {
+  animation: bear-celebrate 1100ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.bear-guide[data-state="celebrate"] .mouth-happy,
+.bear-guide[data-state="completeHappy"] .mouth-happy {
+  opacity: 1;
+}
+
+.bear-guide[data-state="celebrate"] .sparkle,
+.bear-guide[data-state="completeHappy"] .sparkle {
+  animation: bear-sparkle 1100ms ease-out both;
+}
+
+.bear-guide[data-state="celebrate"] .eye-lid,
+.bear-guide[data-state="completeHappy"] .eye-lid,
+.bear-guide[data-state="thanks"] .eye-lid {
+  opacity: 1;
+}
+
+.bear-guide[data-state="lookDown"] .head {
+  transform: rotate(9deg) translate(2px, 5px);
+  transition: transform 450ms ease;
+}
+
+.bear-guide[data-state="lookDown"] .pupil {
+  transform: translate(2px, 5px);
+  transition: transform 450ms ease;
+}
+
+.bear-guide[data-state="completeHappy"] .bear-root {
+  animation: bear-complete 1200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.bear-guide[data-state="thanks"] .bear-root {
+  animation: bear-nod 600ms ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bear-guide .bear-root,
+  .bear-guide .head,
+  .bear-guide .pupil,
+  .bear-guide .sparkle {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@keyframes bear-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes bear-breathe {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes bear-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes bear-shake {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0);
+  }
+  25% {
+    transform: translateX(-4px) rotate(-4deg);
+  }
+  75% {
+    transform: translateX(4px) rotate(4deg);
+  }
+}
+
+@keyframes bear-celebrate {
+  0% {
+    transform: scale(1) rotate(0);
+  }
+  25% {
+    transform: scale(1.08) rotate(-4deg);
+  }
+  55% {
+    transform: scale(1.12) rotate(4deg);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+  }
+}
+
+@keyframes bear-complete {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.1) translateY(-4px);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes bear-nod {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  40% {
+    transform: rotate(6deg) translateY(3px);
+  }
+}
+
+@keyframes bear-sparkle {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  35% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.2);
+  }
+}

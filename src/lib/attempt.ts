@@ -1,0 +1,45 @@
+export type AttemptSnapshot = {
+  correctCount: number;
+  totalResponseMs: number;
+  rank?: number;
+  playerCount?: number;
+  playersBeaten?: number;
+  finishedAt: number;
+};
+
+function storageKey(token: string) {
+  return `beargo:attempt:${token}`;
+}
+
+export function saveAttempt(token: string, attempt: AttemptSnapshot) {
+  sessionStorage.setItem(storageKey(token), JSON.stringify(attempt));
+}
+
+export function loadAttempt(token: string): AttemptSnapshot | null {
+  const raw = sessionStorage.getItem(storageKey(token));
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw) as AttemptSnapshot;
+    if (
+      typeof parsed.correctCount !== "number" ||
+      typeof parsed.totalResponseMs !== "number"
+    ) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function formatDuration(ms: number) {
+  const seconds = ms / 1000;
+  return `${seconds.toFixed(1)} sec`;
+}
+
+export function beatCopy(playersBeaten: number, playerCount: number) {
+  if (playerCount <= 1) return "First on the board today.";
+  if (playersBeaten === 1) return "You beat 1 player.";
+  return `You beat ${playersBeaten} players.`;
+}

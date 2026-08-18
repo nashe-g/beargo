@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+  --font-condensed: var(--font-barlow), ui-sans-serif, system-ui, sans-serif;
+
+  --color-paper: #f3e6d0;
+  --color-paper-deep: #e6d3b4;
+  --color-ink: #1c140c;
+  --color-ink-soft: #4a3b2c;
+  --color-honey: #e3a012;
+  --color-honey-deep: #c4840a;
+  --color-pad: #fffdf8;
+  --color-moss: #2c6a4a;
+  --color-clay: #b33a2b;
+}
+
+html {
+  background: var(--color-ink);
+}
+
+body {
+  min-height: 100dvh;
+  color: var(--color-ink);
+}
+
+.teaser-card {
+  margin-top: auto;
+  width: 100%;
+  border-radius: 1.75rem 1.75rem 0 0;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  padding: 1.25rem 1.25rem 1.5rem;
+  text-align: left;
+}
+
+.teaser-card-pulse {
+  animation: teaser-nudge 900ms ease-out 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .teaser-card-pulse {
+    animation: none;
+  }
+}
+
+@keyframes teaser-nudge {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-12px);
+  }
+  70% {
+    transform: translateY(-5px);
+  }
+}
+
+@page {
+  size: 5in 7in;
+  margin: 0;
+}
