@@ -40,13 +40,13 @@ export function SponsorCard({
         event="sponsor_viewed"
         campaignId={campaign.id}
       />
-      <div className="flex flex-1 flex-col gap-6 py-2">
+      <div className="flex flex-1 flex-col gap-5 py-2 sm:gap-6">
         <BearGuide state="idle" size="sm" />
         <p className="text-sm tracking-[0.22em] text-honey uppercase">
           {campaign.headline}
         </p>
-        <div className="rounded-3xl bg-paper px-5 py-6 text-ink">
-          <h1 className="font-display text-4xl">{campaign.name}</h1>
+        <div className="rounded-3xl bg-paper px-5 py-6 text-ink shadow-[0_16px_40px_rgba(0,0,0,0.18)]">
+          <h1 className="font-display text-3xl sm:text-4xl">{campaign.name}</h1>
           <p className="mt-3 text-lg text-ink-soft">
             {campaign.valueProposition}
           </p>
@@ -58,7 +58,7 @@ export function SponsorCard({
               key={option.id}
               type="button"
               onClick={() => choose(option.id, option.kind)}
-              className="min-h-14 rounded-2xl border border-paper/15 bg-paper/5 px-4 text-left text-lg"
+              className="min-h-14 rounded-2xl border border-paper/15 bg-paper/8 px-4 text-left text-base transition active:scale-[0.99] sm:text-lg"
             >
               {option.label}
             </button>

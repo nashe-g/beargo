@@ -5,13 +5,13 @@
   --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
   --font-condensed: var(--font-barlow), ui-sans-serif, system-ui, sans-serif;
 
-  --color-paper: #f3e6d0;
-  --color-paper-deep: #e6d3b4;
-  --color-ink: #1c140c;
-  --color-ink-soft: #4a3b2c;
-  --color-honey: #e3a012;
+  --color-paper: #f4e4c8;
+  --color-paper-deep: #e4d0ae;
+  --color-ink: #1a120b;
+  --color-ink-soft: #5a4634;
+  --color-honey: #e8a31a;
   --color-honey-deep: #c4840a;
-  --color-pad: #fffdf8;
+  --color-pad: #fffaf1;
   --color-moss: #2c6a4a;
   --color-clay: #b33a2b;
 }
@@ -25,22 +25,49 @@ body {
   color: var(--color-ink);
 }
 
+.paper-surface {
+  background-color: var(--color-paper);
+  background-image:
+    radial-gradient(ellipse 90% 50% at 50% -10%, rgba(232, 163, 26, 0.18), transparent 55%),
+    radial-gradient(ellipse 70% 40% at 100% 100%, rgba(28, 20, 12, 0.06), transparent 50%);
+}
+
+.scanner-stage {
+  background-color: var(--color-ink);
+  background-image: radial-gradient(
+    ellipse 80% 55% at 50% 0%,
+    rgba(232, 163, 26, 0.16),
+    transparent 58%
+  );
+}
+
 .teaser-card {
   margin-top: auto;
   width: 100%;
   border-radius: 1.75rem 1.75rem 0 0;
-  background: var(--color-paper);
+  background:
+    linear-gradient(180deg, rgba(232, 163, 26, 0.16), transparent 28%),
+    var(--color-paper);
   color: var(--color-ink);
-  padding: 1.25rem 1.25rem 1.5rem;
+  padding: 1.35rem 1.35rem 1.6rem;
   text-align: left;
+  box-shadow: 0 -18px 50px rgba(0, 0, 0, 0.28);
 }
 
 .teaser-card-pulse {
   animation: teaser-nudge 900ms ease-out 1;
 }
 
+.pointing-finger {
+  color: var(--color-honey);
+  filter: drop-shadow(0 8px 16px rgba(232, 163, 26, 0.35));
+  animation: finger-pulse 1.15s ease-in-out infinite;
+  transform-origin: 50% 0%;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .teaser-card-pulse {
+  .teaser-card-pulse,
+  .pointing-finger {
     animation: none;
   }
 }
@@ -56,6 +83,22 @@ body {
   70% {
     transform: translateY(-5px);
   }
+}
+
+@keyframes finger-pulse {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(10px) scale(1.06);
+    opacity: 0.85;
+  }
+}
+
+.btn-honey {
+  box-shadow: 0 10px 28px rgba(232, 163, 26, 0.28);
 }
 
 @page {

@@ -123,7 +123,7 @@ export function QuestionPlay({
   return (
     <ScannerShell>
       <StampSession pawToken={paw.token} event="game_started" />
-      <div className="flex flex-1 flex-col gap-5 pt-2">
+      <div className="flex flex-1 flex-col gap-4 pt-2 sm:gap-5">
         <div className="flex items-center justify-between">
           <p className="text-sm tracking-[0.2em] text-paper/55 uppercase">
             {index + 1} / {challenge.questions.length}
@@ -131,7 +131,7 @@ export function QuestionPlay({
           <BearGuide state={bearState} size="sm" />
         </div>
 
-        <h1 className="font-display text-[1.85rem] leading-tight">
+        <h1 className="font-display text-[1.55rem] leading-tight sm:text-[1.85rem]">
           {question.prompt}
         </h1>
 
@@ -140,7 +140,8 @@ export function QuestionPlay({
             const chosen = selectedId === choice.id;
             const reveal = phase === "feedback";
             const correctChoice = choice.id === question.correctId;
-            let tone = "border-paper/15 bg-paper/5";
+            let tone =
+              "border-paper/15 bg-paper/8 active:scale-[0.99] active:bg-paper/12";
             if (reveal && correctChoice) tone = "border-moss bg-moss text-paper";
             if (reveal && chosen && !correctChoice) {
               tone = "border-clay bg-clay text-paper";
@@ -152,7 +153,7 @@ export function QuestionPlay({
                 type="button"
                 onClick={() => answer(choice.id)}
                 disabled={phase === "feedback"}
-                className={`min-h-14 rounded-2xl border px-4 py-3 text-left text-lg ${tone}`}
+                className={`min-h-14 rounded-2xl border px-4 py-3 text-left text-base transition sm:text-lg ${tone}`}
               >
                 {choice.label}
               </button>
@@ -161,7 +162,12 @@ export function QuestionPlay({
         </div>
 
         {phase === "feedback" ? (
-          <p className="text-paper/70">{question.explanation}</p>
+          <div className="space-y-2">
+            <p className="text-paper/75">{question.explanation}</p>
+            {question.conversationHook ? (
+              <p className="text-honey/90">{question.conversationHook}</p>
+            ) : null}
+          </div>
         ) : null}
       </div>
     </ScannerShell>

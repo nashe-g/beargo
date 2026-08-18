@@ -1,24 +1,39 @@
 import { PublicShell } from "@/components/public/PublicShell";
 
+const STEPS = [
+  {
+    title: "Scan the paw.",
+    body: "A printed mark at the venue. No app install.",
+  },
+  {
+    title: "Three questions.",
+    body: "Same set for everyone here today. Correct answers and speed set your rank.",
+  },
+  {
+    title: "See how you rank.",
+    body: "That’s the game. Optional introductions only after that.",
+  },
+];
+
 export default function HowItWorksPage() {
   return (
     <PublicShell>
-      <h1 className="font-display text-5xl">How it works</h1>
-      <ol className="mt-8 space-y-6 text-lg">
-        <li>
-          <strong>Scan the paw.</strong> A printed mark at the venue. No app
-          install.
-        </li>
-        <li>
-          <strong>Three questions.</strong> Same set for everyone here today.
-          Correct answers and speed set your rank.
-        </li>
-        <li>
-          <strong>See how you rank.</strong> That’s the game. Optional
-          introductions only after that.
-        </li>
+      <h1 className="font-display text-4xl sm:text-5xl">How it works</h1>
+      <ol className="mt-8 space-y-4">
+        {STEPS.map((step, index) => (
+          <li
+            key={step.title}
+            className="rounded-3xl border border-ink/10 bg-pad/70 px-5 py-5 shadow-[0_12px_32px_rgba(26,18,11,0.06)]"
+          >
+            <p className="font-condensed text-sm tracking-[0.22em] text-honey-deep">
+              {String(index + 1).padStart(2, "0")}
+            </p>
+            <p className="mt-2 font-display text-2xl">{step.title}</p>
+            <p className="mt-2 text-lg text-ink-soft">{step.body}</p>
+          </li>
+        ))}
       </ol>
-      <p className="mt-8 text-ink-soft">
+      <p className="mt-8 max-w-xl text-ink-soft">
         If a sponsor is on the floor, you can choose to connect. You pay
         nothing. The venue may earn from a qualified introduction.
       </p>

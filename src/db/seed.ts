@@ -1,8 +1,10 @@
+import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import {
   campaignHosts,
   campaigns,
+  challengeSets,
   hosts,
   paws,
   questions,
@@ -17,11 +19,11 @@ import { SEED_QUESTIONS } from "../lib/questions";
 const url =
   process.env.DATABASE_URL || "postgresql://beargo:beargo@localhost:5432/beargo";
 
-const sql = postgres(url, {
+const client = postgres(url, {
   max: 1,
   ssl: url.includes("localhost") || url.includes("127.0.0.1") ? false : true,
 });
-const db = drizzle(sql);
+const db = drizzle(client);
 
 const HOSTS = [
   {
@@ -118,10 +120,25 @@ async function main() {
         explanation: question.explanation,
         difficulty: question.difficulty,
         category: question.category ?? "general",
+        conversationHook: question.conversationHook ?? null,
         status: "approved",
       })),
     )
-    .onConflictDoNothing();
+    .onConflictDoUpdate({
+      target: questions.id,
+      set: {
+        prompt: sql`excluded.prompt`,
+        choices: sql`excluded.choices`,
+        correctId: sql`excluded.correct_id`,
+        explanation: sql`excluded.explanation`,
+        difficulty: sql`excluded.difficulty`,
+        category: sql`excluded.category`,
+        conversationHook: sql`excluded.conversation_hook`,
+        status: sql`excluded.status`,
+      },
+    });
+
+  await db.delete(challengeSets);
 
   await db
     .insert(campaigns)
@@ -170,7 +187,7 @@ async function main() {
     .onConflictDoNothing();
 
   console.log("Seeded BearGo catalogs, question pool, campaigns, and demo users.");
-  await sql.end();
+  await client.end();
 }
 
 main().catch((error) => {

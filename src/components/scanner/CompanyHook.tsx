@@ -32,7 +32,7 @@ export function CompanyHook({ paw }: { paw: PawRecord }) {
         <div className="space-y-3">
           <Link
             href={`/p/${paw.token}/sponsor`}
-            className="flex h-14 items-center justify-center rounded-full bg-honey text-lg font-semibold tracking-[0.12em] text-ink"
+            className="btn-honey flex h-14 items-center justify-center rounded-full bg-honey text-lg font-semibold tracking-[0.12em] text-ink"
           >
             SEE TODAY’S SPONSOR
           </Link>

@@ -133,7 +133,7 @@ export function QualifyConsent({
         <button
           type="submit"
           disabled={busy}
-          className="flex h-14 items-center justify-center rounded-full bg-honey text-lg font-semibold tracking-[0.08em] text-ink disabled:opacity-60"
+          className="btn-honey flex h-14 items-center justify-center rounded-full bg-honey text-lg font-semibold tracking-[0.08em] text-ink disabled:opacity-60"
         >
           FINISH INTRODUCTION
         </button>

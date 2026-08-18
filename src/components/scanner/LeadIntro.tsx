@@ -102,7 +102,7 @@ export function LeadIntro({
           <button
             type="button"
             onClick={() => setStep("details")}
-            className="flex h-14 items-center justify-center rounded-full bg-honey text-lg font-semibold tracking-[0.18em] text-ink"
+            className="btn-honey flex h-14 items-center justify-center rounded-full bg-honey text-lg font-semibold tracking-[0.18em] text-ink"
           >
             CONTINUE
           </button>
@@ -166,7 +166,7 @@ export function LeadIntro({
         <button
           type="submit"
           disabled={busy}
-          className="mt-8 flex h-14 items-center justify-center rounded-full bg-honey text-lg font-semibold tracking-[0.18em] text-ink disabled:opacity-60"
+          className="btn-honey mt-8 flex h-14 items-center justify-center rounded-full bg-honey text-lg font-semibold tracking-[0.18em] text-ink disabled:opacity-60"
         >
           CONTINUE
         </button>

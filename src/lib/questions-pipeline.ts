@@ -228,25 +228,28 @@ export async function listQuestionReports() {
     .orderBy(desc(questionReports.createdAt));
 }
 
-export const GENERATE_PROMPT_VERSION = "v1";
+export const GENERATE_PROMPT_VERSION = "v2";
 
 export function generationSystemPrompt() {
-  return `You write trivia questions for a local bar/restaurant game in Houston.
+  return `You write questions for a local bar/restaurant game in Houston.
+The table should want to argue, laugh, or tell a story — not feel like a worksheet.
 Return ONLY a JSON object: {"questions":[...]}.
 Each question has:
-- prompt (string, one sentence)
+- prompt (string, one lively sentence with a hook or a surprise)
 - choices: four objects {id:"a"|"b"|"c"|"d", label:string}
 - correctId: "a"|"b"|"c"|"d"
-- explanation: one or two sentences, interesting
+- explanation: one or two sentences people would actually say out loud
 - difficulty: "easy"|"medium"|"hard"
 - category: "general"|"houston"|"music"|"food"|"sports"|"nightlife"
-- conversationHook: why this is worth talking about
+- conversationHook: the remark that starts talk at the table
 - sourceNotes: a short factual basis
 
 Rules:
 - Independent, not promotional. Never mention brands, apps, or sponsors.
 - No politics, medical advice, or sensitive disputes.
 - Not ambiguous. One clearly correct answer.
-- Mix global trivia with Houston/Texas facts.
-- Do not repeat obviously stock questions like "how many strings on a guitar".`;
+- Mix Houston/Texas/bar/food/sports with a few sharp general facts.
+- Ban dull counting trivia: dozens, guitar strings, piano keys, "how many", "what color is", capitals, multiplication.
+- Easy still has to be interesting. A question a 10-year-old already knows is a miss.
+- Write like a person at the bar, not a textbook.`;
 }

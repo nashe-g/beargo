@@ -6,6 +6,7 @@ import { BearGuide } from "@/components/bear/BearGuide";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
 import { beatCopy, formatDuration, loadAttempt } from "@/lib/attempt";
 import { BEAR_DURATIONS, type BearState } from "@/lib/bear";
+import { PointingFinger } from "@/components/scanner/PointingFinger";
 import { StampSession } from "@/components/scanner/StampSession";
 import { QUESTIONS_PER_CHALLENGE } from "@/lib/questions";
 import type { PawRecord } from "@/lib/paws";
@@ -84,13 +85,13 @@ export function GameResult({
           <BearGuide state={bearState} size="md" />
           {score.hasAttempt ? (
             <>
-              <p className="mt-4 font-display text-6xl">
+              <p className="mt-3 font-display text-5xl sm:text-6xl">
                 {score.correctCount} / {QUESTIONS_PER_CHALLENGE}
               </p>
-              <p className="mt-1 text-xl text-paper/70">
+              <p className="mt-1 text-lg text-paper/70 sm:text-xl">
                 {formatDuration(score.totalResponseMs)}
               </p>
-              <h1 className="mt-6 font-display text-3xl leading-tight">
+              <h1 className="mt-5 font-display text-2xl leading-tight sm:text-3xl">
                 {score.rank > 0
                   ? `#${score.rank} at ${host} today`
                   : `On the board at ${host}`}
@@ -114,7 +115,7 @@ export function GameResult({
               </h1>
               <Link
                 href={`/p/${paw.token}/play`}
-                className="mt-8 flex h-14 w-full items-center justify-center rounded-full bg-honey text-lg font-semibold tracking-[0.18em] text-ink"
+                className="btn-honey mt-8 flex h-14 w-full items-center justify-center rounded-full bg-honey text-lg font-semibold tracking-[0.18em] text-ink"
               >
                 PLAY
               </Link>
@@ -123,41 +124,42 @@ export function GameResult({
         </div>
 
         {score.hasAttempt && hasSponsor && phase !== "expanded" ? (
-          <button
-            type="button"
-            onClick={expand}
-            onPointerDown={onPointerDown}
-            onPointerUp={onPointerUp}
-            className={`teaser-card ${phase === "handoff" ? "teaser-card-pulse" : ""}`}
-          >
-            <span className="block text-center text-lg tracking-[0.04em]">
-              ↑
-            </span>
-            <span className="mt-2 block font-condensed text-2xl leading-none tracking-[0.06em]">
-              YOU CAN MAKE A COMPANY PAY {host.toUpperCase()}.
-            </span>
-            <span className="mt-2 block text-sm text-ink-soft">
-              You pay nothing.
-            </span>
-          </button>
+          <div className="mt-auto">
+            {phase === "handoff" ? (
+              <div className="flex justify-center pb-1">
+                <PointingFinger className="pointing-finger h-14 w-9 sm:h-16 sm:w-10" />
+              </div>
+            ) : null}
+            <button
+              type="button"
+              onClick={expand}
+              onPointerDown={onPointerDown}
+              onPointerUp={onPointerUp}
+              className={`teaser-card ${phase === "handoff" ? "teaser-card-pulse" : ""}`}
+            >
+              <span className="block font-condensed text-xl leading-none tracking-[0.06em] sm:text-2xl">
+                YOU CAN MAKE A COMPANY PAY {host.toUpperCase()} TODAY.
+              </span>
+              <span className="mt-2 block text-sm text-ink-soft">
+                You pay nothing.
+              </span>
+            </button>
+          </div>
         ) : null}
 
         {score.hasAttempt && hasSponsor && phase === "expanded" ? (
-          <div className="absolute inset-x-0 bottom-0 top-24 flex flex-col justify-end">
-            <div className="rounded-t-[2rem] bg-paper px-5 pb-8 pt-8 text-ink">
+          <div className="absolute inset-x-0 bottom-0 top-20 flex flex-col justify-end sm:top-24">
+            <div className="rounded-t-[2rem] bg-paper px-5 pb-8 pt-8 text-ink shadow-[0_-18px_50px_rgba(0,0,0,0.28)]">
               <p className="font-display text-3xl leading-tight">
-                You can make a company pay {host}.
+                You can make a company pay {host} today.
               </p>
               <p className="mt-3 text-lg text-ink-soft">You pay nothing.</p>
               <Link
                 href={`/p/${paw.token}/company`}
-                className="mt-8 flex h-14 items-center justify-center rounded-full bg-ink text-lg font-semibold tracking-[0.18em] text-paper"
+                className="btn-honey mt-8 flex h-14 w-full items-center justify-center rounded-full bg-honey text-lg font-semibold tracking-[0.18em] text-ink"
               >
                 SHOW ME
               </Link>
-              <p className="mt-4 text-center text-sm text-ink-soft">
-                Optional. The game is already done.
-              </p>
             </div>
           </div>
         ) : null}
