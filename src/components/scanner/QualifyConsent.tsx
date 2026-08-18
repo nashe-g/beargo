@@ -117,7 +117,15 @@ export function QualifyConsent({
             <span>
               By finishing, you agree that we may share your name, email, phone
               number, and responses with {campaign.name} so they can follow up
-              about their service.
+              about their service. See{" "}
+              <a href="/privacy" className="underline">
+                Privacy
+              </a>{" "}
+              and{" "}
+              <a href="/terms" className="underline">
+                Terms
+              </a>
+              .
             </span>
           </label>
           {error ? <p className="text-clay">{error}</p> : null}

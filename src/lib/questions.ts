@@ -12,11 +12,13 @@ export type Question = {
   correctId: string;
   explanation: string;
   difficulty: QuestionDifficulty;
+  category?: string;
+  conversationHook?: string;
 };
 
 export const QUESTIONS_PER_CHALLENGE = 3;
 
-export const QUESTION_POOL: Question[] = [
+export const SEED_QUESTIONS: Question[] = [
   {
     id: "dart-bull",
     difficulty: "easy",

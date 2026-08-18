@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { HostShell } from "@/components/host/HostShell";
 import { formatClock, formatMoney } from "@/lib/format";
-import { getDemoHost } from "@/lib/hosts";
+import { requireHost } from "@/lib/host-auth";
 import { hostMonthStats, hostTodayStats } from "@/lib/host-stats";
 import { todaysSponsorForHostRecord } from "@/lib/route-campaign";
 import { listLeads, listPlays } from "@/lib/store";
@@ -9,11 +9,11 @@ import { listLeads, listPlays } from "@/lib/store";
 export const dynamic = "force-dynamic";
 
 export default async function HostDashboardPage() {
-  const host = getDemoHost();
+  const host = await requireHost();
   const [plays, leads] = await Promise.all([listPlays(), listLeads()]);
   const today = hostTodayStats(host, plays, leads);
   const month = hostMonthStats(host, plays, leads);
-  const sponsor = todaysSponsorForHostRecord(host);
+  const sponsor = await todaysSponsorForHostRecord(host);
 
   return (
     <HostShell host={host} current="/host/dashboard">

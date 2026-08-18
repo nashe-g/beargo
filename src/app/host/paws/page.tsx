@@ -2,12 +2,14 @@ import Link from "next/link";
 import { HostShell } from "@/components/host/HostShell";
 import { PawPrint } from "@/components/paw/PawPrint";
 import { CANONICAL_ORIGIN, pawScanUrl } from "@/lib/config";
-import { getDemoHost } from "@/lib/hosts";
+import { requireHost } from "@/lib/host-auth";
 import { pawsForHost } from "@/lib/paws";
 
-export default function HostPawsPage() {
-  const host = getDemoHost();
-  const paws = pawsForHost(host.id);
+export const dynamic = "force-dynamic";
+
+export default async function HostPawsPage() {
+  const host = await requireHost();
+  const paws = await pawsForHost(host.id);
 
   return (
     <HostShell host={host} current="/host/paws">

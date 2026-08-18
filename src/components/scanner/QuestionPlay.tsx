@@ -6,6 +6,7 @@ import { BearGuide } from "@/components/bear/BearGuide";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
 import { saveAttempt } from "@/lib/attempt";
 import { BEAR_DURATIONS, type BearState } from "@/lib/bear";
+import { StampSession } from "@/components/scanner/StampSession";
 import type { DailyChallenge } from "@/lib/daily-challenge";
 import type { PawRecord } from "@/lib/paws";
 
@@ -121,6 +122,7 @@ export function QuestionPlay({
 
   return (
     <ScannerShell>
+      <StampSession pawToken={paw.token} event="game_started" />
       <div className="flex flex-1 flex-col gap-5 pt-2">
         <div className="flex items-center justify-between">
           <p className="text-sm tracking-[0.2em] text-paper/55 uppercase">

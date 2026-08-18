@@ -1,9 +1,13 @@
 import Link from "next/link";
+import { MagicLinkForm } from "@/components/auth/MagicLinkForm";
 import { PawMark } from "@/components/paw/PawMark";
+import { isProduction } from "@/lib/auth";
 import { DEMO_STARTUP_ID, listStartups } from "@/lib/startups";
 
-export default function StartupLoginPage() {
-  const startups = listStartups();
+export const dynamic = "force-dynamic";
+
+export default async function StartupLoginPage() {
+  const startups = await listStartups();
   const primary = startups.find((startup) => startup.id === DEMO_STARTUP_ID);
   const rest = startups.filter((startup) => startup.id !== DEMO_STARTUP_ID);
 
@@ -19,23 +23,28 @@ export default function StartupLoginPage() {
           </p>
         </div>
         <div className="flex flex-col gap-3">
-          {primary ? (
-            <Link
-              href={`/startup/enter?id=${primary.id}`}
-              className="flex h-14 items-center justify-center rounded-full bg-ink text-paper"
-            >
-              Continue as {primary.displayName}
-            </Link>
+          <MagicLinkForm next="/startup/dashboard" />
+          {!isProduction() ? (
+            <>
+              {primary ? (
+                <Link
+                  href={`/startup/enter?id=${primary.id}`}
+                  className="flex h-14 items-center justify-center rounded-full bg-ink text-paper"
+                >
+                  Continue as {primary.displayName}
+                </Link>
+              ) : null}
+              {rest.map((startup) => (
+                <Link
+                  key={startup.id}
+                  href={`/startup/enter?id=${startup.id}`}
+                  className="flex h-14 items-center justify-center rounded-full border border-ink/20"
+                >
+                  Continue as {startup.displayName}
+                </Link>
+              ))}
+            </>
           ) : null}
-          {rest.map((startup) => (
-            <Link
-              key={startup.id}
-              href={`/startup/enter?id=${startup.id}`}
-              className="flex h-14 items-center justify-center rounded-full border border-ink/20"
-            >
-              Continue as {startup.displayName}
-            </Link>
-          ))}
         </div>
       </div>
     </main>

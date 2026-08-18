@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminOverviewPage() {
   await requireAdmin();
   const [plays, leads] = await Promise.all([listPlays(), listLeads()]);
-  const stats = adminOverview(plays, leads);
+  const stats = await adminOverview(plays, leads);
 
   return (
     <AdminShell current="/admin/overview">

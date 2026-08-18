@@ -1,7 +1,8 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { ADMIN_COOKIE } from "@/lib/auth";
 
-export const ADMIN_COOKIE = "beargo_admin";
+export { ADMIN_COOKIE };
 
 export async function requireAdmin() {
   const value = (await cookies()).get(ADMIN_COOKIE)?.value;

@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { BearGuide } from "@/components/bear/BearGuide";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
+import { StampSession } from "@/components/scanner/StampSession";
 import type { PawRecord } from "@/lib/paws";
 
 export function GameIntro({ paw }: { paw: PawRecord }) {
   return (
     <ScannerShell>
+      <StampSession pawToken={paw.token} event="scanned" />
       <div className="flex flex-1 flex-col items-center justify-between py-6">
         <div className="flex flex-col items-center gap-4 text-center">
           <BearGuide state="arrive" size="lg" />

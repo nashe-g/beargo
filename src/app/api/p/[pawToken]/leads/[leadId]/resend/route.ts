@@ -1,11 +1,15 @@
 import { publicOrigin } from "@/lib/config";
 import { sendVerificationEmail } from "@/lib/verification-email";
+import { clientKey, rateLimit } from "@/lib/rate-limit";
 import { rotateVerificationToken } from "@/lib/store";
 
 export async function POST(
   request: Request,
   context: RouteContext<"/api/p/[pawToken]/leads/[leadId]/resend">,
 ) {
+  if (!rateLimit(clientKey(request, "resend"), 8, 60_000)) {
+    return Response.json({ error: "Slow down" }, { status: 429 });
+  }
   const { pawToken, leadId } = await context.params;
 
   let body: unknown = {};

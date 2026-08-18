@@ -58,9 +58,12 @@ export default async function StartupLeadsPage() {
               </tr>
             </thead>
             <tbody>
-              {leads.map((lead) => {
-                const campaign = getCampaign(lead.campaignId);
+              {await Promise.all(
+                leads.map(async (lead) => {
+                const campaign = await getCampaign(lead.campaignId);
                 const revealed = canRevealContact(lead);
+                const hostName = await hostNameForLead(lead);
+                const placement = await placementForLead(lead);
                 return (
                   <tr key={lead.id} className="border-t border-ink/10">
                     <td className="py-4">
@@ -96,8 +99,8 @@ export default async function StartupLeadsPage() {
                       ) : null}
                     </td>
                     <td>
-                      <p>{hostNameForLead(lead)}</p>
-                      <p className="text-ink-soft">{placementForLead(lead)}</p>
+                      <p>{hostName}</p>
+                      <p className="text-ink-soft">{placement}</p>
                     </td>
                     <td>
                       {lead.status === "qualified"
@@ -106,7 +109,8 @@ export default async function StartupLeadsPage() {
                     </td>
                   </tr>
                 );
-              })}
+              }),
+              )}
             </tbody>
           </table>
         </div>

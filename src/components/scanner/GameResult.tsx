@@ -6,6 +6,7 @@ import { BearGuide } from "@/components/bear/BearGuide";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
 import { beatCopy, formatDuration, loadAttempt } from "@/lib/attempt";
 import { BEAR_DURATIONS, type BearState } from "@/lib/bear";
+import { StampSession } from "@/components/scanner/StampSession";
 import { QUESTIONS_PER_CHALLENGE } from "@/lib/questions";
 import type { PawRecord } from "@/lib/paws";
 
@@ -14,9 +15,11 @@ type Phase = "celebrate" | "handoff" | "expanded" | "done";
 export function GameResult({
   paw,
   hasSponsor,
+  questionIds = [],
 }: {
   paw: PawRecord;
   hasSponsor: boolean;
+  questionIds?: string[];
 }) {
   const [phase, setPhase] = useState<Phase>("celebrate");
   const [bearState, setBearState] = useState<BearState>("celebrate");
@@ -75,6 +78,7 @@ export function GameResult({
 
   return (
     <ScannerShell>
+      <StampSession pawToken={paw.token} event="game_completed" />
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="flex flex-1 flex-col items-center pt-4 text-center">
           <BearGuide state={bearState} size="md" />
@@ -98,6 +102,9 @@ export function GameResult({
               </p>
               {!hasSponsor && phase === "done" ? (
                 <p className="mt-8 text-paper/65">Thanks for playing.</p>
+              ) : null}
+              {score.hasAttempt ? (
+                <ReportQuestion pawToken={paw.token} questionIds={questionIds} />
               ) : null}
             </>
           ) : (
@@ -156,5 +163,33 @@ export function GameResult({
         ) : null}
       </div>
     </ScannerShell>
+  );
+}
+
+function ReportQuestion({
+  pawToken,
+  questionIds,
+}: {
+  pawToken: string;
+  questionIds: string[];
+}) {
+  const [sent, setSent] = useState(false);
+  if (questionIds.length === 0) return null;
+  return (
+    <button
+      type="button"
+      className="mt-6 text-sm text-paper/45 underline-offset-2 hover:underline"
+      onClick={() => {
+        if (sent) return;
+        fetch(`/api/p/${pawToken}/report`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ questionId: questionIds[0] }),
+        }).catch(() => undefined);
+        setSent(true);
+      }}
+    >
+      {sent ? "Reported. Thanks." : "Report this question"}
+    </button>
   );
 }

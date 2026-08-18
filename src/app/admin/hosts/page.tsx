@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { CreateHostForm } from "@/components/admin/CreateHostForm";
 import { requireAdmin } from "@/lib/admin-auth";
 import { adminHostRows } from "@/lib/admin-stats";
 import { formatMoney } from "@/lib/format";
@@ -10,7 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminHostsPage() {
   await requireAdmin();
   const [plays, leads] = await Promise.all([listPlays(), listLeads()]);
-  const rows = adminHostRows(plays, leads);
+  const rows = await adminHostRows(plays, leads);
 
   return (
     <AdminShell current="/admin/hosts">
@@ -18,6 +19,9 @@ export default async function AdminHostsPage() {
       <p className="mt-3 text-ink-soft">
         Today’s games, floor sponsor, and assigned campaigns.
       </p>
+      <div className="mt-6">
+        <CreateHostForm />
+      </div>
       <div className="mt-8 overflow-x-auto">
         <table className="w-full min-w-[44rem] text-left text-sm">
           <thead className="text-ink-soft">

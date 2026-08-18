@@ -3,10 +3,10 @@ import { AdminShell, StatusPill } from "@/components/admin/AdminShell";
 import { requireAdmin } from "@/lib/admin-auth";
 import { listCampaigns } from "@/lib/campaign-resolve";
 import { formatMoney } from "@/lib/format";
-import { getHost, listHosts } from "@/lib/hosts";
+import { listHosts } from "@/lib/hosts";
 import { todaysSponsorForHostRecord } from "@/lib/route-campaign";
 import { performanceForCampaign } from "@/lib/startup-stats";
-import { getStartup } from "@/lib/startups";
+import { listStartups } from "@/lib/startups";
 import { listLeads, listPlays } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
@@ -14,12 +14,25 @@ export const dynamic = "force-dynamic";
 export default async function AdminCampaignsPage() {
   await requireAdmin();
   const [plays, leads] = await Promise.all([listPlays(), listLeads()]);
-  const campaigns = listCampaigns();
-  const hosts = listHosts();
+  const campaigns = await listCampaigns();
+  const hosts = await listHosts();
   const onFloor = new Set(
-    hosts
-      .map((host) => todaysSponsorForHostRecord(host)?.id)
-      .filter((id): id is string => Boolean(id)),
+    (
+      await Promise.all(
+        hosts.map(async (host) => (await todaysSponsorForHostRecord(host))?.id),
+      )
+    ).filter((id): id is string => Boolean(id)),
+  );
+  const startups = await listStartups();
+  const startupNames = new Map(
+    startups.map((startup) => [startup.id, startup.displayName]),
+  );
+  const hostNames = new Map(hosts.map((host) => [host.id, host.displayName]));
+  const statsRows = await Promise.all(
+    campaigns.map(async (campaign) => ({
+      campaign,
+      stats: await performanceForCampaign(campaign, plays, leads),
+    })),
   );
 
   return (
@@ -43,9 +56,7 @@ export default async function AdminCampaignsPage() {
             </tr>
           </thead>
           <tbody>
-            {campaigns.map((campaign) => {
-              const stats = performanceForCampaign(campaign, plays, leads);
-              return (
+            {statsRows.map(({ campaign, stats }) => (
                 <tr key={campaign.id} className="border-t border-ink/10">
                   <td className="py-3">
                     <Link
@@ -55,21 +66,20 @@ export default async function AdminCampaignsPage() {
                       {campaign.name}
                     </Link>
                   </td>
-                  <td>{getStartup(campaign.startupId)?.displayName}</td>
+                  <td>{startupNames.get(campaign.startupId)}</td>
                   <td>
                     <StatusPill status={campaign.status} />
                   </td>
                   <td>
                     {campaign.eligibleHostIds
-                      .map((id) => getHost(id)?.displayName ?? id)
+                      .map((id) => hostNames.get(id) ?? id)
                       .join(", ") || "—"}
                   </td>
                   <td>{onFloor.has(campaign.id) ? "Today" : "—"}</td>
                   <td>{stats.funnel.qualifiedLeads}</td>
                   <td>{formatMoney(stats.spend)}</td>
                 </tr>
-              );
-            })}
+            ))}
           </tbody>
         </table>
       </div>

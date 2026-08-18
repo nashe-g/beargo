@@ -1,7 +1,10 @@
+import { and, eq } from "drizzle-orm";
+import { db } from "@/db";
+import { challengeSets } from "@/db/schema";
+import { listQuestions } from "@/lib/catalog";
 import { localDateInZone } from "@/lib/dates";
 import type { PawRecord } from "@/lib/paws";
 import {
-  QUESTION_POOL,
   QUESTIONS_PER_CHALLENGE,
   type Question,
   type QuestionDifficulty,
@@ -20,35 +23,85 @@ export type ChallengeAnswer = {
   responseMs: number;
 };
 
-function pickOne(questions: Question[], random: () => number) {
-  return questions[Math.floor(random() * questions.length)];
+function pickOne(pool: Question[], random: () => number) {
+  return pool[Math.floor(random() * pool.length)];
 }
 
-function byDifficulty(difficulty: QuestionDifficulty) {
-  return QUESTION_POOL.filter((question) => question.difficulty === difficulty);
+function byDifficulty(pool: Question[], difficulty: QuestionDifficulty) {
+  return pool.filter((question) => question.difficulty === difficulty);
 }
 
-export function getDailyChallenge(
+function draftSet(hostId: string, localDate: string, pool: Question[]): Question[] {
+  const random = mulberry32(hashSeed(`${hostId}:${localDate}`));
+  const easy = byDifficulty(pool, "easy");
+  const medium = byDifficulty(pool, "medium");
+  const hard = byDifficulty(pool, "hard");
+  const fallback = pool.length > 0 ? pool : [];
+  const questions = [
+    pickOne(easy.length ? easy : fallback, random),
+    pickOne(medium.length ? medium : fallback, random),
+    pickOne(hard.length ? hard : fallback, random),
+  ];
+  if (questions.some((question) => !question)) {
+    throw new Error("Question pool is empty");
+  }
+  return questions;
+}
+
+export async function getDailyChallenge(
   hostId: string,
   timezone: string,
   at = new Date(),
-): DailyChallenge {
+): Promise<DailyChallenge> {
   const localDate = localDateInZone(timezone, at);
   const id = `${hostId}:${localDate}`;
-  const random = mulberry32(hashSeed(id));
+
+  const [existing] = await db()
+    .select()
+    .from(challengeSets)
+    .where(
+      and(eq(challengeSets.hostId, hostId), eq(challengeSets.localDate, localDate)),
+    )
+    .limit(1);
+
+  if (existing) {
+    return {
+      id: existing.id,
+      localDate: existing.localDate,
+      questions: existing.snapshot as Question[],
+    };
+  }
+
+  const pool = await listQuestions();
+  const questions = draftSet(hostId, localDate, pool);
+
+  await db()
+    .insert(challengeSets)
+    .values({
+      id,
+      hostId,
+      localDate,
+      questionIds: questions.map((question) => question.id),
+      snapshot: questions,
+    })
+    .onConflictDoNothing();
+
+  const [frozen] = await db()
+    .select()
+    .from(challengeSets)
+    .where(
+      and(eq(challengeSets.hostId, hostId), eq(challengeSets.localDate, localDate)),
+    )
+    .limit(1);
 
   return {
-    id,
+    id: frozen?.id ?? id,
     localDate,
-    questions: [
-      pickOne(byDifficulty("easy"), random),
-      pickOne(byDifficulty("medium"), random),
-      pickOne(byDifficulty("hard"), random),
-    ],
+    questions: (frozen?.snapshot as Question[] | undefined) ?? questions,
   };
 }
 
-export function challengeForPaw(paw: PawRecord, at = new Date()) {
+export async function challengeForPaw(paw: PawRecord, at = new Date()) {
   return getDailyChallenge(paw.hostId, paw.timezone, at);
 }
 

@@ -1,0 +1,14 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: beargo
+      POSTGRES_PASSWORD: beargo
+      POSTGRES_DB: beargo
+    ports:
+      - "5432:5432"
+    volumes:
+      - beargo_pg:/var/lib/postgresql/data
+
+volumes:
+  beargo_pg:

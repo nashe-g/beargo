@@ -3,7 +3,7 @@ import {
   interestLabel,
   qualificationSummary,
 } from "@/lib/campaigns";
-import { getCampaign } from "@/lib/campaign-resolve";
+import { getCampaign } from "@/lib/catalog";
 import { STARTUP_COOKIE } from "@/lib/startup-auth";
 import { getStartup } from "@/lib/startups";
 import {
@@ -20,7 +20,7 @@ function csvCell(value: string) {
 
 export async function GET(request: Request) {
   const id = (await cookies()).get(STARTUP_COOKIE)?.value;
-  const startup = id ? getStartup(id) : null;
+  const startup = id ? await getStartup(id) : null;
   if (!startup) {
     return Response.redirect(new URL("/startup", request.url));
   }
@@ -41,22 +41,24 @@ export async function GET(request: Request) {
     "cpl",
     "campaign",
   ];
-  const rows = qualified.map((lead) => {
-    const campaign = getCampaign(lead.campaignId);
-    return [
-      lead.id,
-      lead.fullName,
-      lead.email,
-      lead.phone,
-      interestLabel(lead.interestId),
-      qualificationSummary(campaign, lead.qualification),
-      hostNameForLead(lead),
-      placementForLead(lead),
-      lead.qualifiedAt ?? "",
-      String(lead.grossCpl ?? campaign?.grossCpl ?? ""),
-      campaign?.name ?? lead.campaignId,
-    ].map(csvCell);
-  });
+  const rows = await Promise.all(
+    qualified.map(async (lead) => {
+      const campaign = await getCampaign(lead.campaignId);
+      return [
+        lead.id,
+        lead.fullName,
+        lead.email,
+        lead.phone,
+        interestLabel(lead.interestId),
+        qualificationSummary(campaign, lead.qualification),
+        await hostNameForLead(lead),
+        await placementForLead(lead),
+        lead.qualifiedAt ?? "",
+        String(lead.grossCpl ?? campaign?.grossCpl ?? ""),
+        campaign?.name ?? lead.campaignId,
+      ].map(csvCell);
+    }),
+  );
 
   const csv = [header.join(","), ...rows.map((row) => row.join(","))].join("\n");
   const stamp = new Date().toISOString().slice(0, 10);

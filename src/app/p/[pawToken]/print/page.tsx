@@ -3,6 +3,8 @@ import { PrintSign } from "@/components/print/PrintSign";
 import { CANONICAL_ORIGIN } from "@/lib/config";
 import { getPaw } from "@/lib/paws";
 
+export const dynamic = "force-dynamic";
+
 export default async function PrintPage({
   params,
   searchParams,
@@ -15,11 +17,12 @@ export default async function PrintPage({
   const host = requestHeaders.get("host") ?? "localhost:3000";
   const protocol = requestHeaders.get("x-forwarded-proto") ?? "http";
   const localOrigin = `${protocol}://${host}`;
+  const paw = await getPaw(pawToken);
   const origin = usingLocal ? localOrigin : CANONICAL_ORIGIN;
 
   return (
     <PrintSign
-      paw={getPaw(pawToken)}
+      paw={paw}
       origin={origin}
       usingLocal={usingLocal}
       localHref={`/p/${pawToken}/print?src=local`}

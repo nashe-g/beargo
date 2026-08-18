@@ -1,7 +1,9 @@
-import { getCampaign } from "@/lib/campaign-resolve";
+import { getCampaign } from "@/lib/catalog";
 import { localDateInZone } from "@/lib/dates";
 import type { HostRecord } from "@/lib/hosts";
+import { dollarsFromCents } from "@/lib/money";
 import type { Lead } from "@/lib/store";
+import { listLedger } from "@/lib/store";
 import type { Play } from "@/lib/rank";
 
 export type HostEarningRow = {
@@ -9,6 +11,7 @@ export type HostEarningRow = {
   at: string;
   source: string;
   amount: number;
+  status: string;
 };
 
 export type HostTodayStats = {
@@ -90,22 +93,42 @@ export function hostMonthStats(
   };
 }
 
-export function hostEarningsLedger(
-  host: HostRecord,
-  leads: Lead[],
-): { available: number; rows: HostEarningRow[] } {
-  const rows = leads
-    .filter((lead) => lead.hostId === host.id && lead.status === "qualified")
-    .map((lead) => ({
-      id: lead.id,
-      at: lead.qualifiedAt ?? lead.createdAt,
-      source: `${getCampaign(lead.campaignId)?.name ?? "Sponsor"} introduction`,
-      amount: lead.hostAmount ?? 0,
-    }))
-    .sort((a, b) => (a.at < b.at ? 1 : -1));
+export async function hostEarningsLedger(host: HostRecord): Promise<{
+  potential: number;
+  pending: number;
+  paid: number;
+  rows: HostEarningRow[];
+}> {
+  const entries = (await listLedger(host.id)).filter(
+    (entry) => entry.kind === "host_earning",
+  );
+  const rows: HostEarningRow[] = await Promise.all(
+    entries.map(async (entry) => {
+      const campaign = entry.campaignId
+        ? await getCampaign(entry.campaignId)
+        : null;
+      return {
+        id: entry.id,
+        at: entry.createdAt,
+        source: `${campaign?.name ?? "Sponsor"} introduction`,
+        amount: entry.amount,
+        status: entry.status,
+      };
+    }),
+  );
 
   return {
-    available: rows.reduce((sum, row) => sum + row.amount, 0),
+    potential: rows
+      .filter((row) => row.status === "potential")
+      .reduce((sum, row) => sum + row.amount, 0),
+    pending: rows
+      .filter((row) => row.status === "pending")
+      .reduce((sum, row) => sum + row.amount, 0),
+    paid: rows
+      .filter((row) => row.status === "paid")
+      .reduce((sum, row) => sum + row.amount, 0),
     rows,
   };
 }
+
+export { dollarsFromCents };

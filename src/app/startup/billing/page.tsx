@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function StartupBillingPage() {
   const startup = await requireStartup();
   const [plays, leads] = await Promise.all([listPlays(), listLeads()]);
-  const stats = performanceForStartup(startup.id, plays, leads);
+  const stats = await performanceForStartup(startup.id, plays, leads);
 
   return (
     <StartupShell startup={startup} current="/startup/billing">

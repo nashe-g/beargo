@@ -14,15 +14,20 @@ export default async function StartupCampaignPage({
 }: PageProps<"/startup/campaigns/[campaignId]">) {
   const startup = await requireStartup();
   const { campaignId } = await params;
-  const campaign = getCampaign(campaignId);
+  const campaign = await getCampaign(campaignId);
   if (!campaign || campaign.startupId !== startup.id) notFound();
 
   const [plays, leads] = await Promise.all([listPlays(), listLeads()]);
-  const { funnel, spend, remaining } = performanceForCampaign(
+  const { funnel, spend, remaining } = await performanceForCampaign(
     campaign,
     plays,
     leads,
   );
+  const hostNames = (
+    await Promise.all(
+      campaign.eligibleHostIds.map(async (id) => (await getHost(id))?.displayName ?? id),
+    )
+  ).join(", ");
 
   return (
     <StartupShell startup={startup} current="/startup/campaigns">
@@ -67,9 +72,9 @@ export default async function StartupCampaignPage({
             <Row
               label="Assigned hosts"
               value={
-                campaign.eligibleHostIds
-                  .map((id) => getHost(id)?.displayName ?? id)
-                  .join(", ") || "None"
+                campaign.eligibleHostIds.length === 0
+                  ? "None"
+                  : hostNames
               }
             />
           </dl>

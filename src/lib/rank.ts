@@ -6,6 +6,7 @@ export type Play = {
   localDate: string;
   correctCount: number;
   totalResponseMs: number;
+  rankingEligible?: boolean;
   createdAt: string;
 };
 

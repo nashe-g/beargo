@@ -8,14 +8,14 @@ export const dynamic = "force-dynamic";
 export default async function AdminChallengesPage() {
   await requireAdmin();
   const [plays, leads] = await Promise.all([listPlays(), listLeads()]);
-  const rows = adminHostRows(plays, leads);
+  const rows = await adminHostRows(plays, leads);
 
   return (
     <AdminShell current="/admin/challenges">
       <h1 className="font-display text-4xl">Challenges</h1>
       <p className="mt-3 max-w-2xl text-ink-soft">
         Same three questions for every player at that host today. Drawn from
-        the reviewed pool. LLM generation is not wired yet.
+        the reviewed pool. Generate drafts from Questions → Generate.
       </p>
 
       <div className="mt-8 space-y-8">

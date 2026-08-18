@@ -1,10 +1,12 @@
 import { HostShell } from "@/components/host/HostShell";
 import { getDailyChallenge } from "@/lib/daily-challenge";
-import { getDemoHost } from "@/lib/hosts";
+import { requireHost } from "@/lib/host-auth";
 
-export default function HostChallengesPage() {
-  const host = getDemoHost();
-  const challenge = getDailyChallenge(host.id, host.timezone);
+export const dynamic = "force-dynamic";
+
+export default async function HostChallengesPage() {
+  const host = await requireHost();
+  const challenge = await getDailyChallenge(host.id, host.timezone);
 
   return (
     <HostShell host={host} current="/host/challenges">

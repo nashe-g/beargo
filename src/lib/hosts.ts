@@ -2,36 +2,22 @@ export type HostRecord = {
   id: string;
   displayName: string;
   timezone: string;
-};
-
-const HOSTS: Record<string, HostRecord> = {
-  "the-rustic": {
-    id: "the-rustic",
-    displayName: "The Rustic",
-    timezone: "America/Chicago",
-  },
-  "the-quiet-room": {
-    id: "the-quiet-room",
-    displayName: "The Quiet Room",
-    timezone: "America/Chicago",
-  },
-  "rice-union": {
-    id: "rice-union",
-    displayName: "Rice Union",
-    timezone: "America/Chicago",
-  },
+  city?: string;
+  neighborhood?: string | null;
+  type?: string;
+  status?: string;
 };
 
 export const DEMO_HOST_ID = "the-rustic";
 
-export function listHosts() {
-  return Object.values(HOSTS);
-}
+export { getHost, listHosts, upsertHost } from "@/lib/catalog";
 
-export function getHost(hostId: string) {
-  return HOSTS[hostId] ?? null;
-}
+import { getHost } from "@/lib/catalog";
 
-export function getDemoHost() {
-  return HOSTS[DEMO_HOST_ID];
+export async function getDemoHost() {
+  const host = await getHost(DEMO_HOST_ID);
+  if (!host) {
+    throw new Error("Demo host is not seeded");
+  }
+  return host;
 }

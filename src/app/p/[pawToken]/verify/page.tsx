@@ -3,6 +3,8 @@ import { VerifyEmail } from "@/components/scanner/VerifyEmail";
 import { getPaw } from "@/lib/paws";
 import { verifyLead } from "@/lib/store";
 
+export const dynamic = "force-dynamic";
+
 export default async function VerifyPage({
   params,
   searchParams,
@@ -10,7 +12,7 @@ export default async function VerifyPage({
   const { pawToken } = await params;
   const query = await searchParams;
   const token = Array.isArray(query.t) ? query.t[0] : query.t;
-  const paw = getPaw(pawToken);
+  const paw = await getPaw(pawToken);
 
   if (token) {
     const result = await verifyLead(token);

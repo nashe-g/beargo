@@ -15,12 +15,12 @@ export const dynamic = "force-dynamic";
 export default async function StartupDashboardPage() {
   const startup = await requireStartup();
   const [plays, leads] = await Promise.all([listPlays(), listLeads()]);
-  const stats = performanceForStartup(startup.id, plays, leads);
-  const sources = sourceRows(startup.id, plays, leads);
+  const stats = await performanceForStartup(startup.id, plays, leads);
+  const sources = await sourceRows(startup.id, plays, leads);
   const interestMix = mix(
     leadsForStartup(startup.id, leads).map((lead) => lead.interestId),
   );
-  const live = campaignsForStartup(startup.id).filter(
+  const live = (await campaignsForStartup(startup.id)).filter(
     (campaign) => campaign.status === "live",
   );
 

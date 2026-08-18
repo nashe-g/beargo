@@ -14,11 +14,11 @@ export default async function AdminHostPage({
 }: PageProps<"/admin/hosts/[hostId]">) {
   await requireAdmin();
   const { hostId } = await params;
-  const host = getHost(hostId);
+  const host = await getHost(hostId);
   if (!host) notFound();
 
   const [plays, leads] = await Promise.all([listPlays(), listLeads()]);
-  const row = adminHostRows(plays, leads).find(
+  const row = (await adminHostRows(plays, leads)).find(
     (entry) => entry.host.id === host.id,
   );
   if (!row) notFound();

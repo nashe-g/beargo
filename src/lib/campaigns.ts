@@ -32,6 +32,10 @@ export type Campaign = {
   hostAmount: number;
   platformAmount: number;
   fundedBalance: number;
+  maxLeads?: number | null;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  completionUrl?: string | null;
 };
 
 export const INTEREST_OPTIONS: {
@@ -46,9 +50,13 @@ export const INTEREST_OPTIONS: {
   { id: "not-for-me", label: "Not for me", kind: "exit" },
 ];
 
-const DEFAULT_ELIGIBLE_INTEREST: InterestId[] = ["try", "useful", "later"];
+export const DEFAULT_ELIGIBLE_INTEREST: InterestId[] = [
+  "try",
+  "useful",
+  "later",
+];
 
-export const CAMPAIGNS: Campaign[] = [
+export const SEED_CAMPAIGNS: Campaign[] = [
   {
     id: "jobradar-houston-pilot",
     startupId: "jobradar",
@@ -167,10 +175,6 @@ export const CAMPAIGNS: Campaign[] = [
 
 export const CONSENT_VERSION = "intro-v1";
 
-export function campaignsForStartup(startupId: string) {
-  return CAMPAIGNS.filter((campaign) => campaign.startupId === startupId);
-}
-
 export function interestLabel(id: string) {
   return INTEREST_OPTIONS.find((option) => option.id === id)?.label ?? id;
 }
@@ -193,10 +197,6 @@ export function qualificationSummary(
       .filter(Boolean)
       .join(" · ") || "—"
   );
-}
-
-export function getCampaign(id: string) {
-  return CAMPAIGNS.find((campaign) => campaign.id === id) ?? null;
 }
 
 export function thanksCopy(reason: string | undefined) {

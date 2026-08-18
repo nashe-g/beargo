@@ -67,7 +67,14 @@ export default async function AdminLeadsPage({
               </tr>
             </thead>
             <tbody>
-              {leads.map((lead) => (
+              {await Promise.all(
+                leads.map(async (lead) => {
+                  const [campaign, host, startup] = await Promise.all([
+                    getCampaign(lead.campaignId),
+                    getHost(lead.hostId),
+                    getStartup(lead.startupId),
+                  ]);
+                  return (
                 <tr key={lead.id} className="border-t border-ink/10">
                   <td className="py-3">
                     <Link href={`/admin/leads/${lead.id}`}>
@@ -82,17 +89,18 @@ export default async function AdminLeadsPage({
                     <p className="text-ink-soft">{lead.email}</p>
                   </td>
                   <td>
-                    {getStartup(lead.startupId)?.displayName} ·{" "}
-                    {getCampaign(lead.campaignId)?.name}
+                    {startup?.displayName} · {campaign?.name}
                   </td>
-                  <td>{getHost(lead.hostId)?.displayName ?? lead.hostId}</td>
+                  <td>{host?.displayName ?? lead.hostId}</td>
                   <td>
                     {lead.status === "qualified"
                       ? formatMoney(lead.grossCpl ?? 0)
                       : "—"}
                   </td>
                 </tr>
-              ))}
+                  );
+                }),
+              )}
             </tbody>
           </table>
         </div>

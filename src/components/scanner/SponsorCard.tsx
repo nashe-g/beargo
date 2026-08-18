@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { BearGuide } from "@/components/bear/BearGuide";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
+import { StampSession } from "@/components/scanner/StampSession";
 import {
   INTEREST_OPTIONS,
   type Campaign,
@@ -34,6 +35,11 @@ export function SponsorCard({
 
   return (
     <ScannerShell>
+      <StampSession
+        pawToken={paw.token}
+        event="sponsor_viewed"
+        campaignId={campaign.id}
+      />
       <div className="flex flex-1 flex-col gap-6 py-2">
         <BearGuide state="idle" size="sm" />
         <p className="text-sm tracking-[0.22em] text-honey uppercase">

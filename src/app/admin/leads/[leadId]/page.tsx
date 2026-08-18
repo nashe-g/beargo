@@ -19,8 +19,13 @@ export default async function AdminLeadPage({
   const lead = await getLead(leadId);
   if (!lead) notFound();
 
-  const campaign = getCampaign(lead.campaignId);
-  const zone = getHost(lead.hostId)?.timezone ?? "America/Chicago";
+  const [campaign, host, paw, startup] = await Promise.all([
+    getCampaign(lead.campaignId),
+    getHost(lead.hostId),
+    getPaw(lead.pawToken),
+    getStartup(lead.startupId),
+  ]);
+  const zone = host?.timezone ?? "America/Chicago";
 
   return (
     <AdminShell current="/admin/leads">
@@ -43,7 +48,7 @@ export default async function AdminLeadPage({
           <dl className="mt-4 space-y-3 text-sm">
             <Row
               label="Startup"
-              value={getStartup(lead.startupId)?.displayName ?? lead.startupId}
+              value={startup?.displayName ?? lead.startupId}
             />
             <Row label="Campaign" value={campaign?.name ?? lead.campaignId} />
             <Row label="Interest" value={interestLabel(lead.interestId)} />
@@ -87,10 +92,10 @@ export default async function AdminLeadPage({
           <dl className="mt-4 space-y-3 text-sm">
             <Row
               label="Host"
-              value={getHost(lead.hostId)?.displayName ?? lead.hostId}
+              value={host?.displayName ?? lead.hostId}
             />
             <Row label="Paw" value={lead.pawToken} />
-            <Row label="Placement" value={getPaw(lead.pawToken).placementLabel} />
+            <Row label="Placement" value={paw.placementLabel} />
             <Row label="Contact" value={formatStamp(lead.createdAt, zone)} />
             <Row
               label="Verified"

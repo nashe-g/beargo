@@ -1,9 +1,13 @@
 import Link from "next/link";
+import { MagicLinkForm } from "@/components/auth/MagicLinkForm";
 import { PawMark } from "@/components/paw/PawMark";
+import { isProduction } from "@/lib/auth";
 import { getDemoHost } from "@/lib/hosts";
 
-export default function HostLoginPage() {
-  const host = getDemoHost();
+export const dynamic = "force-dynamic";
+
+export default async function HostLoginPage() {
+  const host = await getDemoHost().catch(() => null);
 
   return (
     <main className="min-h-dvh bg-paper text-ink">
@@ -15,12 +19,17 @@ export default function HostLoginPage() {
             See today’s games, your Paw, and potential earnings.
           </p>
         </div>
-        <Link
-          href="/host/dashboard"
-          className="flex h-14 items-center justify-center rounded-full bg-ink text-paper"
-        >
-          Continue as {host.displayName}
-        </Link>
+        <div className="space-y-4">
+          <MagicLinkForm next="/host/dashboard" />
+          {!isProduction() && host ? (
+            <Link
+              href={`/host/enter?id=${host.id}`}
+              className="flex h-14 items-center justify-center rounded-full border border-ink/20"
+            >
+              Continue as {host.displayName}
+            </Link>
+          ) : null}
+        </div>
       </div>
     </main>
   );

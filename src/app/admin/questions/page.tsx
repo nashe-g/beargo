@@ -1,17 +1,16 @@
 import Link from "next/link";
 import { AdminShell, StatusPill } from "@/components/admin/AdminShell";
 import { requireAdmin } from "@/lib/admin-auth";
-import { QUESTION_POOL } from "@/lib/questions";
+import { listQuestions } from "@/lib/catalog";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminQuestionsPage() {
   await requireAdmin();
-  const easy = QUESTION_POOL.filter((question) => question.difficulty === "easy");
-  const medium = QUESTION_POOL.filter(
-    (question) => question.difficulty === "medium",
-  );
-  const hard = QUESTION_POOL.filter((question) => question.difficulty === "hard");
+  const pool = await listQuestions();
+  const easy = pool.filter((question) => question.difficulty === "easy");
+  const medium = pool.filter((question) => question.difficulty === "medium");
+  const hard = pool.filter((question) => question.difficulty === "hard");
 
   return (
     <AdminShell current="/admin/questions">
@@ -19,15 +18,15 @@ export default async function AdminQuestionsPage() {
         <div>
           <h1 className="font-display text-4xl">Questions</h1>
           <p className="mt-3 max-w-xl text-ink-soft">
-            Hand-built pool. Daily picker takes one easy, one medium, one
-            hard per host. Generation and format validation land later.
+            Approved pool. Daily picker takes one easy, one medium, one hard
+            per host and freezes that set for the local day.
           </p>
         </div>
         <Link
           href="/admin/questions/generate"
-          className="flex h-12 items-center rounded-full border border-ink/20 px-5"
+          className="flex h-12 items-center rounded-full bg-ink px-5 text-paper"
         >
-          Generation (later)
+          Generate drafts
         </Link>
       </div>
 
@@ -48,7 +47,7 @@ export default async function AdminQuestionsPage() {
             </tr>
           </thead>
           <tbody>
-            {QUESTION_POOL.map((question) => (
+            {pool.map((question) => (
               <tr key={question.id} className="border-t border-ink/10">
                 <td className="py-3 font-mono text-xs">{question.id}</td>
                 <td>

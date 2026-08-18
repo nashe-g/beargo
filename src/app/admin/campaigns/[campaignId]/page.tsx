@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { AdminShell, Stat, StatusPill } from "@/components/admin/AdminShell";
 import { CampaignControls } from "@/components/admin/CampaignControls";
+import { CreditCampaignForm } from "@/components/admin/CreditCampaignForm";
 import { requireAdmin } from "@/lib/admin-auth";
 import { getCampaign } from "@/lib/campaign-resolve";
 import { formatMoney } from "@/lib/format";
@@ -16,12 +17,13 @@ export default async function AdminCampaignPage({
 }: PageProps<"/admin/campaigns/[campaignId]">) {
   await requireAdmin();
   const { campaignId } = await params;
-  const campaign = getCampaign(campaignId);
+  const campaign = await getCampaign(campaignId);
   if (!campaign) notFound();
 
   const [plays, leads] = await Promise.all([listPlays(), listLeads()]);
-  const stats = performanceForCampaign(campaign, plays, leads);
-  const startup = getStartup(campaign.startupId);
+  const stats = await performanceForCampaign(campaign, plays, leads);
+  const startup = await getStartup(campaign.startupId);
+  const hosts = await listHosts();
 
   return (
     <AdminShell current="/admin/campaigns">
@@ -42,6 +44,7 @@ export default async function AdminCampaignPage({
         <Stat label="Spend" value={formatMoney(stats.spend)} />
         <Stat label="Remaining" value={formatMoney(stats.remaining)} />
       </div>
+      <CreditCampaignForm campaignId={campaign.id} />
 
       <section className="mt-12 grid gap-10 lg:grid-cols-2">
         <div className="rounded-3xl bg-ink px-6 py-6 text-paper">
@@ -51,7 +54,7 @@ export default async function AdminCampaignPage({
           <h2 className="mt-3 font-display text-3xl">{campaign.name}</h2>
           <p className="mt-3 text-paper/75">{campaign.valueProposition}</p>
         </div>
-        <CampaignControls campaign={campaign} hosts={listHosts()} />
+        <CampaignControls campaign={campaign} hosts={hosts} />
       </section>
     </AdminShell>
   );

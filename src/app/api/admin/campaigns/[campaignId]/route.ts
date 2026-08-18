@@ -1,7 +1,8 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { audit } from "@/lib/audit";
 import { ADMIN_COOKIE } from "@/lib/admin-auth";
-import { getCampaign, patchCampaign } from "@/lib/campaign-resolve";
+import { getCampaign, patchCampaign } from "@/lib/catalog";
 import type { CampaignStatus } from "@/lib/campaigns";
 
 export async function POST(
@@ -14,7 +15,7 @@ export async function POST(
   }
 
   const { campaignId } = await context.params;
-  if (!getCampaign(campaignId)) {
+  if (!(await getCampaign(campaignId))) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
@@ -47,6 +48,7 @@ export async function POST(
     patch.eligibleHostIds = record.eligibleHostIds.map((id) => String(id));
   }
 
-  const campaign = patchCampaign(campaignId, patch);
+  const campaign = await patchCampaign(campaignId, patch);
+  await audit("admin", "campaign.patch", { campaignId, patch });
   return NextResponse.json({ campaign });
 }

@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { MagicLinkForm } from "@/components/auth/MagicLinkForm";
 import { PawMark } from "@/components/paw/PawMark";
+import { isProduction } from "@/lib/auth";
 
 export default function AdminLoginPage() {
   return (
@@ -13,12 +15,17 @@ export default function AdminLoginPage() {
             is the money correct?
           </p>
         </div>
-        <Link
-          href="/admin/enter"
-          className="flex h-14 items-center justify-center rounded-full bg-ink text-paper"
-        >
-          Continue as admin
-        </Link>
+        <div className="space-y-4">
+          <MagicLinkForm next="/admin/overview" />
+          {!isProduction() ? (
+            <Link
+              href="/admin/enter"
+              className="flex h-14 items-center justify-center rounded-full border border-ink/20"
+            >
+              Continue as admin
+            </Link>
+          ) : null}
+        </div>
       </div>
     </main>
   );

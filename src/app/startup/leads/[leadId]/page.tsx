@@ -24,9 +24,11 @@ export default async function StartupLeadPage({
   const lead = await getLead(leadId);
   if (!lead || lead.startupId !== startup.id) notFound();
 
-  const campaign = getCampaign(lead.campaignId);
+  const campaign = await getCampaign(lead.campaignId);
   const revealed = canRevealContact(lead);
   const zone = "America/Chicago";
+  const hostName = await hostNameForLead(lead);
+  const placement = await placementForLead(lead);
 
   return (
     <StartupShell startup={startup} current="/startup/leads">
@@ -100,9 +102,9 @@ export default async function StartupLeadPage({
         <section>
           <h2 className="font-display text-2xl">Physical provenance</h2>
           <dl className="mt-4 space-y-3 text-sm">
-            <Row label="Host" value={hostNameForLead(lead)} />
+            <Row label="Host" value={hostName} />
             <Row label="Paw" value={lead.pawToken} />
-            <Row label="Placement" value={placementForLead(lead)} />
+            <Row label="Placement" value={placement} />
             <Row
               label="Contact submitted"
               value={formatStamp(lead.createdAt, zone)}

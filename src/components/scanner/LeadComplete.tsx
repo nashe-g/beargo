@@ -19,6 +19,14 @@ export function LeadComplete({
           {campaign.name} can pay {paw.hostDisplayName} for your introduction.
         </p>
         <p className="text-honey">You paid $0.</p>
+        {campaign.completionUrl ? (
+          <a
+            href={campaign.completionUrl}
+            className="mt-4 flex h-14 w-full items-center justify-center rounded-full bg-honey text-lg font-semibold tracking-[0.12em] text-ink"
+          >
+            Continue
+          </a>
+        ) : null}
       </div>
     </ScannerShell>
   );

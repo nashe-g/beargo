@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/admin/questions", label: "Questions" },
   { href: "/admin/campaigns", label: "Campaigns" },
   { href: "/admin/leads", label: "Leads" },
+  { href: "/admin/applications", label: "Apply" },
 ];
 
 export function AdminShell({
