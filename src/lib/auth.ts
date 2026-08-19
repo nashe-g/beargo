@@ -132,7 +132,13 @@ export async function consumeMagicLink(token: string) {
 
 export async function setAuthCookies(user: AuthUser) {
   const jar = await cookies();
-  const options = { path: "/", sameSite: "lax" as const, httpOnly: true };
+  const options = {
+    path: "/",
+    sameSite: "lax" as const,
+    httpOnly: true,
+    secure: isProduction(),
+    maxAge: 60 * 60 * 24 * 14,
+  };
   if (user.role === "admin") jar.set(ADMIN_COOKIE, "1", options);
   if (user.role === "host" && user.hostId) {
     jar.set(HOST_COOKIE, user.hostId, options);

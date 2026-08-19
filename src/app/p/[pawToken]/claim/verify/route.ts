@@ -1,22 +1,21 @@
 import { redirect } from "next/navigation";
 import { getPromotion } from "@/lib/promotions";
-import { consumeClaimLink, markClaimLinkUsed, markPlayerVerified, setPlayerCookie } from "@/lib/players";
 import {
-  ensureScanSession,
-  stampSession,
-} from "@/lib/scan-session";
+  consumeClaimLink,
+  markClaimLinkUsed,
+  markPlayerVerified,
+  setPlayerCookie,
+} from "@/lib/players";
+import { ensureScanSession, stampSession } from "@/lib/scan-session";
 import { getPaw } from "@/lib/paws";
 import { claimVoucher } from "@/lib/vouchers";
 
-export const dynamic = "force-dynamic";
-
-export default async function ClaimVerifyPage({
-  params,
-  searchParams,
-}: PageProps<"/p/[pawToken]/claim/verify">) {
-  const { pawToken } = await params;
-  const query = await searchParams;
-  const token = Array.isArray(query.t) ? query.t[0] : query.t;
+export async function GET(
+  request: Request,
+  context: RouteContext<"/p/[pawToken]/claim/verify">,
+) {
+  const { pawToken } = await context.params;
+  const token = new URL(request.url).searchParams.get("t");
   if (!token) redirect(`/p/${pawToken}/offer`);
 
   const claim = await consumeClaimLink(token);
