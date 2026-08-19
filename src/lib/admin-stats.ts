@@ -3,7 +3,7 @@ import { getDailyChallenge } from "@/lib/daily-challenge";
 import { localDateInZone } from "@/lib/dates";
 import { hostTodayStats } from "@/lib/host-stats";
 import type { Play } from "@/lib/rank";
-import { selectPromotionForHost } from "@/lib/select-promotion";
+import { listNearbyOffersForHost } from "@/lib/select-promotion";
 
 const NETWORK_ZONE = "America/Chicago";
 
@@ -13,7 +13,7 @@ export async function adminHostRows(plays: Play[]) {
     hosts.map(async (host) => ({
       host,
       today: hostTodayStats(host, plays),
-      offer: await selectPromotionForHost(host),
+      nearby: await listNearbyOffersForHost(host),
       paws: await pawsForHost(host.id),
       challenge: await getDailyChallenge(host.id, host.timezone),
     })),

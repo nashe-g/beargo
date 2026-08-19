@@ -28,10 +28,7 @@ export default async function AdminHostPage({
       <p className="mt-3 text-ink-soft">
         {[host.address, host.neighborhood, host.city].filter(Boolean).join(" · ") ||
           "No street address yet."}{" "}
-        {host.timezone}.{" "}
-        {row.offer
-          ? `Nearby offer after rank: ${offerTitle(row.offer.promotion)} at ${row.offer.promotion.merchant.displayName}.`
-          : "No compelling nearby offer. The game still runs."}
+        {host.timezone}.
       </p>
       {host.excludedCategories.length > 0 ? (
         <p className="mt-2 text-sm text-ink-soft">
@@ -51,6 +48,51 @@ export default async function AdminHostPage({
           }
         />
       </div>
+
+      <section className="mt-12">
+        <h2 className="font-display text-2xl">Nearby offers</h2>
+        <p className="mt-2 max-w-2xl text-ink-soft">
+          Players see one offer after they rank: the closest live offer in
+          range. Others stay in range but are not shown.
+        </p>
+        {row.nearby.length === 0 ? (
+          <p className="mt-4 rounded-3xl border border-ink/10 px-5 py-5 text-ink-soft">
+            None in range. The game still runs.
+          </p>
+        ) : (
+          <ul className="mt-4 grid gap-3 md:grid-cols-2">
+            {row.nearby.map((item, index) => (
+              <li
+                key={item.promotion.id}
+                className="rounded-3xl border border-ink/10 px-5 py-5"
+              >
+                <p className="text-sm text-ink-soft">
+                  {index === 0 ? (
+                    <span className="rounded-full bg-moss px-3 py-1 text-paper">
+                      Shown after rank
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-ink/10 px-3 py-1">
+                      In range
+                    </span>
+                  )}
+                </p>
+                <h3 className="mt-3 font-display text-2xl">
+                  {offerTitle(item.promotion)}
+                </h3>
+                <p className="mt-2">{item.promotion.merchant.displayName}</p>
+                <p className="mt-1 text-sm text-ink-soft">
+                  {item.card.distanceLabel} ·{" "}
+                  {categoryLabel(item.promotion.category)}
+                </p>
+                <p className="mt-1 text-sm text-ink-soft">
+                  {item.promotion.location.address}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <section className="mt-12 grid gap-10 lg:grid-cols-2">
         <div>

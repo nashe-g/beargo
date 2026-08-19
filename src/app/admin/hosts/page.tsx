@@ -45,10 +45,23 @@ export default async function AdminHostsPage() {
                   </Link>
                 </td>
                 <td>{row.today.gamesFinished}</td>
-                <td>
-                  {row.offer
-                    ? `${offerTitle(row.offer.promotion)} · ${row.offer.promotion.merchant.displayName}`
-                    : "—"}
+                <td className="py-3">
+                  {row.nearby[0] ? (
+                    <div>
+                      <p>
+                        {offerTitle(row.nearby[0].promotion)} ·{" "}
+                        {row.nearby[0].promotion.merchant.displayName}
+                      </p>
+                      <p className="text-ink-soft">
+                        {row.nearby[0].card.distanceLabel}
+                        {row.nearby.length > 1
+                          ? ` · +${row.nearby.length - 1} more in range`
+                          : ""}
+                      </p>
+                    </div>
+                  ) : (
+                    "—"
+                  )}
                 </td>
                 <td>{row.paws.length}</td>
               </tr>

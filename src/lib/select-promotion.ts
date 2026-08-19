@@ -114,10 +114,16 @@ export async function toOfferCard(
   return card;
 }
 
-export async function selectPromotionForHost(
+export type NearbyOffer = {
+  promotion: PromotionRecord;
+  card: OfferCard;
+  miles: number;
+};
+
+export async function listNearbyOffersForHost(
   host: HostRecord,
   extra: { deviceKey?: string | null; at?: Date } = {},
-): Promise<{ promotion: PromotionRecord; card: OfferCard } | null> {
+): Promise<NearbyOffer[]> {
   const at = extra.at ?? new Date();
   const all = await listPromotions();
   const live = all.filter(
@@ -127,8 +133,7 @@ export async function selectPromotionForHost(
       promotion.location.status === "active",
   );
 
-  const scored: { promotion: PromotionRecord; card: OfferCard; miles: number }[] =
-    [];
+  const scored: NearbyOffer[] = [];
 
   for (const promotion of live) {
     if (!hostAllows(host, promotion)) continue;
@@ -155,5 +160,13 @@ export async function selectPromotionForHost(
   }
 
   scored.sort((a, b) => a.miles - b.miles);
-  return scored[0] ?? null;
+  return scored;
+}
+
+export async function selectPromotionForHost(
+  host: HostRecord,
+  extra: { deviceKey?: string | null; at?: Date } = {},
+) {
+  const nearby = await listNearbyOffersForHost(host, extra);
+  return nearby[0] ?? null;
 }
