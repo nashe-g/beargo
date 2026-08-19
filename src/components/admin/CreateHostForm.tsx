@@ -66,10 +66,11 @@ export function CreateHostForm() {
         className={fieldClass}
       />
       <input
+        required
         type="email"
         value={email}
         onChange={(event) => setEmail(event.target.value)}
-        placeholder="Host login email (optional)"
+        placeholder="Host login email"
         className={fieldClass}
       />
       <AddressFields

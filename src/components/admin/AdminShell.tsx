@@ -29,7 +29,6 @@ export function AdminShell({
             <span className="font-display text-xl">Admin</span>
           </Link>
           <div className="flex items-center gap-5 text-sm text-ink-soft">
-            <span>Ops</span>
             <Link href="/">BearGo</Link>
           </div>
         </div>

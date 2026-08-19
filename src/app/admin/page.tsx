@@ -1,16 +1,11 @@
-import { cookies } from "next/headers";
 import Link from "next/link";
 import { MagicLinkForm } from "@/components/auth/MagicLinkForm";
 import { PawMark } from "@/components/paw/PawMark";
-import { isOpsUnlocked, OPS_COOKIE } from "@/lib/ops-gate";
+import { isProduction } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminLoginPage() {
-  const unlocked = await isOpsUnlocked(
-    (await cookies()).get(OPS_COOKIE)?.value,
-  );
-
+export default function AdminLoginPage() {
   return (
     <main className="min-h-dvh bg-paper text-ink">
       <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-between px-6 py-10">
@@ -18,13 +13,15 @@ export default async function AdminLoginPage() {
           <PawMark className="w-24" />
           <h1 className="mt-6 font-display text-4xl">Admin</h1>
           <p className="mt-3 text-lg text-ink-soft">
-            Is the game network healthy, is the commercial funnel healthy, and
-            is the money correct? One redeemed customer is $1.
+            Sign in as admin@beargo.pro. One redeemed customer is $1.
           </p>
         </div>
         <div className="space-y-4">
-          <MagicLinkForm next="/admin/overview" />
-          {unlocked ? (
+          <MagicLinkForm
+            next="/admin/overview"
+            placeholder="admin@beargo.pro"
+          />
+          {!isProduction() ? (
             <Link
               href="/admin/enter"
               className="flex h-14 items-center justify-center rounded-full border border-ink/20"

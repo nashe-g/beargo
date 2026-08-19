@@ -38,3 +38,12 @@ export async function isOpsUnlocked(cookieValue?: string | null) {
   if (!password) return false;
   return cookieValue === (await opsCookieValue(password));
 }
+
+/** After staff unlock, send people to the path they asked for — never default to host. */
+export function staffDestination(next: string | null | undefined) {
+  if (!next || !next.startsWith("/") || next.startsWith("//")) return null;
+  const pathname = next.split("?")[0] ?? next;
+  if (pathname === "/ops" || pathname.startsWith("/ops/")) return null;
+  if (!isOpsPath(pathname)) return null;
+  return next;
+}

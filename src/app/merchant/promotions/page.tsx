@@ -26,7 +26,9 @@ export default async function MerchantPromotionsPage() {
       </p>
       <ul className="mt-8 space-y-4">
         {promotions.length === 0 ? (
-          <li className="text-ink-soft">No offers yet. Ask ops to create one.</li>
+          <li className="text-ink-soft">
+            No offers yet. Ask BearGo to create one.
+          </li>
         ) : (
           promotions.map((promotion) => {
             const remaining = remainingById[promotion.id];

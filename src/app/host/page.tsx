@@ -1,17 +1,13 @@
-import { cookies } from "next/headers";
 import Link from "next/link";
 import { MagicLinkForm } from "@/components/auth/MagicLinkForm";
 import { PawMark } from "@/components/paw/PawMark";
+import { isProduction } from "@/lib/auth";
 import { getDemoHost } from "@/lib/hosts";
-import { isOpsUnlocked, OPS_COOKIE } from "@/lib/ops-gate";
 
 export const dynamic = "force-dynamic";
 
 export default async function HostLoginPage() {
-  const host = await getDemoHost().catch(() => null);
-  const unlocked = await isOpsUnlocked(
-    (await cookies()).get(OPS_COOKIE)?.value,
-  );
+  const host = isProduction() ? null : await getDemoHost().catch(() => null);
 
   return (
     <main className="min-h-dvh bg-paper text-ink">
@@ -25,7 +21,7 @@ export default async function HostLoginPage() {
         </div>
         <div className="space-y-4">
           <MagicLinkForm next="/host/dashboard" />
-          {unlocked && host ? (
+          {host ? (
             <Link
               href={`/host/enter?id=${host.id}`}
               className="flex h-14 items-center justify-center rounded-full border border-ink/20"

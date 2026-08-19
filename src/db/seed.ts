@@ -158,24 +158,39 @@ const PROMOTIONS = [
   },
 ];
 
-const USERS = [
-  { email: "admin@beargo.pro", role: "admin", hostId: null, merchantId: null },
+const ADMIN_USERS = [
+  {
+    email: "admin@beargo.pro",
+    role: "admin",
+    hostId: null as string | null,
+    merchantId: null as string | null,
+  },
+  {
+    email: "hello@beargo.pro",
+    role: "admin",
+    hostId: null as string | null,
+    merchantId: null as string | null,
+  },
+];
+
+const DEMO_USERS = [
+  ...ADMIN_USERS,
   {
     email: "rustic@beargo.pro",
     role: "host",
     hostId: "the-rustic",
-    merchantId: null,
+    merchantId: null as string | null,
   },
   {
     email: "riot@beargo.pro",
     role: "merchant",
-    hostId: null,
+    hostId: null as string | null,
     merchantId: "the-riot",
   },
   {
     email: "eastside@beargo.pro",
     role: "merchant",
-    hostId: null,
+    hostId: null as string | null,
     merchantId: "eastside-coffee",
   },
 ];
@@ -331,77 +346,105 @@ async function migrateSchema() {
 async function main() {
   await migrateSchema();
 
-  await db
-    .insert(hosts)
-    .values(HOSTS)
-    .onConflictDoUpdate({
-      target: hosts.id,
-      set: {
-        displayName: sql`excluded.display_name`,
-        timezone: sql`excluded.timezone`,
-        city: sql`excluded.city`,
-        neighborhood: sql`excluded.neighborhood`,
-        address: sql`excluded.address`,
-        type: sql`excluded.type`,
-        lat: sql`excluded.lat`,
-        lng: sql`excluded.lng`,
-        excludedCategories: sql`excluded.excluded_categories`,
-        excludedMerchantIds: sql`excluded.excluded_merchant_ids`,
-      },
-    });
-  await db.insert(paws).values(PAWS).onConflictDoNothing();
+  const demo = process.env.SEED_DEMO === "1";
+  const fresh = process.env.SEED_FRESH === "1";
 
-  await db
-    .insert(merchants)
-    .values(MERCHANTS)
-    .onConflictDoUpdate({
-      target: merchants.id,
-      set: {
-        displayName: sql`excluded.display_name`,
-        category: sql`excluded.category`,
-        billingEnabled: sql`excluded.billing_enabled`,
-      },
-    });
-  await db
-    .insert(merchantLocations)
-    .values(LOCATIONS)
-    .onConflictDoUpdate({
-      target: merchantLocations.id,
-      set: {
-        name: sql`excluded.name`,
-        address: sql`excluded.address`,
-        city: sql`excluded.city`,
-        neighborhood: sql`excluded.neighborhood`,
-        lat: sql`excluded.lat`,
-        lng: sql`excluded.lng`,
-        timezone: sql`excluded.timezone`,
-      },
-    });
-  await db
-    .insert(promotions)
-    .values(PROMOTIONS)
-    .onConflictDoUpdate({
-      target: promotions.id,
-      set: {
-        status: sql`excluded.status`,
-        discountType: sql`excluded.discount_type`,
-        discountAmountCents: sql`excluded.discount_amount_cents`,
-        discountPercent: sql`excluded.discount_percent`,
-        minimumPurchaseCents: sql`excluded.minimum_purchase_cents`,
-        maxDiscountCents: sql`excluded.max_discount_cents`,
-        category: sql`excluded.category`,
-        teaserMode: sql`excluded.teaser_mode`,
-        shortTerms: sql`excluded.short_terms`,
-        restrictions: sql`excluded.restrictions`,
-        validWeekdays: sql`excluded.valid_weekdays`,
-        validMinutesStart: sql`excluded.valid_minutes_start`,
-        validMinutesEnd: sql`excluded.valid_minutes_end`,
-        voucherExpireHour: sql`excluded.voucher_expire_hour`,
-        maxRedemptions: sql`excluded.max_redemptions`,
-        radiusMiles: sql`excluded.radius_miles`,
-        testMode: sql`excluded.test_mode`,
-      },
-    });
+  if (fresh) {
+    await db.execute(sql`
+      TRUNCATE TABLE
+        vouchers,
+        claim_links,
+        players,
+        ledger_entries,
+        scan_sessions,
+        plays,
+        promotion_hosts,
+        promotions,
+        merchant_locations,
+        merchants,
+        paws,
+        challenge_sets,
+        applications,
+        magic_links,
+        hosts
+      RESTART IDENTITY CASCADE;
+      DELETE FROM users;
+    `);
+  }
+
+  if (demo) {
+    await db
+      .insert(hosts)
+      .values(HOSTS)
+      .onConflictDoUpdate({
+        target: hosts.id,
+        set: {
+          displayName: sql`excluded.display_name`,
+          timezone: sql`excluded.timezone`,
+          city: sql`excluded.city`,
+          neighborhood: sql`excluded.neighborhood`,
+          address: sql`excluded.address`,
+          type: sql`excluded.type`,
+          lat: sql`excluded.lat`,
+          lng: sql`excluded.lng`,
+          excludedCategories: sql`excluded.excluded_categories`,
+          excludedMerchantIds: sql`excluded.excluded_merchant_ids`,
+        },
+      });
+    await db.insert(paws).values(PAWS).onConflictDoNothing();
+
+    await db
+      .insert(merchants)
+      .values(MERCHANTS)
+      .onConflictDoUpdate({
+        target: merchants.id,
+        set: {
+          displayName: sql`excluded.display_name`,
+          category: sql`excluded.category`,
+          billingEnabled: sql`excluded.billing_enabled`,
+        },
+      });
+    await db
+      .insert(merchantLocations)
+      .values(LOCATIONS)
+      .onConflictDoUpdate({
+        target: merchantLocations.id,
+        set: {
+          name: sql`excluded.name`,
+          address: sql`excluded.address`,
+          city: sql`excluded.city`,
+          neighborhood: sql`excluded.neighborhood`,
+          lat: sql`excluded.lat`,
+          lng: sql`excluded.lng`,
+          timezone: sql`excluded.timezone`,
+        },
+      });
+    await db
+      .insert(promotions)
+      .values(PROMOTIONS)
+      .onConflictDoUpdate({
+        target: promotions.id,
+        set: {
+          status: sql`excluded.status`,
+          discountType: sql`excluded.discount_type`,
+          discountAmountCents: sql`excluded.discount_amount_cents`,
+          discountPercent: sql`excluded.discount_percent`,
+          minimumPurchaseCents: sql`excluded.minimum_purchase_cents`,
+          maxDiscountCents: sql`excluded.max_discount_cents`,
+          category: sql`excluded.category`,
+          teaserMode: sql`excluded.teaser_mode`,
+          shortTerms: sql`excluded.short_terms`,
+          restrictions: sql`excluded.restrictions`,
+          validWeekdays: sql`excluded.valid_weekdays`,
+          validMinutesStart: sql`excluded.valid_minutes_start`,
+          validMinutesEnd: sql`excluded.valid_minutes_end`,
+          voucherExpireHour: sql`excluded.voucher_expire_hour`,
+          maxRedemptions: sql`excluded.max_redemptions`,
+          radiusMiles: sql`excluded.radius_miles`,
+          testMode: sql`excluded.test_mode`,
+        },
+      });
+  }
 
   await db
     .insert(questions)
@@ -434,10 +477,11 @@ async function main() {
 
   await db.delete(challengeSets);
 
+  const staff = demo ? DEMO_USERS : ADMIN_USERS;
   await db
     .insert(users)
     .values(
-      USERS.map((user) => ({
+      staff.map((user) => ({
         id: user.email,
         email: user.email,
         emailNormalized: normalizeEmail(user.email),
@@ -456,9 +500,19 @@ async function main() {
     });
 
   await db.execute(sql`DELETE FROM users WHERE role = 'startup'`);
+  if (!demo) {
+    await db.execute(
+      sql`DELETE FROM users WHERE email_normalized NOT IN ('admin@beargo.pro', 'hello@beargo.pro')`,
+    );
+    await db.execute(sql`UPDATE promotions SET test_mode = false`);
+  }
 
   console.log(
-    "Seeded BearGo hosts, merchants, promotions, question pool, and demo users.",
+    fresh && !demo
+      ? "Wiped commercial data. Question pool and admin@beargo.pro / hello@beargo.pro staff only."
+      : demo
+        ? "Seeded demo hosts, merchants, promotions, questions, and staff users."
+        : "Production staff: admin@beargo.pro and hello@beargo.pro. Demo logins removed. Live offers will bill $1.",
   );
   await client.end();
 }

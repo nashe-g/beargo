@@ -24,8 +24,15 @@ export async function POST(request: Request) {
   const address = String(body.address ?? "").trim();
   const lat = Number(body.lat);
   const lng = Number(body.lng);
+  const email = String(body.email ?? "").trim();
   if (!displayName) {
     return NextResponse.json({ error: "Name required" }, { status: 400 });
+  }
+  if (!email.includes("@")) {
+    return NextResponse.json(
+      { error: "Host login email required" },
+      { status: 400 },
+    );
   }
   if (!address || !Number.isFinite(lat) || !Number.isFinite(lng)) {
     return NextResponse.json(
@@ -42,10 +49,7 @@ export async function POST(request: Request) {
     lat,
     lng,
   });
-  const email = String(body.email ?? "").trim();
-  if (email.includes("@")) {
-    await upsertUser({ email, role: "host", hostId: host.id });
-  }
+  await upsertUser({ email, role: "host", hostId: host.id });
   await audit("admin", "hosts.create", { id: host.id });
   return NextResponse.json({ host });
 }

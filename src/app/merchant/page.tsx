@@ -1,8 +1,6 @@
-import { cookies } from "next/headers";
+import { isProduction, safeNext } from "@/lib/auth";
 import { MagicLinkForm } from "@/components/auth/MagicLinkForm";
 import { PawMark } from "@/components/paw/PawMark";
-import { safeNext } from "@/lib/auth";
-import { isOpsUnlocked, OPS_COOKIE } from "@/lib/ops-gate";
 import { DEMO_MERCHANT_ID, listMerchants } from "@/lib/promotions";
 import Link from "next/link";
 
@@ -20,9 +18,6 @@ export default async function MerchantLoginPage({
     Array.isArray(query.next) ? query.next[0] : query.next ?? null,
     "/merchant/dashboard",
   );
-  const unlocked = await isOpsUnlocked(
-    (await cookies()).get(OPS_COOKIE)?.value,
-  );
 
   return (
     <main className="min-h-dvh bg-paper text-ink">
@@ -37,7 +32,7 @@ export default async function MerchantLoginPage({
         </div>
         <div className="flex flex-col gap-3">
           <MagicLinkForm next={next} />
-          {unlocked ? (
+          {!isProduction() ? (
             <>
               {primary ? (
                 <Link

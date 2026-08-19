@@ -28,7 +28,7 @@ export function CreateOfferForm() {
   const [radiusMiles, setRadiusMiles] = useState("1.5");
   const [teaserMode, setTeaserMode] = useState("merchant_hidden");
   const [shortTerms, setShortTerms] = useState("");
-  const [testMode, setTestMode] = useState(true);
+  const [testMode, setTestMode] = useState(false);
   const [error, setError] = useState("");
 
   async function submit(event: React.FormEvent) {

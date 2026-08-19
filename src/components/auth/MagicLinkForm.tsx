@@ -5,9 +5,11 @@ import { useState } from "react";
 export function MagicLinkForm({
   next,
   label = "Email me a sign-in link",
+  placeholder = "you@gmail.com",
 }: {
   next: string;
   label?: string;
+  placeholder?: string;
 }) {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -52,7 +54,7 @@ export function MagicLinkForm({
         required
         value={email}
         onChange={(event) => setEmail(event.target.value)}
-        placeholder="you@company.com"
+        placeholder={placeholder}
         className="h-14 w-full rounded-full border border-ink/15 bg-paper px-5"
       />
       <button

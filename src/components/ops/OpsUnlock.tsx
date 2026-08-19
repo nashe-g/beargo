@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PawMark } from "@/components/paw/PawMark";
+import { staffDestination } from "@/lib/ops-gate";
 
 export function OpsUnlock() {
   const router = useRouter();
   const search = useSearchParams();
-  const next = search.get("next") || "/host";
+  const next = staffDestination(search.get("next"));
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -27,7 +28,8 @@ export function OpsUnlock() {
         setBusy(false);
         return;
       }
-      router.replace(next.startsWith("/") ? next : "/host");
+      router.replace(next ?? "/ops");
+      router.refresh();
     } catch {
       setError("Could not unlock.");
       setBusy(false);
@@ -42,9 +44,9 @@ export function OpsUnlock() {
       >
         <div className="flex flex-col items-center text-center">
           <PawMark className="w-24" />
-          <h1 className="mt-6 font-display text-4xl">Ops</h1>
+          <h1 className="mt-6 font-display text-4xl">Staff</h1>
           <p className="mt-3 text-lg text-ink-soft">
-            Host, merchant, and admin sit behind this lock on the live site.
+            Sign in as admin, host, or merchant.
           </p>
         </div>
         <div className="space-y-4">
@@ -65,7 +67,7 @@ export function OpsUnlock() {
             disabled={busy || !password}
             className="flex h-14 w-full items-center justify-center rounded-full bg-ink text-paper disabled:opacity-50"
           >
-            UNLOCK
+            Continue
           </button>
         </div>
       </form>
