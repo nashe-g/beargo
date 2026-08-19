@@ -1,18 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { AddressFields } from "@/components/admin/AddressFields";
-import { PROMOTION_CATEGORIES } from "@/lib/offer";
+import { OTHER_CATEGORY, PROMOTION_CATEGORIES } from "@/lib/offer";
 
 const fieldClass =
   "h-12 w-full rounded-full border border-ink/15 px-4 outline-none focus:border-honey";
+
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <label className="block space-y-1">
+      <span className="px-1 text-sm text-ink-soft">{label}</span>
+      {children}
+    </label>
+  );
+}
 
 export function CreateOfferForm() {
   const router = useRouter();
   const [merchantName, setMerchantName] = useState("");
   const [email, setEmail] = useState("");
   const [category, setCategory] = useState("entertainment");
+  const [categoryOther, setCategoryOther] = useState("");
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("Houston");
   const [neighborhood, setNeighborhood] = useState("");
@@ -40,6 +56,7 @@ export function CreateOfferForm() {
         merchantName,
         email,
         category,
+        categoryOther,
         address,
         city,
         neighborhood,
@@ -63,6 +80,8 @@ export function CreateOfferForm() {
     }
     setMerchantName("");
     setEmail("");
+    setCategory("entertainment");
+    setCategoryOther("");
     setAddress("");
     setNeighborhood("");
     setLat("");
@@ -97,17 +116,31 @@ export function CreateOfferForm() {
         placeholder="Merchant login email"
         className={fieldClass}
       />
-      <select
-        value={category}
-        onChange={(event) => setCategory(event.target.value)}
-        className={fieldClass}
-      >
-        {PROMOTION_CATEGORIES.map((row) => (
-          <option key={row.id} value={row.id}>
-            {row.label}
-          </option>
-        ))}
-      </select>
+      <Field label="Category">
+        <select
+          value={category}
+          onChange={(event) => setCategory(event.target.value)}
+          className={fieldClass}
+        >
+          {PROMOTION_CATEGORIES.map((row) => (
+            <option key={row.id} value={row.id}>
+              {row.label}
+            </option>
+          ))}
+          <option value={OTHER_CATEGORY}>Other</option>
+        </select>
+      </Field>
+      {category === OTHER_CATEGORY ? (
+        <Field label="What category is this?">
+          <input
+            required
+            value={categoryOther}
+            onChange={(event) => setCategoryOther(event.target.value)}
+            placeholder="e.g. Bookstore"
+            className={fieldClass}
+          />
+        </Field>
+      ) : null}
       <AddressFields
         address={address}
         city={city}
@@ -122,79 +155,79 @@ export function CreateOfferForm() {
           if (patch.lng != null) setLng(patch.lng);
         }}
       />
-      <div className="grid gap-2 sm:grid-cols-2">
-        <select
-          value={discountType}
-          onChange={(event) =>
-            setDiscountType(event.target.value as "fixed" | "percentage")
-          }
-          className={fieldClass}
-        >
-          <option value="fixed">$ off</option>
-          <option value="percentage">% off</option>
-        </select>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Discount">
+          <select
+            value={discountType}
+            onChange={(event) =>
+              setDiscountType(event.target.value as "fixed" | "percentage")
+            }
+            className={fieldClass}
+          >
+            <option value="fixed">$ off</option>
+            <option value="percentage">% off</option>
+          </select>
+        </Field>
         {discountType === "fixed" ? (
-          <input
-            required
-            value={amount}
-            onChange={(event) => setAmount(event.target.value)}
-            placeholder="Dollars off"
-            inputMode="decimal"
-            className={fieldClass}
-          />
+          <Field label="Amount off ($)">
+            <input
+              required
+              value={amount}
+              onChange={(event) => setAmount(event.target.value)}
+              inputMode="decimal"
+              className={fieldClass}
+            />
+          </Field>
         ) : (
-          <input
-            required
-            value={percent}
-            onChange={(event) => setPercent(event.target.value)}
-            placeholder="Percent off"
-            inputMode="numeric"
-            className={fieldClass}
-          />
+          <Field label="Percent off">
+            <input
+              required
+              value={percent}
+              onChange={(event) => setPercent(event.target.value)}
+              inputMode="numeric"
+              className={fieldClass}
+            />
+          </Field>
         )}
-        <input
-          required
-          value={minimum}
-          onChange={(event) => setMinimum(event.target.value)}
-          placeholder="Minimum purchase $"
-          inputMode="decimal"
-          className={fieldClass}
-        />
-        {discountType === "percentage" ? (
+        <Field label="Minimum purchase ($)">
           <input
-            value={maxOff}
-            onChange={(event) => setMaxOff(event.target.value)}
-            placeholder="Max $ off"
+            required
+            value={minimum}
+            onChange={(event) => setMinimum(event.target.value)}
             inputMode="decimal"
             className={fieldClass}
           />
-        ) : (
+        </Field>
+        {discountType === "percentage" ? (
+          <Field label="Max $ off">
+            <input
+              value={maxOff}
+              onChange={(event) => setMaxOff(event.target.value)}
+              inputMode="decimal"
+              className={fieldClass}
+            />
+          </Field>
+        ) : null}
+        <Field label="Radius from host (miles)">
           <input
+            required
             value={radiusMiles}
             onChange={(event) => setRadiusMiles(event.target.value)}
-            placeholder="Radius miles"
             inputMode="decimal"
             className={fieldClass}
           />
-        )}
+        </Field>
       </div>
-      {discountType === "percentage" ? (
-        <input
-          value={radiusMiles}
-          onChange={(event) => setRadiusMiles(event.target.value)}
-          placeholder="Radius miles"
-          inputMode="decimal"
+      <Field label="Teaser">
+        <select
+          value={teaserMode}
+          onChange={(event) => setTeaserMode(event.target.value)}
           className={fieldClass}
-        />
-      ) : null}
-      <select
-        value={teaserMode}
-        onChange={(event) => setTeaserMode(event.target.value)}
-        className={fieldClass}
-      >
-        <option value="merchant_hidden">Hide merchant until they tap</option>
-        <option value="merchant_visible">Show merchant in the teaser</option>
-      </select>
+        >
+          <option value="merchant_hidden">Hide merchant until they tap</option>
+          <option value="merchant_visible">Show merchant in the teaser</option>
+        </select>
+      </Field>
       <input
         value={shortTerms}
         onChange={(event) => setShortTerms(event.target.value)}

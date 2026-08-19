@@ -22,6 +22,28 @@ export function categoryLabel(id: string) {
   return PROMOTION_CATEGORIES.find((row) => row.id === id)?.label ?? id;
 }
 
+export const OTHER_CATEGORY = "other";
+
+export function resolvePromotionCategory(
+  selected: string,
+  otherText = "",
+) {
+  const allowed = new Set(PROMOTION_CATEGORIES.map((row) => row.id));
+  if (selected !== OTHER_CATEGORY) {
+    return allowed.has(selected as PromotionCategory)
+      ? selected
+      : null;
+  }
+  const text = otherText.trim().replace(/\s+/g, " ");
+  if (text.length < 2 || text.length > 48) return null;
+  const slug = text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  const match = PROMOTION_CATEGORIES.find(
+    (row) =>
+      row.id === slug || row.label.toLowerCase() === text.toLowerCase(),
+  );
+  return match ? match.id : text;
+}
+
 export type DiscountType = "fixed" | "percentage";
 export type TeaserMode = "merchant_hidden" | "merchant_visible";
 export type PromotionStatus = "draft" | "live" | "paused" | "ended" | "capped";

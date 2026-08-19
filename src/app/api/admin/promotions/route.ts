@@ -4,7 +4,7 @@ import { ADMIN_COOKIE } from "@/lib/admin-auth";
 import { audit } from "@/lib/audit";
 import { upsertUser } from "@/lib/auth";
 import { centsFromDollars } from "@/lib/money";
-import { PROMOTION_CATEGORIES, type DiscountType, type TeaserMode } from "@/lib/offer";
+import { type DiscountType, type TeaserMode, resolvePromotionCategory } from "@/lib/offer";
 import { upsertLocation, upsertMerchant, upsertPromotion } from "@/lib/promotions";
 
 export async function POST(request: Request) {
@@ -16,6 +16,7 @@ export async function POST(request: Request) {
     merchantName?: string;
     email?: string;
     category?: string;
+    categoryOther?: string;
     address?: string;
     city?: string;
     neighborhood?: string;
@@ -37,16 +38,21 @@ export async function POST(request: Request) {
   const address = String(body.address ?? "").trim();
   const lat = Number(body.lat);
   const lng = Number(body.lng);
-  const category = String(body.category ?? "entertainment");
-  const allowed = new Set(PROMOTION_CATEGORIES.map((row) => row.id));
+  const category = resolvePromotionCategory(
+    String(body.category ?? "entertainment"),
+    String(body.categoryOther ?? ""),
+  );
   if (!merchantName || !email.includes("@")) {
     return NextResponse.json(
       { error: "Business name and login email required" },
       { status: 400 },
     );
   }
-  if (!allowed.has(category as (typeof PROMOTION_CATEGORIES)[number]["id"])) {
-    return NextResponse.json({ error: "Invalid category" }, { status: 400 });
+  if (!category) {
+    return NextResponse.json(
+      { error: "Pick a category, or type one under Other." },
+      { status: 400 },
+    );
   }
   if (!address || !Number.isFinite(lat) || !Number.isFinite(lng)) {
     return NextResponse.json(
