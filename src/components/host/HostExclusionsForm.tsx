@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { PROMOTION_CATEGORIES } from "@/lib/offer";
 
 export function HostExclusionsForm({
@@ -8,6 +9,7 @@ export function HostExclusionsForm({
 }: {
   excludedCategories: string[];
 }) {
+  const router = useRouter();
   const [selected, setSelected] = useState<string[]>(excludedCategories);
   const [message, setMessage] = useState("");
 
@@ -19,6 +21,7 @@ export function HostExclusionsForm({
       body: JSON.stringify({ excludedCategories: selected }),
     });
     setMessage(response.ok ? "Saved." : "Could not save.");
+    if (response.ok) router.refresh();
   }
 
   return (
