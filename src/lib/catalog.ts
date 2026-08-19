@@ -137,6 +137,41 @@ export async function pawsForHost(hostId: string) {
   return Promise.all(rows.map((row) => mapPaw(row, hostMap)));
 }
 
+export async function allocatePawToken(hostId: string) {
+  const host = await getHost(hostId);
+  const base = slugify(host?.displayName ?? "paw");
+  const rows = await db().select({ token: paws.token }).from(paws);
+  const taken = new Set(rows.map((row) => row.token));
+  if (!taken.has(base)) return base;
+  for (let n = 2; n < 10_000; n++) {
+    const candidate = `${base}-${n}`;
+    if (!taken.has(candidate)) return candidate;
+  }
+  return `${base}-${randomUUID().slice(0, 8)}`;
+}
+
+export async function createPaw(input: {
+  hostId: string;
+  placementLabel: string;
+}) {
+  const host = await getHost(input.hostId);
+  if (!host) return null;
+  const token = await allocatePawToken(input.hostId);
+  const [existing] = await db()
+    .select({ token: paws.token })
+    .from(paws)
+    .where(eq(paws.token, token))
+    .limit(1);
+  if (existing) return null;
+  await db().insert(paws).values({
+    token,
+    hostId: input.hostId,
+    placementLabel: input.placementLabel,
+    status: "active",
+  });
+  return getPaw(token);
+}
+
 export async function upsertPaw(input: {
   token: string;
   hostId: string;

@@ -22,8 +22,8 @@ export default async function AdminPawsPage() {
     <AdminShell current="/admin/paws">
       <h1 className="font-display text-4xl">Paws</h1>
       <p className="mt-3 text-ink-soft">
-        Physical inventory. Print the Paw QR and put it at the venue. Print
-        stays offer-free.
+        Physical inventory. BearGo assigns a unique token for the scan URL.
+        Placement is where you put the sticker. Print stays offer-free.
       </p>
       <div className="mt-6">
         <CreatePawForm hosts={hosts} />

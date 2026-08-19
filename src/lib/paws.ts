@@ -7,4 +7,4 @@ export type PawRecord = {
   status: "active" | "inactive";
 };
 
-export { getPaw, listPaws, pawsForHost, upsertPaw, unassignedPaw } from "@/lib/catalog";
+export { getPaw, listPaws, pawsForHost, createPaw, upsertPaw, unassignedPaw } from "@/lib/catalog";
