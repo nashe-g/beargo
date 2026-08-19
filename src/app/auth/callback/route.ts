@@ -1,13 +1,14 @@
-import { consumeMagicLink, safeNext, setAuthCookies } from "@/lib/auth";
-import { redirect } from "next/navigation";
+import { NextResponse } from "next/server";
+import { applyAuthCookies, consumeMagicLink, safeNext } from "@/lib/auth";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const token = url.searchParams.get("t");
   const next = safeNext(url.searchParams.get("next"), "/");
   const user = token ? await consumeMagicLink(token) : null;
-  if (!user) redirect("/auth/expired");
-  await setAuthCookies(user);
+  if (!user) {
+    return NextResponse.redirect(new URL("/auth/expired", url.origin));
+  }
   const destination =
     next !== "/"
       ? next
@@ -16,5 +17,7 @@ export async function GET(request: Request) {
         : user.role === "host"
           ? "/host/dashboard"
           : "/merchant/dashboard";
-  redirect(destination);
+  const response = NextResponse.redirect(new URL(destination, url.origin));
+  applyAuthCookies(response, user);
+  return response;
 }

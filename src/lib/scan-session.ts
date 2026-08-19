@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { cookies } from "next/headers";
+import type { CookieWriter } from "@/lib/http-cookies";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { scanSessions } from "@/db/schema";
@@ -23,6 +24,7 @@ function cookieOptions(maxAge: number) {
     path: "/",
     sameSite: "lax" as const,
     httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
     maxAge,
   };
 }
@@ -37,9 +39,19 @@ export async function sessionIdFromCookies() {
   return jar.get(SCAN_COOKIE)?.value ?? null;
 }
 
-export async function ensureDeviceCookie() {
+async function cookieWriterFromHeaders(): Promise<CookieWriter> {
   const jar = await cookies();
-  let value = jar.get(DEVICE_COOKIE)?.value;
+  return {
+    get: (name) => jar.get(name)?.value,
+    set: (name, value, options) => {
+      jar.set(name, value, options);
+    },
+  };
+}
+
+export async function ensureDeviceCookie(writer?: CookieWriter) {
+  const jar = writer ?? (await cookieWriterFromHeaders());
+  let value = jar.get(DEVICE_COOKIE);
   if (!value) {
     value = randomUUID();
     jar.set(DEVICE_COOKIE, value, cookieOptions(60 * 60 * 24 * 400));
@@ -50,10 +62,11 @@ export async function ensureDeviceCookie() {
 export async function ensureScanSession(
   paw: PawRecord,
   extras: { promotionId?: string | null; challengeId?: string | null } = {},
+  writer?: CookieWriter,
 ) {
-  const jar = await cookies();
-  const deviceKey = await ensureDeviceCookie();
-  let sessionId = jar.get(SCAN_COOKIE)?.value;
+  const jar = writer ?? (await cookieWriterFromHeaders());
+  const deviceKey = await ensureDeviceCookie(jar);
+  let sessionId = jar.get(SCAN_COOKIE);
   const localDate = localDateInZone(paw.timezone);
 
   if (sessionId) {

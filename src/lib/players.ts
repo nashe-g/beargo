@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { cookies } from "next/headers";
+import { httpCookieOptions } from "@/lib/http-cookies";
 import { db } from "@/db";
 import { claimLinks, players, vouchers } from "@/db/schema";
 import { iso, isoRequired } from "@/lib/money";
@@ -166,12 +167,7 @@ export async function markClaimLinkUsed(tokenHash: string) {
 
 export async function setPlayerCookie(playerId: string) {
   const jar = await cookies();
-  jar.set(PLAYER_COOKIE, playerId, {
-    path: "/",
-    sameSite: "lax",
-    httpOnly: true,
-    maxAge: 60 * 60 * 24 * 400,
-  });
+  jar.set(PLAYER_COOKIE, playerId, httpCookieOptions(60 * 60 * 24 * 400));
 }
 
 export async function playerIdFromCookies() {

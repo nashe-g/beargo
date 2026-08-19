@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
+import { httpCookieOptions } from "@/lib/http-cookies";
 import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { magicLinks, users } from "@/db/schema";
@@ -130,21 +131,16 @@ export async function consumeMagicLink(token: string) {
   return user ? mapUser(user) : null;
 }
 
-export async function setAuthCookies(user: AuthUser) {
-  const jar = await cookies();
-  const options = {
-    path: "/",
-    sameSite: "lax" as const,
-    httpOnly: true,
-    secure: isProduction(),
-    maxAge: 60 * 60 * 24 * 14,
-  };
-  if (user.role === "admin") jar.set(ADMIN_COOKIE, "1", options);
+export function applyAuthCookies(response: NextResponse, user: AuthUser) {
+  const options = httpCookieOptions(60 * 60 * 24 * 14);
+  if (user.role === "admin") {
+    response.cookies.set(ADMIN_COOKIE, "1", options);
+  }
   if (user.role === "host" && user.hostId) {
-    jar.set(HOST_COOKIE, user.hostId, options);
+    response.cookies.set(HOST_COOKIE, user.hostId, options);
   }
   if (user.role === "merchant" && user.merchantId) {
-    jar.set(MERCHANT_COOKIE, user.merchantId, options);
+    response.cookies.set(MERCHANT_COOKIE, user.merchantId, options);
   }
 }
 
