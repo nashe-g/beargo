@@ -1,9 +1,11 @@
 import { cookies } from "next/headers";
 import { getPaw } from "@/lib/paws";
-import { todaysSponsor } from "@/lib/route-campaign";
+import { getHost } from "@/lib/hosts";
+import { selectPromotionForHost } from "@/lib/select-promotion";
 import {
   DEVICE_COOKIE,
   SCAN_COOKIE,
+  attachSessionPromotion,
   ensureScanSession,
   stampSession,
   type SessionStamp,
@@ -20,31 +22,30 @@ export async function POST(
   }
 
   const paw = await getPaw(pawToken);
-  let body: { event?: string; interestId?: string; campaignId?: string } = {};
+  let body: { event?: string; promotionId?: string; voucherId?: string } = {};
   try {
     body = (await request.json()) as typeof body;
   } catch {
     body = {};
   }
 
-  const campaign = await todaysSponsor(paw);
-  const session = await ensureScanSession(paw, {
-    campaignId: campaign?.id ?? body.campaignId ?? null,
-  });
+  const host = await getHost(paw.hostId);
+  const selected = host
+    ? await selectPromotionForHost(host)
+    : null;
+  const promotionId =
+    body.promotionId ?? selected?.promotion.id ?? null;
+  const session = await ensureScanSession(paw, { promotionId });
+  if (promotionId) await attachSessionPromotion(session.id, promotionId);
   const event = (body.event ?? "scanned") as SessionStamp;
   await stampSession(session.id, event, {
-    interestId: body.interestId,
-    leadId: undefined,
-    campaignId: campaign?.id ?? body.campaignId,
+    promotionId: promotionId ?? undefined,
+    voucherId: body.voucherId,
   });
 
   const jar = await cookies();
-  if (!jar.get(DEVICE_COOKIE)?.value) {
-    /* ensureScanSession already set cookies when missing */
-  }
-  if (!jar.get(SCAN_COOKIE)?.value) {
-    /* same */
-  }
+  void jar.get(DEVICE_COOKIE);
+  void jar.get(SCAN_COOKIE);
 
   return Response.json({ ok: true, sessionId: session.id });
 }

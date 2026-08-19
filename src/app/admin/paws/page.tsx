@@ -5,7 +5,6 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { CANONICAL_ORIGIN, pawScanUrl } from "@/lib/config";
 import { getHost, listHosts } from "@/lib/hosts";
 import { listPaws } from "@/lib/paws";
-import { todaysSponsor } from "@/lib/route-campaign";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +15,6 @@ export default async function AdminPawsPage() {
     paws.map(async (paw) => ({
       paw,
       host: await getHost(paw.hostId),
-      sponsor: await todaysSponsor(paw),
     })),
   );
 
@@ -24,7 +22,7 @@ export default async function AdminPawsPage() {
     <AdminShell current="/admin/paws">
       <h1 className="font-display text-4xl">Paws</h1>
       <p className="mt-3 text-ink-soft">
-        Physical inventory. Print stays sponsor-free.
+        Physical inventory. Print stays offer-free.
       </p>
       <div className="mt-6">
         <CreatePawForm hosts={hosts} />
@@ -37,12 +35,11 @@ export default async function AdminPawsPage() {
               <th className="pb-3 font-normal">Host</th>
               <th className="pb-3 font-normal">Placement</th>
               <th className="pb-3 font-normal">Status</th>
-              <th className="pb-3 font-normal">Today’s sponsor</th>
               <th className="pb-3 font-normal"></th>
             </tr>
           </thead>
           <tbody>
-            {rows.map(({ paw, host, sponsor }) => (
+            {rows.map(({ paw, host }) => (
               <tr key={paw.token} className="border-t border-ink/10">
                 <td className="py-3 font-mono">{paw.token}</td>
                 <td>{host?.displayName ?? paw.hostDisplayName}</td>
@@ -50,7 +47,6 @@ export default async function AdminPawsPage() {
                 <td>
                   <StatusPill status={paw.status} />
                 </td>
-                <td>{sponsor?.name ?? "None"}</td>
                 <td className="space-x-3 text-right">
                   <Link href={`/p/${paw.token}`}>Scan</Link>
                   <Link href={`/p/${paw.token}/print`}>Print</Link>

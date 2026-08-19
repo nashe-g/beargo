@@ -23,7 +23,7 @@ export default async function AuthCallbackPage({
       : user.role === "admin"
         ? "/admin/overview"
         : user.role === "host"
-          ? "/host/dashboard"
-          : "/startup/dashboard";
+        ? "/host/dashboard"
+        : "/merchant/dashboard";
   redirect(destination);
 }

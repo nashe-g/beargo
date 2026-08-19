@@ -1,5 +1,6 @@
 import {
   boolean,
+  doublePrecision,
   integer,
   jsonb,
   pgTable,
@@ -16,6 +17,16 @@ export const hosts = pgTable("hosts", {
   neighborhood: text("neighborhood"),
   type: text("type").notNull().default("venue"),
   status: text("status").notNull().default("active"),
+  lat: doublePrecision("lat"),
+  lng: doublePrecision("lng"),
+  excludedCategories: jsonb("excluded_categories")
+    .$type<string[]>()
+    .notNull()
+    .default([]),
+  excludedMerchantIds: jsonb("excluded_merchant_ids")
+    .$type<string[]>()
+    .notNull()
+    .default([]),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -79,47 +90,73 @@ export const challengeSets = pgTable(
   (table) => [uniqueIndex("challenge_sets_host_date").on(table.hostId, table.localDate)],
 );
 
-export const startups = pgTable("startups", {
+export const merchants = pgTable("merchants", {
   id: text("id").primaryKey(),
   displayName: text("display_name").notNull(),
-  oneLiner: text("one_liner").notNull(),
+  category: text("category").notNull(),
+  logoUrl: text("logo_url"),
+  status: text("status").notNull().default("active"),
+  billingEnabled: boolean("billing_enabled").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const merchantLocations = pgTable("merchant_locations", {
+  id: text("id").primaryKey(),
+  merchantId: text("merchant_id")
+    .notNull()
+    .references(() => merchants.id),
+  name: text("name").notNull(),
+  address: text("address").notNull(),
+  city: text("city").notNull().default("Houston"),
+  neighborhood: text("neighborhood"),
+  lat: doublePrecision("lat").notNull(),
+  lng: doublePrecision("lng").notNull(),
+  timezone: text("timezone").notNull().default("America/Chicago"),
   status: text("status").notNull().default("active"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const campaigns = pgTable("campaigns", {
+export const promotions = pgTable("promotions", {
   id: text("id").primaryKey(),
-  startupId: text("startup_id")
+  merchantId: text("merchant_id")
     .notNull()
-    .references(() => startups.id),
-  name: text("name").notNull(),
+    .references(() => merchants.id),
+  locationId: text("location_id")
+    .notNull()
+    .references(() => merchantLocations.id),
   status: text("status").notNull().default("paused"),
-  headline: text("headline").notNull().default("TODAY'S SPONSOR"),
-  valueProposition: text("value_proposition").notNull(),
-  eligibleInterestIds: jsonb("eligible_interest_ids").$type<string[]>().notNull(),
-  qualifyQuestions: jsonb("qualify_questions").$type<unknown[]>().notNull().default([]),
-  grossCplCents: integer("gross_cpl_cents").notNull(),
-  hostAmountCents: integer("host_amount_cents").notNull(),
-  platformAmountCents: integer("platform_amount_cents").notNull(),
-  fundedBalanceCents: integer("funded_balance_cents").notNull().default(0),
-  maxLeads: integer("max_leads"),
+  discountType: text("discount_type").notNull(),
+  discountAmountCents: integer("discount_amount_cents"),
+  discountPercent: integer("discount_percent"),
+  minimumPurchaseCents: integer("minimum_purchase_cents").notNull(),
+  maxDiscountCents: integer("max_discount_cents"),
+  category: text("category").notNull(),
+  teaserMode: text("teaser_mode").notNull().default("merchant_hidden"),
+  shortTerms: text("short_terms").notNull().default(""),
+  restrictions: text("restrictions"),
   startsAt: timestamp("starts_at", { withTimezone: true }),
   endsAt: timestamp("ends_at", { withTimezone: true }),
-  completionUrl: text("completion_url"),
+  validWeekdays: jsonb("valid_weekdays").$type<number[]>().notNull().default([0, 1, 2, 3, 4, 5, 6]),
+  validMinutesStart: integer("valid_minutes_start").notNull().default(0),
+  validMinutesEnd: integer("valid_minutes_end").notNull().default(24 * 60 - 1),
+  voucherExpireHour: integer("voucher_expire_hour").notNull().default(1),
+  maxRedemptions: integer("max_redemptions"),
+  radiusMiles: doublePrecision("radius_miles").notNull().default(1.5),
+  testMode: boolean("test_mode").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const campaignHosts = pgTable(
-  "campaign_hosts",
+export const promotionHosts = pgTable(
+  "promotion_hosts",
   {
-    campaignId: text("campaign_id")
+    promotionId: text("promotion_id")
       .notNull()
-      .references(() => campaigns.id),
+      .references(() => promotions.id),
     hostId: text("host_id")
       .notNull()
       .references(() => hosts.id),
   },
-  (table) => [uniqueIndex("campaign_hosts_pk").on(table.campaignId, table.hostId)],
+  (table) => [uniqueIndex("promotion_hosts_pk").on(table.promotionId, table.hostId)],
 );
 
 export const plays = pgTable("plays", {
@@ -142,70 +179,101 @@ export const scanSessions = pgTable("scan_sessions", {
   hostId: text("host_id").notNull(),
   localDate: text("local_date").notNull(),
   challengeId: text("challenge_id"),
-  campaignId: text("campaign_id"),
+  promotionId: text("promotion_id"),
+  voucherId: text("voucher_id"),
   deviceKey: text("device_key"),
   scannedAt: timestamp("scanned_at", { withTimezone: true }).notNull().defaultNow(),
   gameStartedAt: timestamp("game_started_at", { withTimezone: true }),
   gameCompletedAt: timestamp("game_completed_at", { withTimezone: true }),
+  teaserShownAt: timestamp("teaser_shown_at", { withTimezone: true }),
   teaserOpenedAt: timestamp("teaser_opened_at", { withTimezone: true }),
-  sponsorViewedAt: timestamp("sponsor_viewed_at", { withTimezone: true }),
-  interestId: text("interest_id"),
-  leadId: text("lead_id"),
+  offerViewedAt: timestamp("offer_viewed_at", { withTimezone: true }),
+  claimedAt: timestamp("claimed_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const leads = pgTable("leads", {
-  id: text("id").primaryKey(),
-  pawToken: text("paw_token").notNull(),
+export const players = pgTable(
+  "players",
+  {
+    id: text("id").primaryKey(),
+    fullName: text("full_name").notNull(),
+    email: text("email").notNull(),
+    emailNormalized: text("email_normalized").notNull(),
+    phone: text("phone").notNull(),
+    phoneNormalized: text("phone_normalized").notNull(),
+    emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("players_email_normalized").on(table.emailNormalized)],
+);
+
+export const claimLinks = pgTable("claim_links", {
+  tokenHash: text("token_hash").primaryKey(),
+  playerId: text("player_id")
+    .notNull()
+    .references(() => players.id),
+  promotionId: text("promotion_id").notNull(),
   hostId: text("host_id").notNull(),
-  startupId: text("startup_id").notNull(),
-  campaignId: text("campaign_id").notNull(),
+  pawToken: text("paw_token").notNull(),
   sessionId: text("session_id"),
-  interestId: text("interest_id").notNull(),
-  fullName: text("full_name").notNull(),
-  email: text("email").notNull(),
-  emailNormalized: text("email_normalized").notNull(),
-  phone: text("phone").notNull(),
-  phoneNormalized: text("phone_normalized").notNull(),
-  emailVerified: boolean("email_verified").notNull().default(false),
-  emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
-  verifyTokenHash: text("verify_token_hash"),
-  verifyExpiresAt: timestamp("verify_expires_at", { withTimezone: true }),
-  verificationEmailSentAt: timestamp("verification_email_sent_at", { withTimezone: true }),
-  verificationEmailCount: integer("verification_email_count").notNull().default(0),
-  qualification: jsonb("qualification").$type<Record<string, string>>().notNull().default({}),
-  consentAt: timestamp("consent_at", { withTimezone: true }),
-  consentVersion: text("consent_version"),
-  status: text("status").notNull(),
-  grossCplCents: integer("gross_cpl_cents"),
-  hostAmountCents: integer("host_amount_cents"),
-  platformAmountCents: integer("platform_amount_cents"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  qualifiedAt: timestamp("qualified_at", { withTimezone: true }),
+  deviceKey: text("device_key"),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
 });
 
-export const consentReceipts = pgTable("consent_receipts", {
-  id: text("id").primaryKey(),
-  leadId: text("lead_id").notNull(),
-  startupId: text("startup_id").notNull(),
-  version: text("version").notNull(),
-  text: text("text").notNull(),
-  fields: text("fields").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const vouchers = pgTable(
+  "vouchers",
+  {
+    id: text("id").primaryKey(),
+    token: text("token").notNull(),
+    code: text("code").notNull(),
+    playerId: text("player_id").references(() => players.id),
+    promotionId: text("promotion_id")
+      .notNull()
+      .references(() => promotions.id),
+    merchantId: text("merchant_id")
+      .notNull()
+      .references(() => merchants.id),
+    locationId: text("location_id")
+      .notNull()
+      .references(() => merchantLocations.id),
+    hostId: text("host_id").notNull(),
+    pawToken: text("paw_token").notNull(),
+    sessionId: text("session_id"),
+    deviceKey: text("device_key"),
+    status: text("status").notNull().default("claimed"),
+    claimedAt: timestamp("claimed_at", { withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    redeemedAt: timestamp("redeemed_at", { withTimezone: true }),
+    redeemedByUserId: text("redeemed_by_user_id"),
+    redeemedLocationId: text("redeemed_location_id"),
+    purchaseSubtotalCents: integer("purchase_subtotal_cents"),
+    discountAppliedCents: integer("discount_applied_cents"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("vouchers_token").on(table.token),
+    uniqueIndex("vouchers_code").on(table.code),
+  ],
+);
 
-export const ledgerEntries = pgTable("ledger_entries", {
-  id: text("id").primaryKey(),
-  kind: text("kind").notNull(),
-  amountCents: integer("amount_cents").notNull(),
-  hostId: text("host_id"),
-  startupId: text("startup_id"),
-  campaignId: text("campaign_id"),
-  leadId: text("lead_id"),
-  status: text("status").notNull().default("posted"),
-  note: text("note"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const ledgerEntries = pgTable(
+  "ledger_entries",
+  {
+    id: text("id").primaryKey(),
+    kind: text("kind").notNull(),
+    amountCents: integer("amount_cents").notNull(),
+    merchantId: text("merchant_id"),
+    hostId: text("host_id"),
+    promotionId: text("promotion_id"),
+    voucherId: text("voucher_id"),
+    status: text("status").notNull().default("accrued"),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("ledger_voucher_fee").on(table.voucherId, table.kind)],
+);
 
 export const users = pgTable(
   "users",
@@ -215,7 +283,7 @@ export const users = pgTable(
     emailNormalized: text("email_normalized").notNull(),
     role: text("role").notNull(),
     hostId: text("host_id"),
-    startupId: text("startup_id"),
+    merchantId: text("merchant_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [uniqueIndex("users_email_normalized").on(table.emailNormalized)],
@@ -249,12 +317,5 @@ export const auditLogs = pgTable("audit_logs", {
   actor: text("actor").notNull(),
   action: text("action").notNull(),
   payload: jsonb("payload").$type<Record<string, unknown>>().notNull().default({}),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
-
-export const leadExports = pgTable("lead_exports", {
-  id: text("id").primaryKey(),
-  startupId: text("startup_id").notNull(),
-  leadCount: integer("lead_count").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

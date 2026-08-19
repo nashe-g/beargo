@@ -10,9 +10,10 @@ export default function TermsPage() {
           prize unless a specific promotion says otherwise.
         </p>
         <p>
-          Optional introductions are not a purchase. You pay $0. By finishing
-          an introduction you ask us to share the details you provided with
-          that sponsor.
+          Nearby offers are optional and free to claim. You pay $0. Claiming
+          asks for name, email, and phone, then a confirmation link to that
+          email. A claimed voucher is not a purchase from BearGo. The promoting
+          merchant applies the discount in their own checkout.
         </p>
         <p>Houston, Texas. Contact hello@beargo.pro.</p>
       </div>

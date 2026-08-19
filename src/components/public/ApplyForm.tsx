@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export function ApplyForm({ kind }: { kind: "host" | "startup" }) {
+export function ApplyForm({ kind }: { kind: "host" | "merchant" }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [oneLiner, setOneLiner] = useState("");
@@ -41,7 +41,7 @@ export function ApplyForm({ kind }: { kind: "host" | "startup" }) {
         required
         value={name}
         onChange={(event) => setName(event.target.value)}
-        placeholder={kind === "host" ? "Venue name" : "Company name"}
+        placeholder={kind === "host" ? "Venue name" : "Business name"}
         className="h-14 w-full rounded-full border border-ink/15 bg-pad/80 px-5 outline-none focus:border-honey"
       />
       <input
@@ -58,11 +58,11 @@ export function ApplyForm({ kind }: { kind: "host" | "startup" }) {
         placeholder="City"
         className="h-14 w-full rounded-full border border-ink/15 bg-pad/80 px-5 outline-none focus:border-honey"
       />
-      {kind === "startup" ? (
+      {kind === "merchant" ? (
         <input
           value={oneLiner}
           onChange={(event) => setOneLiner(event.target.value)}
-          placeholder="One-liner"
+          placeholder="What you sell, in one line"
           className="h-14 w-full rounded-full border border-ink/15 bg-pad/80 px-5 outline-none focus:border-honey"
         />
       ) : null}

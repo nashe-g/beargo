@@ -13,10 +13,10 @@ export type SessionStamp =
   | "scanned"
   | "game_started"
   | "game_completed"
+  | "teaser_shown"
   | "teaser_opened"
-  | "sponsor_viewed"
-  | "interest"
-  | "lead";
+  | "offer_viewed"
+  | "claimed";
 
 function cookieOptions(maxAge: number) {
   return {
@@ -49,7 +49,7 @@ export async function ensureDeviceCookie() {
 
 export async function ensureScanSession(
   paw: PawRecord,
-  extras: { campaignId?: string | null; challengeId?: string | null } = {},
+  extras: { promotionId?: string | null; challengeId?: string | null } = {},
 ) {
   const jar = await cookies();
   const deviceKey = await ensureDeviceCookie();
@@ -74,7 +74,7 @@ export async function ensureScanSession(
     hostId: paw.hostId,
     localDate,
     challengeId: extras.challengeId ?? null,
-    campaignId: extras.campaignId ?? null,
+    promotionId: extras.promotionId ?? null,
     deviceKey,
   });
   jar.set(SCAN_COOKIE, sessionId, cookieOptions(60 * 60 * 24));
@@ -90,14 +90,16 @@ export async function ensureScanSession(
 export async function stampSession(
   sessionId: string,
   stamp: SessionStamp,
-  extra: { interestId?: string; leadId?: string; campaignId?: string } = {},
+  extra: { promotionId?: string; voucherId?: string } = {},
 ) {
   const now = new Date();
   const patch: Partial<typeof scanSessions.$inferInsert> = { ...extra };
   if (stamp === "game_started") patch.gameStartedAt = now;
   if (stamp === "game_completed") patch.gameCompletedAt = now;
+  if (stamp === "teaser_shown") patch.teaserShownAt = now;
   if (stamp === "teaser_opened") patch.teaserOpenedAt = now;
-  if (stamp === "sponsor_viewed") patch.sponsorViewedAt = now;
+  if (stamp === "offer_viewed") patch.offerViewedAt = now;
+  if (stamp === "claimed") patch.claimedAt = now;
   if (Object.keys(patch).length === 0) return;
   await db()
     .update(scanSessions)
@@ -105,27 +107,28 @@ export async function stampSession(
     .where(eq(scanSessions.id, sessionId));
 }
 
-export async function sessionCountsForCampaign(campaignId: string) {
+export async function sessionCountsForPromotion(promotionId: string) {
   const rows = await db()
     .select()
     .from(scanSessions)
-    .where(eq(scanSessions.campaignId, campaignId));
+    .where(eq(scanSessions.promotionId, promotionId));
   return {
     scanned: rows.length,
-    gamesStarted: rows.filter((row) => row.gameStartedAt).length,
     gamesCompleted: rows.filter((row) => row.gameCompletedAt).length,
-    teasers: rows.filter((row) => row.teaserOpenedAt).length,
-    sponsors: rows.filter((row) => row.sponsorViewedAt).length,
+    teasersShown: rows.filter((row) => row.teaserShownAt).length,
+    teasersOpened: rows.filter((row) => row.teaserOpenedAt).length,
+    offersViewed: rows.filter((row) => row.offerViewedAt).length,
+    claimed: rows.filter((row) => row.claimedAt).length,
   };
 }
 
-export async function attachSessionCampaign(
+export async function attachSessionPromotion(
   sessionId: string,
-  campaignId: string | null,
+  promotionId: string | null,
 ) {
-  if (!campaignId) return;
+  if (!promotionId) return;
   await db()
     .update(scanSessions)
-    .set({ campaignId })
+    .set({ promotionId })
     .where(and(eq(scanSessions.id, sessionId)));
 }

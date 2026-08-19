@@ -12,7 +12,7 @@ export default async function AdminApplicationsPage() {
     <AdminShell current="/admin/applications">
       <h1 className="font-display text-4xl">Applications</h1>
       <p className="mt-3 text-ink-soft">
-        Host and startup apply from the public site. Approve to create a record
+        Host and merchant apply from the public site. Approve to create a record
         and a magic-link login.
       </p>
       {pending.length === 0 ? (

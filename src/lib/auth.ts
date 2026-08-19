@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { magicLinks, users } from "@/db/schema";
@@ -11,15 +10,15 @@ import { normalizeEmail } from "@/lib/normalize";
 import { hashToken, newSecretToken } from "@/lib/tokens";
 
 export const HOST_COOKIE = "beargo_host";
-export const STARTUP_COOKIE = "beargo_startup";
+export const MERCHANT_COOKIE = "beargo_merchant";
 export const ADMIN_COOKIE = "beargo_admin";
 
 export type AuthUser = {
   id: string;
   email: string;
-  role: "admin" | "host" | "startup";
+  role: "admin" | "host" | "merchant";
   hostId: string | null;
-  startupId: string | null;
+  merchantId: string | null;
 };
 
 function mapUser(row: typeof users.$inferSelect): AuthUser {
@@ -28,7 +27,7 @@ function mapUser(row: typeof users.$inferSelect): AuthUser {
     email: row.email,
     role: row.role as AuthUser["role"],
     hostId: row.hostId,
-    startupId: row.startupId,
+    merchantId: row.merchantId,
   };
 }
 
@@ -50,7 +49,7 @@ export async function upsertUser(input: {
   email: string;
   role: AuthUser["role"];
   hostId?: string | null;
-  startupId?: string | null;
+  merchantId?: string | null;
 }) {
   const emailNormalized = normalizeEmail(input.email);
   const existing = await getUserByEmail(input.email);
@@ -60,7 +59,7 @@ export async function upsertUser(input: {
       .set({
         role: input.role,
         hostId: input.hostId ?? existing.hostId,
-        startupId: input.startupId ?? existing.startupId,
+        merchantId: input.merchantId ?? existing.merchantId,
       })
       .where(eq(users.id, existing.id));
     return (await getUserByEmail(input.email))!;
@@ -72,7 +71,7 @@ export async function upsertUser(input: {
     emailNormalized,
     role: input.role,
     hostId: input.hostId ?? null,
-    startupId: input.startupId ?? null,
+    merchantId: input.merchantId ?? null,
   });
   return (await getUserByEmail(input.email))!;
 }
@@ -138,8 +137,8 @@ export async function setAuthCookies(user: AuthUser) {
   if (user.role === "host" && user.hostId) {
     jar.set(HOST_COOKIE, user.hostId, options);
   }
-  if (user.role === "startup" && user.startupId) {
-    jar.set(STARTUP_COOKIE, user.startupId, options);
+  if (user.role === "merchant" && user.merchantId) {
+    jar.set(MERCHANT_COOKIE, user.merchantId, options);
   }
 }
 

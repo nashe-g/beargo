@@ -16,7 +16,7 @@ export default async function LabMailPage() {
         </p>
         <h1 className="mt-2 font-display text-4xl">Mailbox</h1>
         <p className="mt-3 text-ink-soft">
-          SMTP isn’t configured, so verification mail lands here instead of a
+          SMTP isn’t configured, so sign-in mail lands here instead of a
           real inbox. Set SMTP_HOST to send for real.
         </p>
         <Link href="/lab" className="mt-4 inline-block text-sm text-ink-soft">

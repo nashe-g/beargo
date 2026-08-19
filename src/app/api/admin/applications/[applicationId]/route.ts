@@ -7,7 +7,8 @@ import {
 } from "@/lib/applications";
 import { audit } from "@/lib/audit";
 import { upsertUser } from "@/lib/auth";
-import { upsertHost, upsertStartup } from "@/lib/catalog";
+import { upsertHost } from "@/lib/catalog";
+import { upsertMerchant } from "@/lib/promotions";
 
 export async function POST(
   request: Request,
@@ -42,14 +43,14 @@ export async function POST(
         hostId: host.id,
       });
     } else {
-      const startup = await upsertStartup({
+      const merchant = await upsertMerchant({
         displayName: application.payload.name,
-        oneLiner: application.payload.oneLiner || application.payload.name,
+        category: application.payload.category || "entertainment",
       });
       await upsertUser({
         email: application.payload.email,
-        role: "startup",
-        startupId: startup.id,
+        role: "merchant",
+        merchantId: merchant.id,
       });
     }
     await setApplicationStatus(applicationId, "approved");

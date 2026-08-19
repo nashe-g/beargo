@@ -6,6 +6,10 @@ export type HostRecord = {
   neighborhood?: string | null;
   type?: string;
   status?: string;
+  lat?: number | null;
+  lng?: number | null;
+  excludedCategories: string[];
+  excludedMerchantIds: string[];
 };
 
 export const DEMO_HOST_ID = "the-rustic";

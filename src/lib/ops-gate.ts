@@ -20,8 +20,10 @@ export function isOpsPath(pathname: string) {
   return (
     pathname === "/host" ||
     pathname.startsWith("/host/") ||
-    pathname === "/startup" ||
-    pathname.startsWith("/startup/") ||
+    pathname === "/merchant" ||
+    pathname.startsWith("/merchant/") ||
+    pathname === "/r" ||
+    pathname.startsWith("/r/") ||
     pathname === "/admin" ||
     pathname.startsWith("/admin/") ||
     pathname === "/lab" ||

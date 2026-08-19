@@ -2,17 +2,15 @@ import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import {
-  campaignHosts,
-  campaigns,
   challengeSets,
   hosts,
+  merchantLocations,
+  merchants,
   paws,
+  promotions,
   questions,
-  startups,
   users,
 } from "./schema";
-import { SEED_CAMPAIGNS } from "../lib/campaigns";
-import { centsFromDollars } from "../lib/money";
 import { normalizeEmail } from "../lib/normalize";
 import { SEED_QUESTIONS } from "../lib/questions";
 
@@ -21,6 +19,7 @@ const url =
 
 const client = postgres(url, {
   max: 1,
+  prepare: false,
   ssl: url.includes("localhost") || url.includes("127.0.0.1") ? false : true,
 });
 const db = drizzle(client);
@@ -33,6 +32,10 @@ const HOSTS = [
     city: "Houston",
     neighborhood: "Washington Avenue",
     type: "venue",
+    lat: 29.7705,
+    lng: -95.3975,
+    excludedCategories: ["bars", "restaurants", "nightlife"],
+    excludedMerchantIds: [] as string[],
   },
   {
     id: "the-quiet-room",
@@ -41,6 +44,10 @@ const HOSTS = [
     city: "Houston",
     neighborhood: "Montrose",
     type: "venue",
+    lat: 29.7472,
+    lng: -95.3908,
+    excludedCategories: [] as string[],
+    excludedMerchantIds: [] as string[],
   },
   {
     id: "rice-union",
@@ -49,6 +56,10 @@ const HOSTS = [
     city: "Houston",
     neighborhood: "Rice Village",
     type: "campus",
+    lat: 29.716,
+    lng: -95.409,
+    excludedCategories: [] as string[],
+    excludedMerchantIds: [] as string[],
   },
 ];
 
@@ -57,58 +68,337 @@ const PAWS = [
   { token: "quiet", hostId: "the-quiet-room", placementLabel: "Front table" },
 ];
 
-const STARTUPS = [
+const MERCHANTS = [
   {
-    id: "jobradar",
-    displayName: "JobRadar",
-    oneLiner: "Jobs matched to what people are looking for.",
+    id: "the-riot",
+    displayName: "The Riot Comedy Club",
+    category: "comedy",
+    billingEnabled: true,
   },
   {
-    id: "hoplist",
-    displayName: "HopList",
-    oneLiner: "Houston happy hours, tap lists, and rooms worth going out for.",
+    id: "eastside-coffee",
+    displayName: "Eastside Coffee",
+    category: "coffee",
+    billingEnabled: true,
+  },
+];
+
+const LOCATIONS = [
+  {
+    id: "the-riot-main",
+    merchantId: "the-riot",
+    name: "The Riot Comedy Club",
+    address: "1816 Thompson St, Houston",
+    city: "Houston",
+    neighborhood: "Washington Avenue",
+    lat: 29.7639,
+    lng: -95.3905,
+    timezone: "America/Chicago",
   },
   {
-    id: "campusbite",
-    displayName: "CampusBite",
-    oneLiner: "Campus food, without the dining-hall guesswork.",
+    id: "eastside-coffee-montrose",
+    merchantId: "eastside-coffee",
+    name: "Eastside Coffee",
+    address: "4317 Montrose Blvd, Houston",
+    city: "Houston",
+    neighborhood: "Montrose",
+    lat: 29.7368,
+    lng: -95.3914,
+    timezone: "America/Chicago",
+  },
+];
+
+const PROMOTIONS = [
+  {
+    id: "riot-10-off-30",
+    merchantId: "the-riot",
+    locationId: "the-riot-main",
+    status: "live",
+    discountType: "fixed",
+    discountAmountCents: 1000,
+    discountPercent: null as number | null,
+    minimumPurchaseCents: 3000,
+    maxDiscountCents: null as number | null,
+    category: "comedy",
+    teaserMode: "merchant_hidden",
+    shortTerms: "$10 off a $30+ ticket or tab. Show your BearGo voucher at the door.",
+    restrictions: "One voucher per person. Not valid with other offers.",
+    validWeekdays: [0, 1, 2, 3, 4, 5, 6],
+    validMinutesStart: 0,
+    validMinutesEnd: 24 * 60 - 1,
+    voucherExpireHour: 1,
+    maxRedemptions: 200,
+    radiusMiles: 1.5,
+    testMode: true,
   },
   {
-    id: "nightowl",
-    displayName: "NightOwl",
-    oneLiner: "Late-night plans, without the group chat.",
+    id: "eastside-20-off",
+    merchantId: "eastside-coffee",
+    locationId: "eastside-coffee-montrose",
+    status: "live",
+    discountType: "percentage",
+    discountAmountCents: null as number | null,
+    discountPercent: 20,
+    minimumPurchaseCents: 800,
+    maxDiscountCents: 500,
+    category: "coffee",
+    teaserMode: "merchant_hidden",
+    shortTerms: "20% off $8+, up to $5. Show your BearGo voucher when you pay.",
+    restrictions: "Dine-in or pickup. One voucher per visit.",
+    validWeekdays: [0, 1, 2, 3, 4, 5, 6],
+    validMinutesStart: 0,
+    validMinutesEnd: 24 * 60 - 1,
+    voucherExpireHour: 1,
+    maxRedemptions: 100,
+    radiusMiles: 1.5,
+    testMode: true,
   },
 ];
 
 const USERS = [
-  { email: "admin@beargo.pro", role: "admin", hostId: null, startupId: null },
+  { email: "admin@beargo.pro", role: "admin", hostId: null, merchantId: null },
   {
     email: "rustic@beargo.pro",
     role: "host",
     hostId: "the-rustic",
-    startupId: null,
+    merchantId: null,
   },
   {
-    email: "jobradar@beargo.pro",
-    role: "startup",
+    email: "riot@beargo.pro",
+    role: "merchant",
     hostId: null,
-    startupId: "jobradar",
+    merchantId: "the-riot",
   },
   {
-    email: "hoplist@beargo.pro",
-    role: "startup",
+    email: "eastside@beargo.pro",
+    role: "merchant",
     hostId: null,
-    startupId: "hoplist",
+    merchantId: "eastside-coffee",
   },
 ];
 
+async function migrateSchema() {
+  await db.execute(sql`
+    ALTER TABLE hosts ADD COLUMN IF NOT EXISTS lat double precision;
+    ALTER TABLE hosts ADD COLUMN IF NOT EXISTS lng double precision;
+    ALTER TABLE hosts ADD COLUMN IF NOT EXISTS excluded_categories jsonb NOT NULL DEFAULT '[]'::jsonb;
+    ALTER TABLE hosts ADD COLUMN IF NOT EXISTS excluded_merchant_ids jsonb NOT NULL DEFAULT '[]'::jsonb;
+
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS merchant_id text;
+    ALTER TABLE users DROP COLUMN IF EXISTS startup_id;
+
+    ALTER TABLE scan_sessions ADD COLUMN IF NOT EXISTS promotion_id text;
+    ALTER TABLE scan_sessions ADD COLUMN IF NOT EXISTS voucher_id text;
+    ALTER TABLE scan_sessions ADD COLUMN IF NOT EXISTS teaser_shown_at timestamptz;
+    ALTER TABLE scan_sessions ADD COLUMN IF NOT EXISTS offer_viewed_at timestamptz;
+    ALTER TABLE scan_sessions ADD COLUMN IF NOT EXISTS claimed_at timestamptz;
+    ALTER TABLE scan_sessions DROP COLUMN IF EXISTS sponsor_viewed_at;
+    ALTER TABLE scan_sessions DROP COLUMN IF EXISTS campaign_id;
+    ALTER TABLE scan_sessions DROP COLUMN IF EXISTS lead_id;
+    ALTER TABLE scan_sessions DROP COLUMN IF EXISTS interest_id;
+
+    ALTER TABLE ledger_entries ADD COLUMN IF NOT EXISTS merchant_id text;
+    ALTER TABLE ledger_entries ADD COLUMN IF NOT EXISTS promotion_id text;
+    ALTER TABLE ledger_entries ADD COLUMN IF NOT EXISTS voucher_id text;
+    ALTER TABLE ledger_entries DROP COLUMN IF EXISTS startup_id;
+    ALTER TABLE ledger_entries DROP COLUMN IF EXISTS campaign_id;
+    ALTER TABLE ledger_entries DROP COLUMN IF EXISTS lead_id;
+
+    CREATE TABLE IF NOT EXISTS merchants (
+      id text PRIMARY KEY,
+      display_name text NOT NULL,
+      category text NOT NULL,
+      logo_url text,
+      status text NOT NULL DEFAULT 'active',
+      billing_enabled boolean NOT NULL DEFAULT true,
+      created_at timestamptz NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS merchant_locations (
+      id text PRIMARY KEY,
+      merchant_id text NOT NULL REFERENCES merchants(id),
+      name text NOT NULL,
+      address text NOT NULL,
+      city text NOT NULL DEFAULT 'Houston',
+      neighborhood text,
+      lat double precision NOT NULL,
+      lng double precision NOT NULL,
+      timezone text NOT NULL DEFAULT 'America/Chicago',
+      status text NOT NULL DEFAULT 'active',
+      created_at timestamptz NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS promotions (
+      id text PRIMARY KEY,
+      merchant_id text NOT NULL REFERENCES merchants(id),
+      location_id text NOT NULL REFERENCES merchant_locations(id),
+      status text NOT NULL DEFAULT 'paused',
+      discount_type text NOT NULL,
+      discount_amount_cents integer,
+      discount_percent integer,
+      minimum_purchase_cents integer NOT NULL,
+      max_discount_cents integer,
+      category text NOT NULL,
+      teaser_mode text NOT NULL DEFAULT 'merchant_hidden',
+      short_terms text NOT NULL DEFAULT '',
+      restrictions text,
+      starts_at timestamptz,
+      ends_at timestamptz,
+      valid_weekdays jsonb NOT NULL DEFAULT '[0,1,2,3,4,5,6]'::jsonb,
+      valid_minutes_start integer NOT NULL DEFAULT 0,
+      valid_minutes_end integer NOT NULL DEFAULT 1439,
+      voucher_expire_hour integer NOT NULL DEFAULT 1,
+      max_redemptions integer,
+      radius_miles double precision NOT NULL DEFAULT 1.5,
+      test_mode boolean NOT NULL DEFAULT false,
+      created_at timestamptz NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS promotion_hosts (
+      promotion_id text NOT NULL REFERENCES promotions(id),
+      host_id text NOT NULL REFERENCES hosts(id)
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS promotion_hosts_pk
+      ON promotion_hosts (promotion_id, host_id);
+
+    CREATE TABLE IF NOT EXISTS vouchers (
+      id text PRIMARY KEY,
+      token text NOT NULL,
+      code text NOT NULL,
+      promotion_id text NOT NULL REFERENCES promotions(id),
+      merchant_id text NOT NULL REFERENCES merchants(id),
+      location_id text NOT NULL REFERENCES merchant_locations(id),
+      host_id text NOT NULL,
+      paw_token text NOT NULL,
+      session_id text,
+      device_key text,
+      status text NOT NULL DEFAULT 'claimed',
+      claimed_at timestamptz NOT NULL DEFAULT now(),
+      expires_at timestamptz NOT NULL,
+      redeemed_at timestamptz,
+      redeemed_by_user_id text,
+      redeemed_location_id text,
+      purchase_subtotal_cents integer,
+      discount_applied_cents integer,
+      created_at timestamptz NOT NULL DEFAULT now()
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS vouchers_token ON vouchers (token);
+    CREATE UNIQUE INDEX IF NOT EXISTS vouchers_code ON vouchers (code);
+
+    CREATE UNIQUE INDEX IF NOT EXISTS ledger_voucher_fee
+      ON ledger_entries (voucher_id, kind);
+
+    CREATE TABLE IF NOT EXISTS players (
+      id text PRIMARY KEY,
+      full_name text NOT NULL,
+      email text NOT NULL,
+      email_normalized text NOT NULL,
+      phone text NOT NULL,
+      phone_normalized text NOT NULL,
+      email_verified_at timestamptz,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS players_email_normalized
+      ON players (email_normalized);
+
+    CREATE TABLE IF NOT EXISTS claim_links (
+      token_hash text PRIMARY KEY,
+      player_id text NOT NULL REFERENCES players(id),
+      promotion_id text NOT NULL,
+      host_id text NOT NULL,
+      paw_token text NOT NULL,
+      session_id text,
+      device_key text,
+      expires_at timestamptz NOT NULL,
+      used_at timestamptz
+    );
+
+    ALTER TABLE vouchers ADD COLUMN IF NOT EXISTS player_id text REFERENCES players(id);
+
+    DROP TABLE IF EXISTS lead_exports CASCADE;
+    DROP TABLE IF EXISTS consent_receipts CASCADE;
+    DROP TABLE IF EXISTS leads CASCADE;
+    DROP TABLE IF EXISTS campaign_hosts CASCADE;
+    DROP TABLE IF EXISTS campaigns CASCADE;
+    DROP TABLE IF EXISTS startups CASCADE;
+  `);
+}
+
 async function main() {
+  await migrateSchema();
+
   await db
     .insert(hosts)
     .values(HOSTS)
-    .onConflictDoNothing();
+    .onConflictDoUpdate({
+      target: hosts.id,
+      set: {
+        displayName: sql`excluded.display_name`,
+        timezone: sql`excluded.timezone`,
+        city: sql`excluded.city`,
+        neighborhood: sql`excluded.neighborhood`,
+        type: sql`excluded.type`,
+        lat: sql`excluded.lat`,
+        lng: sql`excluded.lng`,
+        excludedCategories: sql`excluded.excluded_categories`,
+        excludedMerchantIds: sql`excluded.excluded_merchant_ids`,
+      },
+    });
   await db.insert(paws).values(PAWS).onConflictDoNothing();
-  await db.insert(startups).values(STARTUPS).onConflictDoNothing();
+
+  await db
+    .insert(merchants)
+    .values(MERCHANTS)
+    .onConflictDoUpdate({
+      target: merchants.id,
+      set: {
+        displayName: sql`excluded.display_name`,
+        category: sql`excluded.category`,
+        billingEnabled: sql`excluded.billing_enabled`,
+      },
+    });
+  await db
+    .insert(merchantLocations)
+    .values(LOCATIONS)
+    .onConflictDoUpdate({
+      target: merchantLocations.id,
+      set: {
+        name: sql`excluded.name`,
+        address: sql`excluded.address`,
+        city: sql`excluded.city`,
+        neighborhood: sql`excluded.neighborhood`,
+        lat: sql`excluded.lat`,
+        lng: sql`excluded.lng`,
+        timezone: sql`excluded.timezone`,
+      },
+    });
+  await db
+    .insert(promotions)
+    .values(PROMOTIONS)
+    .onConflictDoUpdate({
+      target: promotions.id,
+      set: {
+        status: sql`excluded.status`,
+        discountType: sql`excluded.discount_type`,
+        discountAmountCents: sql`excluded.discount_amount_cents`,
+        discountPercent: sql`excluded.discount_percent`,
+        minimumPurchaseCents: sql`excluded.minimum_purchase_cents`,
+        maxDiscountCents: sql`excluded.max_discount_cents`,
+        category: sql`excluded.category`,
+        teaserMode: sql`excluded.teaser_mode`,
+        shortTerms: sql`excluded.short_terms`,
+        restrictions: sql`excluded.restrictions`,
+        validWeekdays: sql`excluded.valid_weekdays`,
+        validMinutesStart: sql`excluded.valid_minutes_start`,
+        validMinutesEnd: sql`excluded.valid_minutes_end`,
+        voucherExpireHour: sql`excluded.voucher_expire_hour`,
+        maxRedemptions: sql`excluded.max_redemptions`,
+        radiusMiles: sql`excluded.radius_miles`,
+        testMode: sql`excluded.test_mode`,
+      },
+    });
+
   await db
     .insert(questions)
     .values(
@@ -141,38 +431,6 @@ async function main() {
   await db.delete(challengeSets);
 
   await db
-    .insert(campaigns)
-    .values(
-      SEED_CAMPAIGNS.map((campaign) => ({
-        id: campaign.id,
-        startupId: campaign.startupId,
-        name: campaign.name,
-        status: campaign.status,
-        headline: campaign.headline,
-        valueProposition: campaign.valueProposition,
-        eligibleInterestIds: campaign.eligibleInterestIds,
-        qualifyQuestions: campaign.questions,
-        grossCplCents: centsFromDollars(campaign.grossCpl),
-        hostAmountCents: centsFromDollars(campaign.hostAmount),
-        platformAmountCents: centsFromDollars(campaign.platformAmount),
-        fundedBalanceCents: centsFromDollars(campaign.fundedBalance),
-      })),
-    )
-    .onConflictDoNothing();
-
-  await db
-    .insert(campaignHosts)
-    .values(
-      SEED_CAMPAIGNS.flatMap((campaign) =>
-        campaign.eligibleHostIds.map((hostId) => ({
-          campaignId: campaign.id,
-          hostId,
-        })),
-      ),
-    )
-    .onConflictDoNothing();
-
-  await db
     .insert(users)
     .values(
       USERS.map((user) => ({
@@ -181,12 +439,23 @@ async function main() {
         emailNormalized: normalizeEmail(user.email),
         role: user.role,
         hostId: user.hostId,
-        startupId: user.startupId,
+        merchantId: user.merchantId,
       })),
     )
-    .onConflictDoNothing();
+    .onConflictDoUpdate({
+      target: users.emailNormalized,
+      set: {
+        role: sql`excluded.role`,
+        hostId: sql`excluded.host_id`,
+        merchantId: sql`excluded.merchant_id`,
+      },
+    });
 
-  console.log("Seeded BearGo catalogs, question pool, campaigns, and demo users.");
+  await db.execute(sql`DELETE FROM users WHERE role = 'startup'`);
+
+  console.log(
+    "Seeded BearGo hosts, merchants, promotions, question pool, and demo users.",
+  );
   await client.end();
 }
 

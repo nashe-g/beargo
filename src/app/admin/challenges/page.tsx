@@ -1,14 +1,14 @@
 import { AdminShell } from "@/components/admin/AdminShell";
 import { requireAdmin } from "@/lib/admin-auth";
 import { adminHostRows } from "@/lib/admin-stats";
-import { listLeads, listPlays } from "@/lib/store";
+import { listPlays } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminChallengesPage() {
   await requireAdmin();
-  const [plays, leads] = await Promise.all([listPlays(), listLeads()]);
-  const rows = await adminHostRows(plays, leads);
+  const plays = await listPlays();
+  const rows = await adminHostRows(plays);
 
   return (
     <AdminShell current="/admin/challenges">

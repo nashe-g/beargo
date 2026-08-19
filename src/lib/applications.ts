@@ -6,7 +6,7 @@ import { isoRequired } from "@/lib/money";
 
 export type Application = {
   id: string;
-  kind: "host" | "startup";
+  kind: "host" | "merchant";
   payload: Record<string, string>;
   status: string;
   createdAt: string;

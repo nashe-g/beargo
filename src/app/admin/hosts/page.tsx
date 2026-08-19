@@ -3,21 +3,22 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { CreateHostForm } from "@/components/admin/CreateHostForm";
 import { requireAdmin } from "@/lib/admin-auth";
 import { adminHostRows } from "@/lib/admin-stats";
-import { formatMoney } from "@/lib/format";
-import { listLeads, listPlays } from "@/lib/store";
+import { offerTitle } from "@/lib/offer";
+import { listPlays } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminHostsPage() {
   await requireAdmin();
-  const [plays, leads] = await Promise.all([listPlays(), listLeads()]);
-  const rows = await adminHostRows(plays, leads);
+  const plays = await listPlays();
+  const rows = await adminHostRows(plays);
 
   return (
     <AdminShell current="/admin/hosts">
       <h1 className="font-display text-4xl">Hosts</h1>
       <p className="mt-3 text-ink-soft">
-        Today’s games, floor sponsor, and assigned campaigns.
+        Today’s games, Paw inventory, and the nearby offer that would unlock
+        after rank.
       </p>
       <div className="mt-6">
         <CreateHostForm />
@@ -28,9 +29,7 @@ export default async function AdminHostsPage() {
             <tr>
               <th className="pb-3 font-normal">Host</th>
               <th className="pb-3 font-normal">Games today</th>
-              <th className="pb-3 font-normal">QLs today</th>
-              <th className="pb-3 font-normal">Potential</th>
-              <th className="pb-3 font-normal">Sponsor</th>
+              <th className="pb-3 font-normal">Nearby offer</th>
               <th className="pb-3 font-normal">Paws</th>
             </tr>
           </thead>
@@ -46,9 +45,11 @@ export default async function AdminHostsPage() {
                   </Link>
                 </td>
                 <td>{row.today.gamesFinished}</td>
-                <td>{row.today.qualifiedLeads}</td>
-                <td>{formatMoney(row.today.earnings)}</td>
-                <td>{row.sponsor ? row.sponsor.name : "—"}</td>
+                <td>
+                  {row.offer
+                    ? `${offerTitle(row.offer.promotion)} · ${row.offer.promotion.merchant.displayName}`
+                    : "—"}
+                </td>
                 <td>{row.paws.length}</td>
               </tr>
             ))}

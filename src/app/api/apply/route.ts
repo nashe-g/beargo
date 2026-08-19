@@ -9,7 +9,7 @@ export async function POST(request: Request) {
     kind?: string;
     payload?: Record<string, string>;
   };
-  if (body.kind !== "host" && body.kind !== "startup") {
+  if (body.kind !== "host" && body.kind !== "merchant") {
     return Response.json({ error: "Invalid application" }, { status: 400 });
   }
   const payload = body.payload ?? {};

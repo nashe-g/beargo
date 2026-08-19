@@ -10,14 +10,15 @@ export default function PrivacyPage() {
           details. Rank is local to the venue and the day.
         </p>
         <p>
-          If you choose an optional introduction, we collect name, email, phone,
-          and your answers to qualification questions so we can verify contact
-          and share them with that day’s sponsor after you consent.
+          Claiming a nearby offer asks for name, email, and phone. We email a
+          link so you can confirm the address is yours before the voucher is
+          issued. We keep that contact for BearGo. We do not sell it as a lead
+          to the promoting merchant.
         </p>
         <p>
-          Hosts see game counts and potential earnings, not your contact
-          details. Startups see contact only after a qualified introduction.
-          Admin may access in-progress details for support and fraud.
+          Hosts see game counts, not player contact details. Merchants see
+          voucher redemptions for their offers. Admin may access operational
+          records for support and fraud.
         </p>
         <p>Questions: hello@beargo.pro</p>
       </div>

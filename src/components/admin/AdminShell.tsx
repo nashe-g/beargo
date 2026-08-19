@@ -8,8 +8,8 @@ const LINKS = [
   { href: "/admin/paws", label: "Paws" },
   { href: "/admin/challenges", label: "Challenges" },
   { href: "/admin/questions", label: "Questions" },
-  { href: "/admin/campaigns", label: "Campaigns" },
-  { href: "/admin/leads", label: "Leads" },
+  { href: "/admin/promotions", label: "Offers" },
+  { href: "/admin/players", label: "Players" },
   { href: "/admin/applications", label: "Apply" },
 ];
 
@@ -74,7 +74,7 @@ export function Stat({
 
 export function StatusPill({ status }: { status: string }) {
   const tone =
-    status === "live" || status === "active" || status === "qualified"
+        status === "live" || status === "active" || status === "qualified" || status === "verified"
       ? "bg-moss text-paper"
       : status === "paused" || status === "pending_verification"
         ? "bg-ink/10 text-ink-soft"

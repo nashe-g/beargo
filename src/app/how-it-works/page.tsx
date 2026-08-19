@@ -11,7 +11,7 @@ const STEPS = [
   },
   {
     title: "See how you rank.",
-    body: "That’s the game.",
+    body: "That’s the game. If a nearby offer is worth it, you’ll see the value on the same screen.",
   },
 ];
 
@@ -34,7 +34,7 @@ export default function HowItWorksPage() {
         ))}
       </ol>
       <div className="mt-8 max-w-xl space-y-3 text-lg text-ink-soft">
-        <p>If a company is on the floor, you can choose to connect.</p>
+        <p>You can claim a nearby offer for free. Confirm email. Visit. Show the voucher.</p>
         <p className="font-semibold text-ink">You pay $0.</p>
       </div>
     </PublicShell>

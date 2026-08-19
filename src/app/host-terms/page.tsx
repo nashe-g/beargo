@@ -6,12 +6,12 @@ export default function HostTermsPage() {
       <h1 className="font-display text-5xl">Host terms</h1>
       <div className="mt-6 space-y-4 text-ink-soft">
         <p>
-          You host a physical Paw. The game must remain playable without a
-          sponsor. Print stays sponsor-free.
+          You host the physical Paw and the daily game. You can block offer
+          categories so BearGo does not advertise competitors in your room.
         </p>
         <p>
-          Amounts shown in the host console are potential until a payout is
-          marked paid. Live economics begin when billing is turned on.
+          Nearby merchants pay BearGo $1 per verified redemption. That fee is
+          not a host payout in this version.
         </p>
       </div>
     </PublicShell>

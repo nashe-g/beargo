@@ -1,11 +1,10 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminShell, Stat, StatusPill } from "@/components/admin/AdminShell";
 import { requireAdmin } from "@/lib/admin-auth";
 import { adminHostRows } from "@/lib/admin-stats";
-import { formatMoney } from "@/lib/format";
 import { getHost } from "@/lib/hosts";
-import { listLeads, listPlays } from "@/lib/store";
+import { categoryLabel, offerTitle } from "@/lib/offer";
+import { listPlays } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
@@ -17,8 +16,8 @@ export default async function AdminHostPage({
   const host = await getHost(hostId);
   if (!host) notFound();
 
-  const [plays, leads] = await Promise.all([listPlays(), listLeads()]);
-  const row = (await adminHostRows(plays, leads)).find(
+  const plays = await listPlays();
+  const row = (await adminHostRows(plays)).find(
     (entry) => entry.host.id === host.id,
   );
   if (!row) notFound();
@@ -28,16 +27,27 @@ export default async function AdminHostPage({
       <h1 className="font-display text-4xl">{host.displayName}</h1>
       <p className="mt-3 text-ink-soft">
         {host.timezone}.{" "}
-        {row.sponsor
-          ? `Today’s sponsor is ${row.sponsor.name}.`
-          : "No sponsor on the floor. The game still runs."}
+        {row.offer
+          ? `Nearby offer after rank: ${offerTitle(row.offer.promotion)} at ${row.offer.promotion.merchant.displayName}.`
+          : "No compelling nearby offer. The game still runs."}
       </p>
+      {host.excludedCategories.length > 0 ? (
+        <p className="mt-2 text-sm text-ink-soft">
+          Blocks {host.excludedCategories.map(categoryLabel).join(", ")}.
+        </p>
+      ) : null}
 
-      <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Stat label="Games today" value={String(row.today.gamesFinished)} />
-        <Stat label="Intros today" value={String(row.today.introductionsStarted)} />
-        <Stat label="QLs today" value={String(row.today.qualifiedLeads)} />
-        <Stat label="Potential today" value={formatMoney(row.today.earnings)} />
+        <Stat label="Paws" value={String(row.paws.length)} />
+        <Stat
+          label="Coords"
+          value={
+            host.lat != null && host.lng != null
+              ? `${host.lat.toFixed(4)}, ${host.lng.toFixed(4)}`
+              : "Missing"
+          }
+        />
       </div>
 
       <section className="mt-12 grid gap-10 lg:grid-cols-2">
@@ -73,24 +83,6 @@ export default async function AdminHostPage({
               ))}
             </ul>
           )}
-          <h2 className="mt-10 font-display text-2xl">Campaigns</h2>
-          <ul className="mt-4 space-y-3">
-            {row.campaigns.length === 0 ? (
-              <li className="text-ink-soft">None assigned.</li>
-            ) : (
-              row.campaigns.map((campaign) => (
-                <li key={campaign.id}>
-                  <Link
-                    href={`/admin/campaigns/${campaign.id}`}
-                    className="flex items-center justify-between rounded-2xl border border-ink/10 px-4 py-3"
-                  >
-                    <span>{campaign.name}</span>
-                    <StatusPill status={campaign.status} />
-                  </Link>
-                </li>
-              ))
-            )}
-          </ul>
         </div>
       </section>
     </AdminShell>

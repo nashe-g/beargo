@@ -44,7 +44,7 @@ export function OpsUnlock() {
           <PawMark className="w-24" />
           <h1 className="mt-6 font-display text-4xl">Ops</h1>
           <p className="mt-3 text-lg text-ink-soft">
-            Host, startup, and admin sit behind this lock on the live site.
+            Host, merchant, and admin sit behind this lock on the live site.
           </p>
         </div>
         <div className="space-y-4">

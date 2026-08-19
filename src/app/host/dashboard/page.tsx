@@ -1,37 +1,43 @@
-import Link from "next/link";
 import { HostShell } from "@/components/host/HostShell";
-import { formatClock, formatMoney } from "@/lib/format";
+import { formatClock } from "@/lib/format";
 import { requireHost } from "@/lib/host-auth";
-import { hostMonthStats, hostTodayStats } from "@/lib/host-stats";
-import { todaysSponsorForHostRecord } from "@/lib/route-campaign";
-import { listLeads, listPlays } from "@/lib/store";
+import { localDateInZone } from "@/lib/dates";
+import { listPlays } from "@/lib/store";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 export default async function HostDashboardPage() {
   const host = await requireHost();
-  const [plays, leads] = await Promise.all([listPlays(), listLeads()]);
-  const today = hostTodayStats(host, plays, leads);
-  const month = hostMonthStats(host, plays, leads);
-  const sponsor = await todaysSponsorForHostRecord(host);
+  const plays = await listPlays();
+  const localDate = localDateInZone(host.timezone);
+  const todayPlays = plays.filter(
+    (play) => play.hostId === host.id && play.localDate === localDate,
+  );
+  const month = localDate.slice(0, 7);
+  const monthPlays = plays.filter(
+    (play) => play.hostId === host.id && play.localDate.startsWith(month),
+  );
+  const perfect = todayPlays.filter((play) => play.correctCount === 3);
+  const fastestPerfectMs =
+    perfect.length === 0
+      ? null
+      : Math.min(...perfect.map((play) => play.totalResponseMs));
 
   return (
     <HostShell host={host} current="/host/dashboard">
       <p className="text-sm tracking-[0.2em] uppercase text-ink-soft">
-        {today.localDate}
+        {localDate}
       </p>
       <h1 className="mt-2 font-display text-4xl">Today</h1>
       <p className="mt-3 text-ink-soft">
-        {sponsor
-          ? `Today’s sponsor: ${sponsor.name}. Potential host share ${formatMoney(sponsor.hostAmount)} on a qualified introduction.`
-          : "No sponsor on the floor today. The game still runs."}
+        The game runs either way. Nearby offers only show if they don’t compete
+        with this room.
       </p>
 
       <div className="mt-8 grid grid-cols-2 gap-3">
-        <Stat label="Games finished" value={String(today.gamesFinished)} />
-        <Stat label="Qualified leads" value={String(today.qualifiedLeads)} />
-        <Stat label="Introductions started" value={String(today.introductionsStarted)} />
-        <Stat label="Potential today" value={formatMoney(today.earnings)} />
+        <Stat label="Games finished" value={String(todayPlays.length)} />
+        <Stat label="This month" value={String(monthPlays.length)} />
       </div>
 
       <p className="mt-8 rounded-3xl bg-ink px-5 py-6 text-paper">
@@ -39,32 +45,10 @@ export default async function HostDashboardPage() {
           Fastest 3 / 3 today
         </span>
         <span className="mt-2 block font-display text-3xl">
-          {today.fastestPerfectMs == null
+          {fastestPerfectMs == null
             ? "Nobody yet"
-            : formatClock(today.fastestPerfectMs)}
+            : formatClock(fastestPerfectMs)}
         </span>
-      </p>
-
-      <section className="mt-10">
-        <h2 className="font-display text-2xl">This month</h2>
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          <Stat label="Games" value={String(month.gamesFinished)} />
-          <Stat label="Qualified leads" value={String(month.qualifiedLeads)} />
-          <Stat label="Potential" value={formatMoney(month.earnings)} />
-          <Stat
-            label="Potential / 100 games"
-            value={
-              month.earningsPerHundredGames == null
-                ? "—"
-                : formatMoney(month.earningsPerHundredGames)
-            }
-          />
-        </div>
-      </section>
-
-      <p className="mt-6 text-sm text-ink-soft">
-        Dollar amounts are potential, using a working model. Live rates come
-        after launch.
       </p>
 
       <Link

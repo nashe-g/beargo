@@ -12,7 +12,7 @@ export default function AdminLoginPage() {
           <h1 className="mt-6 font-display text-4xl">Admin</h1>
           <p className="mt-3 text-lg text-ink-soft">
             Is the game network healthy, is the commercial funnel healthy, and
-            is the money correct?
+            is the money correct? One redeemed customer is $1.
           </p>
         </div>
         <div className="space-y-4">

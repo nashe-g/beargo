@@ -3,11 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { BearGuide } from "@/components/bear/BearGuide";
+import { PointingFinger } from "@/components/scanner/PointingFinger";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
+import { StampSession } from "@/components/scanner/StampSession";
 import { beatCopy, formatDuration, loadAttempt } from "@/lib/attempt";
 import { BEAR_DURATIONS, type BearState } from "@/lib/bear";
-import { PointingFinger } from "@/components/scanner/PointingFinger";
-import { StampSession } from "@/components/scanner/StampSession";
+import type { OfferCard } from "@/lib/select-promotion";
 import { QUESTIONS_PER_CHALLENGE } from "@/lib/questions";
 import type { PawRecord } from "@/lib/paws";
 
@@ -15,11 +16,13 @@ type Phase = "celebrate" | "handoff" | "expanded" | "done";
 
 export function GameResult({
   paw,
-  hasSponsor,
+  offer,
+  claimedHref,
   questionIds = [],
 }: {
   paw: PawRecord;
-  hasSponsor: boolean;
+  offer: OfferCard | null;
+  claimedHref?: string | null;
   questionIds?: string[];
 }) {
   const [phase, setPhase] = useState<Phase>("celebrate");
@@ -33,6 +36,8 @@ export function GameResult({
     hasAttempt: false,
   });
   const startY = useRef<number | null>(null);
+  const host = paw.hostDisplayName;
+  const hasOffer = Boolean(offer) || Boolean(claimedHref);
 
   useEffect(() => {
     const attempt = loadAttempt(paw.token);
@@ -48,7 +53,7 @@ export function GameResult({
     }
 
     const look = window.setTimeout(() => {
-      if (hasSponsor) {
+      if (hasOffer) {
         setPhase("handoff");
         setBearState("lookDown");
         return;
@@ -58,7 +63,7 @@ export function GameResult({
     }, BEAR_DURATIONS.celebrate);
 
     return () => window.clearTimeout(look);
-  }, [paw.token, hasSponsor]);
+  }, [paw.token, hasOffer]);
 
   function expand() {
     setPhase("expanded");
@@ -75,11 +80,28 @@ export function GameResult({
     startY.current = null;
   }
 
-  const host = paw.hostDisplayName;
+  const nearbyLine = offer
+    ? [offer.distanceLabel, offer.urgency].filter(Boolean).join(" · ")
+    : "";
+  const unlocked =
+    offer?.teaserMode === "merchant_visible"
+      ? `${offer.valueHeadline} AT ${offer.merchantName.toUpperCase()}`
+      : `${offer?.valueHeadline} NEARBY`;
 
   return (
     <ScannerShell>
-      <StampSession pawToken={paw.token} event="game_completed" />
+      <StampSession
+        pawToken={paw.token}
+        event="game_completed"
+        promotionId={offer?.promotionId}
+      />
+      {offer ? (
+        <StampSession
+          pawToken={paw.token}
+          event="teaser_shown"
+          promotionId={offer.promotionId}
+        />
+      ) : null}
       <div className="relative flex min-h-0 flex-1 flex-col">
         <div className="flex min-h-0 flex-1 flex-col items-center overflow-hidden pt-2 text-center">
           <BearGuide state={bearState} size="sm" />
@@ -101,12 +123,10 @@ export function GameResult({
                   ? beatCopy(score.playersBeaten, score.playerCount)
                   : "Rank will show on the next play."}
               </p>
-              {!hasSponsor && phase === "done" ? (
+              {!hasOffer && phase === "done" ? (
                 <p className="mt-6 text-paper/65">Thanks for playing.</p>
               ) : null}
-              {score.hasAttempt ? (
-                <ReportQuestion pawToken={paw.token} questionIds={questionIds} />
-              ) : null}
+              <ReportQuestion pawToken={paw.token} questionIds={questionIds} />
             </>
           ) : (
             <>
@@ -123,7 +143,20 @@ export function GameResult({
           )}
         </div>
 
-        {score.hasAttempt && hasSponsor && phase !== "expanded" ? (
+        {score.hasAttempt && claimedHref && phase !== "expanded" ? (
+          <div className="mt-auto shrink-0">
+            <Link href={claimedHref} className="teaser-card block">
+              <span className="block text-xs font-semibold tracking-[0.22em] text-honey-deep">
+                YOUR VOUCHER
+              </span>
+              <span className="mt-2 block font-condensed text-2xl leading-none">
+                SHOW THIS WHEN YOU PAY
+              </span>
+            </Link>
+          </div>
+        ) : null}
+
+        {score.hasAttempt && offer && !claimedHref && phase !== "expanded" ? (
           <div className="mt-auto shrink-0">
             <div className="flex justify-center">
               <PointingFinger className="pointing-finger" />
@@ -135,31 +168,44 @@ export function GameResult({
               onPointerUp={onPointerUp}
               className={`teaser-card ${phase !== "celebrate" ? "teaser-card-pulse" : ""}`}
             >
-              <span className="block font-condensed text-xl leading-none tracking-[0.06em] sm:text-2xl">
-                YOU CAN MAKE A COMPANY PAY {host.toUpperCase()} TODAY.
+              <span className="block text-xs font-semibold tracking-[0.22em] text-honey-deep">
+                YOU UNLOCKED
               </span>
-              <span className="mt-2 block text-sm text-ink-soft">
-                You pay $0.
+              <span className="mt-2 block font-condensed text-3xl leading-none tracking-[0.04em]">
+                {unlocked}
+              </span>
+              <span className="mt-3 block text-sm uppercase tracking-[0.12em] text-ink-soft">
+                {nearbyLine}
+              </span>
+              <span className="mt-4 block font-semibold tracking-[0.18em]">
+                {offer.teaserCta}
               </span>
             </button>
           </div>
         ) : null}
 
-        {score.hasAttempt && hasSponsor && phase === "expanded" ? (
+        {score.hasAttempt && offer && !claimedHref && phase === "expanded" ? (
           <div className="absolute inset-x-0 bottom-0 top-16 flex flex-col justify-end">
+            <StampSession
+              pawToken={paw.token}
+              event="teaser_opened"
+              promotionId={offer.promotionId}
+            />
             <div className="rounded-t-[2rem] bg-paper px-5 pb-8 pt-8 text-ink shadow-[0_-18px_50px_rgba(0,0,0,0.28)]">
-              <p className="font-display text-3xl leading-tight">
-                You can make a company pay {host} today.
+              <p className="text-xs font-semibold tracking-[0.22em] text-honey-deep">
+                YOU UNLOCKED
               </p>
-              <p className="mt-3 text-lg text-ink-soft">
-                Think of it as an extra tip to {host}.
+              <p className="mt-2 font-display text-4xl leading-tight">
+                {offer.teaserMode === "merchant_visible"
+                  ? `${offer.valueHeadline} at ${offer.merchantName}`
+                  : `${offer.valueHeadline} nearby`}
               </p>
-              <p className="mt-2 text-lg font-semibold">You pay $0.</p>
+              <p className="mt-3 text-lg text-ink-soft">{nearbyLine}</p>
               <Link
-                href={`/p/${paw.token}/company`}
+                href={`/p/${paw.token}/offer`}
                 className="btn-honey mt-8 flex h-14 w-full items-center justify-center rounded-full bg-honey text-lg font-semibold tracking-[0.18em] text-ink"
               >
-                SHOW ME
+                {offer.teaserCta}
               </Link>
             </div>
           </div>
