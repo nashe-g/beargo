@@ -16,8 +16,7 @@ export function milesBetween(
 }
 
 export function formatDistance(miles: number) {
-  if (miles < 0.12) return "2 blocks away";
-  if (miles < 0.25) return `${(miles * 8).toFixed(0)} blocks away`;
+  if (miles < 1) return `${miles.toFixed(2)} miles away`;
   if (miles < 10) return `${miles.toFixed(1)} miles away`;
   return `${Math.round(miles)} miles away`;
 }
