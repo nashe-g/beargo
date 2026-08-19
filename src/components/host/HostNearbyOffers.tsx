@@ -33,7 +33,7 @@ export function HostNearbyOffers({
   const [openId, setOpenId] = useState("");
   const [busyId, setBusyId] = useState("");
   const [message, setMessage] = useState("");
-  const menuRef = useRef<HTMLUListElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!openId) return;
