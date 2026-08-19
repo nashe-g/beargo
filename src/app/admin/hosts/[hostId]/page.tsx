@@ -4,7 +4,6 @@ import { NearbyOfferCards } from "@/components/offers/NearbyOfferCards";
 import { requireAdmin } from "@/lib/admin-auth";
 import { adminHostRows } from "@/lib/admin-stats";
 import { getHost } from "@/lib/hosts";
-import { categoryLabel } from "@/lib/offer";
 import { listPlays } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
@@ -31,11 +30,6 @@ export default async function AdminHostPage({
           "No street address yet."}{" "}
         {host.timezone}.
       </p>
-      {host.excludedCategories.length > 0 ? (
-        <p className="mt-2 text-sm text-ink-soft">
-          Blocks {host.excludedCategories.map(categoryLabel).join(", ")}.
-        </p>
-      ) : null}
 
       <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Stat label="Games today" value={String(row.today.gamesFinished)} />
@@ -53,10 +47,13 @@ export default async function AdminHostPage({
       <section className="mt-12">
         <h2 className="font-display text-2xl">Nearby offers</h2>
         <p className="mt-2 max-w-2xl text-ink-soft">
-          Players see one offer after they rank: the closest live offer in
-          range. Others stay in range but are not shown.
+          Players see one offer after they rank: the closest live offer this
+          room allows. Blocked offers stay listed here.
         </p>
-        <NearbyOfferCards nearby={row.nearby} />
+        <NearbyOfferCards
+          nearby={row.nearby}
+          blockedIds={host.excludedPromotionIds}
+        />
       </section>
 
       <section className="mt-12 grid gap-10 lg:grid-cols-2">

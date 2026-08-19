@@ -32,6 +32,7 @@ function mapHost(row: typeof hosts.$inferSelect): HostRecord {
     lng: row.lng,
     excludedCategories: row.excludedCategories ?? [],
     excludedMerchantIds: row.excludedMerchantIds ?? [],
+    excludedPromotionIds: row.excludedPromotionIds ?? [],
   };
 }
 
@@ -63,6 +64,7 @@ export async function upsertHost(input: {
   lng?: number | null;
   excludedCategories?: string[];
   excludedMerchantIds?: string[];
+  excludedPromotionIds?: string[];
 }) {
   const id = input.id || slugify(input.displayName);
   await db()
@@ -80,6 +82,7 @@ export async function upsertHost(input: {
       lng: input.lng ?? null,
       excludedCategories: input.excludedCategories ?? [],
       excludedMerchantIds: input.excludedMerchantIds ?? [],
+      excludedPromotionIds: input.excludedPromotionIds ?? [],
     })
     .onConflictDoUpdate({
       target: hosts.id,
@@ -93,8 +96,15 @@ export async function upsertHost(input: {
         status: input.status ?? "active",
         lat: input.lat ?? null,
         lng: input.lng ?? null,
-        excludedCategories: input.excludedCategories ?? [],
-        excludedMerchantIds: input.excludedMerchantIds ?? [],
+        ...(input.excludedCategories !== undefined
+          ? { excludedCategories: input.excludedCategories }
+          : {}),
+        ...(input.excludedMerchantIds !== undefined
+          ? { excludedMerchantIds: input.excludedMerchantIds }
+          : {}),
+        ...(input.excludedPromotionIds !== undefined
+          ? { excludedPromotionIds: input.excludedPromotionIds }
+          : {}),
       },
     });
   return (await getHost(id))!;

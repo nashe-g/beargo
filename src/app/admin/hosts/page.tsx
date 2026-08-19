@@ -46,22 +46,30 @@ export default async function AdminHostsPage() {
                 </td>
                 <td>{row.today.gamesFinished}</td>
                 <td className="py-3">
-                  {row.nearby[0] ? (
-                    <div>
-                      <p>
-                        {offerTitle(row.nearby[0].promotion)} ·{" "}
-                        {row.nearby[0].promotion.merchant.displayName}
-                      </p>
-                      <p className="text-ink-soft">
-                        {row.nearby[0].card.distanceLabel}
-                        {row.nearby.length > 1
-                          ? ` · +${row.nearby.length - 1} more in range`
-                          : ""}
-                      </p>
-                    </div>
-                  ) : (
-                    "—"
-                  )}
+                  {(() => {
+                    const shown = row.nearby.find(
+                      (item) =>
+                        !row.host.excludedPromotionIds.includes(
+                          item.promotion.id,
+                        ),
+                    );
+                    const extra = row.nearby.filter(
+                      (item) => item.promotion.id !== shown?.promotion.id,
+                    ).length;
+                    if (!shown) return "—";
+                    return (
+                      <div>
+                        <p>
+                          {offerTitle(shown.promotion)} ·{" "}
+                          {shown.promotion.merchant.displayName}
+                        </p>
+                        <p className="text-ink-soft">
+                          {shown.card.distanceLabel}
+                          {extra > 0 ? ` · +${extra} more in range` : ""}
+                        </p>
+                      </div>
+                    );
+                  })()}
                 </td>
                 <td>{row.paws.length}</td>
               </tr>

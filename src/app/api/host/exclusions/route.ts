@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { HOST_COOKIE } from "@/lib/auth";
 import { getHost, upsertHost } from "@/lib/catalog";
-import { PROMOTION_CATEGORIES } from "@/lib/offer";
+import { listPromotions } from "@/lib/promotions";
 
 export async function POST(request: Request) {
   const hostId = (await cookies()).get(HOST_COOKIE)?.value;
@@ -10,14 +10,14 @@ export async function POST(request: Request) {
   if (!host) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const body = (await request.json()) as { excludedCategories?: string[] };
-  const allowed = new Set(PROMOTION_CATEGORIES.map((row) => row.id));
-  const excludedCategories = (body.excludedCategories ?? []).filter((id) =>
-    allowed.has(id as (typeof PROMOTION_CATEGORIES)[number]["id"]),
+  const body = (await request.json()) as { excludedPromotionIds?: string[] };
+  const known = new Set((await listPromotions()).map((row) => row.id));
+  const excludedPromotionIds = (body.excludedPromotionIds ?? []).filter((id) =>
+    known.has(String(id)),
   );
   await upsertHost({
     ...host,
-    excludedCategories,
+    excludedPromotionIds,
   });
   return NextResponse.json({ ok: true });
 }

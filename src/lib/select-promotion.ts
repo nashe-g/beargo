@@ -36,10 +36,18 @@ export type OfferCard = {
   revealCta: string;
 };
 
-function hostAllows(host: HostRecord, promotion: PromotionRecord) {
+function hostAllows(
+  host: HostRecord,
+  promotion: PromotionRecord,
+  extra: { ignoreOfferBlocks?: boolean } = {},
+) {
+  if (
+    !extra.ignoreOfferBlocks &&
+    host.excludedPromotionIds.includes(promotion.id)
+  ) {
+    return false;
+  }
   if (host.excludedMerchantIds.includes(promotion.merchantId)) return false;
-  if (host.excludedCategories.includes(promotion.category)) return false;
-  if (host.excludedCategories.includes(promotion.merchant.category)) return false;
   if (
     promotion.eligibleHostIds.length > 0 &&
     !promotion.eligibleHostIds.includes(host.id)
@@ -122,7 +130,11 @@ export type NearbyOffer = {
 
 export async function listNearbyOffersForHost(
   host: HostRecord,
-  extra: { deviceKey?: string | null; at?: Date } = {},
+  extra: {
+    deviceKey?: string | null;
+    at?: Date;
+    includeBlocked?: boolean;
+  } = {},
 ): Promise<NearbyOffer[]> {
   const at = extra.at ?? new Date();
   const all = await listPromotions();
@@ -136,7 +148,13 @@ export async function listNearbyOffersForHost(
   const scored: NearbyOffer[] = [];
 
   for (const promotion of live) {
-    if (!hostAllows(host, promotion)) continue;
+    if (
+      !hostAllows(host, promotion, {
+        ignoreOfferBlocks: extra.includeBlocked,
+      })
+    ) {
+      continue;
+    }
     if (!inWindow(promotion, at)) continue;
     const remaining = await remainingRedemptions(promotion);
     if (remaining <= 0) continue;

@@ -200,6 +200,7 @@ async function migrateSchema() {
     ALTER TABLE hosts ADD COLUMN IF NOT EXISTS lat double precision;
     ALTER TABLE hosts ADD COLUMN IF NOT EXISTS lng double precision;
     ALTER TABLE hosts ADD COLUMN IF NOT EXISTS excluded_categories jsonb NOT NULL DEFAULT '[]'::jsonb;
+    ALTER TABLE hosts ADD COLUMN IF NOT EXISTS excluded_promotion_ids jsonb NOT NULL DEFAULT '[]'::jsonb;
     ALTER TABLE hosts ADD COLUMN IF NOT EXISTS address text;
 
     ALTER TABLE users ADD COLUMN IF NOT EXISTS merchant_id text;

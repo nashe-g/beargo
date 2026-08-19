@@ -28,6 +28,10 @@ export const hosts = pgTable("hosts", {
     .$type<string[]>()
     .notNull()
     .default([]),
+  excludedPromotionIds: jsonb("excluded_promotion_ids")
+    .$type<string[]>()
+    .notNull()
+    .default([]),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

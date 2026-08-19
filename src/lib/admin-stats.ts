@@ -13,7 +13,7 @@ export async function adminHostRows(plays: Play[]) {
     hosts.map(async (host) => ({
       host,
       today: hostTodayStats(host, plays),
-      nearby: await listNearbyOffersForHost(host),
+      nearby: await listNearbyOffersForHost(host, { includeBlocked: true }),
       paws: await pawsForHost(host.id),
       challenge: await getDailyChallenge(host.id, host.timezone),
     })),

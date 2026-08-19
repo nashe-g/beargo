@@ -11,6 +11,7 @@ export type HostRecord = {
   lng?: number | null;
   excludedCategories: string[];
   excludedMerchantIds: string[];
+  excludedPromotionIds: string[];
 };
 
 export const DEMO_HOST_ID = "the-rustic";
