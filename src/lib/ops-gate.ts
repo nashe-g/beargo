@@ -31,3 +31,10 @@ export function isOpsPath(pathname: string) {
     pathname.startsWith("/api/admin/")
   );
 }
+
+export async function isOpsUnlocked(cookieValue?: string | null) {
+  if (!opsGateEnabled()) return true;
+  const password = opsPassword();
+  if (!password) return false;
+  return cookieValue === (await opsCookieValue(password));
+}

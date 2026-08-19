@@ -1,10 +1,11 @@
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { ADMIN_COOKIE } from "@/lib/admin-auth";
-import { isProduction } from "@/lib/auth";
+import { isOpsUnlocked, OPS_COOKIE } from "@/lib/ops-gate";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  if (isProduction()) {
+  if (!(await isOpsUnlocked((await cookies()).get(OPS_COOKIE)?.value))) {
     return NextResponse.redirect(new URL("/admin", url.origin));
   }
   const response = NextResponse.redirect(

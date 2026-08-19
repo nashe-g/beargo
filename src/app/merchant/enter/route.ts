@@ -1,10 +1,12 @@
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { isProduction, safeNext } from "@/lib/auth";
+import { safeNext } from "@/lib/auth";
 import { MERCHANT_COOKIE } from "@/lib/merchant-auth";
+import { isOpsUnlocked, OPS_COOKIE } from "@/lib/ops-gate";
 import { getMerchant } from "@/lib/promotions";
 
 export async function GET(request: Request) {
-  if (isProduction()) {
+  if (!(await isOpsUnlocked((await cookies()).get(OPS_COOKIE)?.value))) {
     return NextResponse.redirect(new URL("/merchant", request.url));
   }
   const url = new URL(request.url);

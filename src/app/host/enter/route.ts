@@ -1,9 +1,11 @@
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { HOST_COOKIE, isProduction } from "@/lib/auth";
+import { HOST_COOKIE } from "@/lib/auth";
 import { getHost } from "@/lib/hosts";
+import { isOpsUnlocked, OPS_COOKIE } from "@/lib/ops-gate";
 
 export async function GET(request: Request) {
-  if (isProduction()) {
+  if (!(await isOpsUnlocked((await cookies()).get(OPS_COOKIE)?.value))) {
     return NextResponse.redirect(new URL("/host", request.url));
   }
   const url = new URL(request.url);

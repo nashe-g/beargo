@@ -1,9 +1,16 @@
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { MagicLinkForm } from "@/components/auth/MagicLinkForm";
 import { PawMark } from "@/components/paw/PawMark";
-import { isProduction } from "@/lib/auth";
+import { isOpsUnlocked, OPS_COOKIE } from "@/lib/ops-gate";
 
-export default function AdminLoginPage() {
+export const dynamic = "force-dynamic";
+
+export default async function AdminLoginPage() {
+  const unlocked = await isOpsUnlocked(
+    (await cookies()).get(OPS_COOKIE)?.value,
+  );
+
   return (
     <main className="min-h-dvh bg-paper text-ink">
       <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-between px-6 py-10">
@@ -17,7 +24,7 @@ export default function AdminLoginPage() {
         </div>
         <div className="space-y-4">
           <MagicLinkForm next="/admin/overview" />
-          {!isProduction() ? (
+          {unlocked ? (
             <Link
               href="/admin/enter"
               className="flex h-14 items-center justify-center rounded-full border border-ink/20"
