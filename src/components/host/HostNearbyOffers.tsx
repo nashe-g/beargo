@@ -1,10 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { NearbyOfferCards } from "@/components/offers/NearbyOfferCards";
 import { categoryLabel, offerTitle } from "@/lib/offer";
 import type { NearbyOffer } from "@/lib/select-promotion";
+
+function MenuIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-5 w-5"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="5" r="1.75" />
+      <circle cx="12" cy="12" r="1.75" />
+      <circle cx="12" cy="19" r="1.75" />
+    </svg>
+  );
+}
 
 export function HostNearbyOffers({
   nearby,
@@ -15,14 +30,33 @@ export function HostNearbyOffers({
 }) {
   const router = useRouter();
   const [blocked, setBlocked] = useState(excludedPromotionIds);
+  const [openId, setOpenId] = useState("");
   const [busyId, setBusyId] = useState("");
   const [message, setMessage] = useState("");
+  const menuRef = useRef<HTMLUListElement>(null);
+
+  useEffect(() => {
+    if (!openId) return;
+    function onPointer(event: MouseEvent) {
+      if (!menuRef.current?.contains(event.target as Node)) setOpenId("");
+    }
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpenId("");
+    }
+    document.addEventListener("mousedown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [openId]);
 
   async function toggle(promotionId: string) {
     const next = blocked.includes(promotionId)
       ? blocked.filter((id) => id !== promotionId)
       : [...blocked, promotionId];
     setBusyId(promotionId);
+    setOpenId("");
     setMessage("");
     const response = await fetch("/api/host/exclusions", {
       method: "POST",
@@ -52,12 +86,38 @@ export function HostNearbyOffers({
         {nearby.map((item) => {
           const isBlocked = blocked.includes(item.promotion.id);
           const shown = item.promotion.id === shownId;
+          const open = openId === item.promotion.id;
           return (
             <li
               key={item.promotion.id}
-              className="rounded-3xl border border-ink/10 px-5 py-5"
+              className="relative rounded-3xl border border-ink/10 px-5 py-5"
             >
-              <p className="text-sm">
+              <div className="absolute right-3 top-3" ref={open ? menuRef : undefined}>
+                <button
+                  type="button"
+                  aria-label="Offer actions"
+                  aria-expanded={open}
+                  disabled={busyId === item.promotion.id}
+                  onClick={() =>
+                    setOpenId(open ? "" : item.promotion.id)
+                  }
+                  className="flex h-10 w-10 items-center justify-center rounded-full text-ink-soft hover:bg-ink/5 disabled:opacity-50"
+                >
+                  <MenuIcon />
+                </button>
+                {open ? (
+                  <div className="absolute right-0 top-11 z-10 min-w-[12rem] rounded-2xl border border-ink/10 bg-paper py-1 shadow-lg">
+                    <button
+                      type="button"
+                      onClick={() => toggle(item.promotion.id)}
+                      className="flex w-full px-4 py-3 text-left text-sm"
+                    >
+                      {isBlocked ? "Allow this offer" : "Block this offer"}
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+              <p className="pr-12 text-sm">
                 <span
                   className={`rounded-full px-3 py-1 ${
                     isBlocked
@@ -85,14 +145,6 @@ export function HostNearbyOffers({
               <p className="mt-1 text-sm text-ink-soft">
                 {item.promotion.location.address}
               </p>
-              <button
-                type="button"
-                disabled={busyId === item.promotion.id}
-                onClick={() => toggle(item.promotion.id)}
-                className="mt-4 flex h-12 w-full items-center justify-center rounded-full border border-ink/20 disabled:opacity-50"
-              >
-                {isBlocked ? "Allow this offer" : "Block this offer"}
-              </button>
             </li>
           );
         })}
