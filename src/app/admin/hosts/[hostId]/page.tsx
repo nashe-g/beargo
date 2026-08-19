@@ -26,6 +26,8 @@ export default async function AdminHostPage({
     <AdminShell current="/admin/hosts">
       <h1 className="font-display text-4xl">{host.displayName}</h1>
       <p className="mt-3 text-ink-soft">
+        {[host.address, host.neighborhood, host.city].filter(Boolean).join(" · ") ||
+          "No street address yet."}{" "}
         {host.timezone}.{" "}
         {row.offer
           ? `Nearby offer after rank: ${offerTitle(row.offer.promotion)} at ${row.offer.promotion.merchant.displayName}.`
@@ -78,7 +80,12 @@ export default async function AdminHostPage({
                   <span>
                     {paw.token} · {paw.placementLabel}
                   </span>
-                  <StatusPill status={paw.status} />
+                  <span className="flex items-center gap-3">
+                    <a href={`/p/${paw.token}/print`} className="underline-offset-2 hover:underline">
+                      Print QR
+                    </a>
+                    <StatusPill status={paw.status} />
+                  </span>
                 </li>
               ))}
             </ul>

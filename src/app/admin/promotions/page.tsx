@@ -1,4 +1,5 @@
 import { AdminShell } from "@/components/admin/AdminShell";
+import { CreateOfferForm } from "@/components/admin/CreateOfferForm";
 import { requireAdmin } from "@/lib/admin-auth";
 import { offerTitle } from "@/lib/offer";
 import { listPromotions } from "@/lib/promotions";
@@ -13,7 +14,11 @@ export default async function AdminPromotionsPage() {
       <h1 className="font-display text-4xl">Offers</h1>
       <p className="mt-3 text-ink-soft">
         One nearby promotion after a completed game. $1 only on redemption.
+        Add the merchant’s real address so it can appear at nearby host Paws.
       </p>
+      <div className="mt-6">
+        <CreateOfferForm />
+      </div>
       <ul className="mt-8 space-y-4">
         {promotions.map((promotion) => (
           <li

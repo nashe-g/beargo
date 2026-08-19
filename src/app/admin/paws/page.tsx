@@ -22,7 +22,8 @@ export default async function AdminPawsPage() {
     <AdminShell current="/admin/paws">
       <h1 className="font-display text-4xl">Paws</h1>
       <p className="mt-3 text-ink-soft">
-        Physical inventory. Print stays offer-free.
+        Physical inventory. Print the Paw QR and put it at the venue. Print
+        stays offer-free.
       </p>
       <div className="mt-6">
         <CreatePawForm hosts={hosts} />

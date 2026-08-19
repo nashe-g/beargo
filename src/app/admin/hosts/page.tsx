@@ -17,8 +17,8 @@ export default async function AdminHostsPage() {
     <AdminShell current="/admin/hosts">
       <h1 className="font-display text-4xl">Hosts</h1>
       <p className="mt-3 text-ink-soft">
-        Today’s games, Paw inventory, and the nearby offer that would unlock
-        after rank.
+        Add the venue’s street address. Nearby offers route from those
+        coordinates, not from a player’s phone GPS.
       </p>
       <div className="mt-6">
         <CreateHostForm />

@@ -31,6 +31,7 @@ const HOSTS = [
     timezone: "America/Chicago",
     city: "Houston",
     neighborhood: "Washington Avenue",
+    address: "1836 Washington Ave, Houston, TX 77007",
     type: "venue",
     lat: 29.7705,
     lng: -95.3975,
@@ -43,6 +44,7 @@ const HOSTS = [
     timezone: "America/Chicago",
     city: "Houston",
     neighborhood: "Montrose",
+    address: "4317 Montrose Blvd, Houston, TX 77006",
     type: "venue",
     lat: 29.7472,
     lng: -95.3908,
@@ -55,6 +57,7 @@ const HOSTS = [
     timezone: "America/Chicago",
     city: "Houston",
     neighborhood: "Rice Village",
+    address: "6100 Main St, Houston, TX 77005",
     type: "campus",
     lat: 29.716,
     lng: -95.409,
@@ -182,7 +185,7 @@ async function migrateSchema() {
     ALTER TABLE hosts ADD COLUMN IF NOT EXISTS lat double precision;
     ALTER TABLE hosts ADD COLUMN IF NOT EXISTS lng double precision;
     ALTER TABLE hosts ADD COLUMN IF NOT EXISTS excluded_categories jsonb NOT NULL DEFAULT '[]'::jsonb;
-    ALTER TABLE hosts ADD COLUMN IF NOT EXISTS excluded_merchant_ids jsonb NOT NULL DEFAULT '[]'::jsonb;
+    ALTER TABLE hosts ADD COLUMN IF NOT EXISTS address text;
 
     ALTER TABLE users ADD COLUMN IF NOT EXISTS merchant_id text;
     ALTER TABLE users DROP COLUMN IF EXISTS startup_id;
@@ -338,6 +341,7 @@ async function main() {
         timezone: sql`excluded.timezone`,
         city: sql`excluded.city`,
         neighborhood: sql`excluded.neighborhood`,
+        address: sql`excluded.address`,
         type: sql`excluded.type`,
         lat: sql`excluded.lat`,
         lng: sql`excluded.lng`,

@@ -4,6 +4,7 @@ export type HostRecord = {
   timezone: string;
   city?: string;
   neighborhood?: string | null;
+  address?: string | null;
   type?: string;
   status?: string;
   lat?: number | null;

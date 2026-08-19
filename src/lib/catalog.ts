@@ -25,6 +25,7 @@ function mapHost(row: typeof hosts.$inferSelect): HostRecord {
     timezone: row.timezone,
     city: row.city,
     neighborhood: row.neighborhood,
+    address: row.address,
     type: row.type,
     status: row.status,
     lat: row.lat,
@@ -55,6 +56,7 @@ export async function upsertHost(input: {
   timezone: string;
   city?: string;
   neighborhood?: string | null;
+  address?: string | null;
   type?: string;
   status?: string;
   lat?: number | null;
@@ -71,6 +73,7 @@ export async function upsertHost(input: {
       timezone: input.timezone,
       city: input.city ?? "Houston",
       neighborhood: input.neighborhood ?? null,
+      address: input.address ?? null,
       type: input.type ?? "venue",
       status: input.status ?? "active",
       lat: input.lat ?? null,
@@ -85,6 +88,7 @@ export async function upsertHost(input: {
         timezone: input.timezone,
         city: input.city ?? "Houston",
         neighborhood: input.neighborhood ?? null,
+        address: input.address ?? null,
         type: input.type ?? "venue",
         status: input.status ?? "active",
         lat: input.lat ?? null,

@@ -15,6 +15,7 @@ export const hosts = pgTable("hosts", {
   timezone: text("timezone").notNull().default("America/Chicago"),
   city: text("city").notNull().default("Houston"),
   neighborhood: text("neighborhood"),
+  address: text("address"),
   type: text("type").notNull().default("venue"),
   status: text("status").notNull().default("active"),
   lat: doublePrecision("lat"),
