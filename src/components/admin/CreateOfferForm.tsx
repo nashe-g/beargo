@@ -42,8 +42,6 @@ export function CreateOfferForm() {
   const [minimum, setMinimum] = useState("30");
   const [maxOff, setMaxOff] = useState("5");
   const [radiusMiles, setRadiusMiles] = useState("1.5");
-  const [validMode, setValidMode] = useState<"days" | "until">("days");
-  const [validDays, setValidDays] = useState("7");
   const [endDate, setEndDate] = useState("");
   const [endTime, setEndTime] = useState("");
   const [teaserMode, setTeaserMode] = useState("merchant_hidden");
@@ -72,8 +70,6 @@ export function CreateOfferForm() {
         minimumPurchase: Number(minimum),
         maxDiscount: Number(maxOff),
         radiusMiles: Number(radiusMiles),
-        validMode,
-        validDays: Number(validDays),
         endDate,
         endTime,
         teaserMode,
@@ -94,8 +90,6 @@ export function CreateOfferForm() {
     setNeighborhood("");
     setLat("");
     setLng("");
-    setValidMode("days");
-    setValidDays("7");
     setEndDate("");
     setEndTime("");
     setShortTerms("");
@@ -230,56 +224,30 @@ export function CreateOfferForm() {
           />
         </Field>
       </div>
-      <Field label="How long this offer runs">
-        <select
-          value={validMode}
-          onChange={(event) =>
-            setValidMode(event.target.value as "days" | "until")
-          }
-          className={fieldClass}
-        >
-          <option value="days">A number of days</option>
-          <option value="until">Until a date and time</option>
-        </select>
-      </Field>
-      {validMode === "days" ? (
-        <Field label="Number of days">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Offer end date">
           <input
             required
-            value={validDays}
-            onChange={(event) => setValidDays(event.target.value)}
-            inputMode="numeric"
-            min={1}
-            max={365}
+            type="date"
+            value={endDate}
+            onChange={(event) => setEndDate(event.target.value)}
             className={fieldClass}
           />
         </Field>
-      ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="End date">
-            <input
-              required
-              type="date"
-              value={endDate}
-              onChange={(event) => setEndDate(event.target.value)}
-              className={fieldClass}
-            />
-          </Field>
-          <Field label="End time">
-            <input
-              required
-              type="time"
-              value={endTime}
-              onChange={(event) => setEndTime(event.target.value)}
-              className={fieldClass}
-            />
-          </Field>
-        </div>
-      )}
+        <Field label="Offer end time">
+          <input
+            required
+            type="time"
+            value={endTime}
+            onChange={(event) => setEndTime(event.target.value)}
+            className={fieldClass}
+          />
+        </Field>
+      </div>
       <p className="px-1 text-sm text-ink-soft">
-        {validMode === "days"
-          ? "Including today. Ends at 11:59 PM local time on the last day. Players can claim until then. Issued vouchers stay valid through that same end, even if the offer is later canceled."
-          : "Date and time are in the business’s local timezone. Players can claim until this moment. Issued vouchers stay valid through this same end, even if the offer is later canceled."}
+        Date and time are in the business’s local timezone. Players can claim
+        until this moment. Issued vouchers stay valid through this same end,
+        even if the offer is later canceled.
       </p>
       <Field label="Teaser">
         <select
