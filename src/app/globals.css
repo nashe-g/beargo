@@ -60,8 +60,9 @@ body {
 
 .pointing-finger {
   display: block;
-  width: 4.5rem;
+  width: 5rem;
   height: auto;
+  overflow: visible;
   color: var(--color-honey);
   filter: drop-shadow(0 8px 16px rgba(232, 163, 26, 0.35));
   animation: finger-pulse 1.15s ease-in-out infinite;

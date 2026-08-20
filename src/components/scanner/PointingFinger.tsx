@@ -1,16 +1,19 @@
 export function PointingFinger({ className = "" }: { className?: string }) {
   return (
     <svg
-      viewBox="0 0 72 152"
+      viewBox="0 0 24 24"
       className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
       aria-hidden="true"
     >
-      <g fill="currentColor">
-        <path d="M30 8h26v108Q43 140 30 116V8z" />
-        <circle cx="30" cy="32" r="11" />
-        <circle cx="30" cy="54" r="11" />
-        <circle cx="30" cy="76" r="11" />
-      </g>
+      <path d="M8 12v8.5a1.5 1.5 0 0 0 3 0v-7.5" />
+      <path d="M11 13.5v2a1.5 1.5 0 0 0 3 0v-2.5" />
+      <path d="M14 14.5a1.5 1.5 0 0 0 3 0v-1.5" />
+      <path d="M17 13.5a1.5 1.5 0 0 0 3 0v-4.5a6 6 0 0 0-6-6h-2h.208a6 6 0 0 0-5.012 2.7l-.196.3q-.468.718-3.286 5.728a1.5 1.5 0 0 0 .536 2.022c.734.44 1.674.325 2.28-.28l1.47-1.47" />
     </svg>
   );
 }
