@@ -60,7 +60,7 @@ body {
 
 .pointing-finger {
   display: block;
-  width: 3.35rem;
+  width: 4.5rem;
   height: auto;
   color: var(--color-honey);
   filter: drop-shadow(0 8px 16px rgba(232, 163, 26, 0.35));
