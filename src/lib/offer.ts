@@ -56,7 +56,7 @@ export type PromotionStatus =
 
 export function promotionStatusLabel(status: PromotionStatus | string) {
   if (status === "cancelled") return "Canceled";
-  if (status === "capped") return "Redemption limit reached";
+  if (status === "capped") return "Ended";
   if (status === "live") return "Live";
   if (status === "paused") return "Paused";
   if (status === "ended") return "Ended";
@@ -64,18 +64,42 @@ export function promotionStatusLabel(status: PromotionStatus | string) {
   return status.replaceAll("_", " ");
 }
 
-export function canCancelPromotion(status: PromotionStatus | string) {
-  return status !== "cancelled" && status !== "ended";
+export function displayPromotionStatus(
+  promotion: {
+    status: PromotionStatus | string;
+    endsAt?: Date | string | null;
+  },
+  at = new Date(),
+): PromotionStatus {
+  if (promotion.status === "cancelled") return "cancelled";
+  if (promotion.status === "ended" || promotion.status === "capped") {
+    return "ended";
+  }
+  const end = promotion.endsAt ? new Date(promotion.endsAt).getTime() : null;
+  if (end != null && end <= at.getTime()) return "ended";
+  return promotion.status as PromotionStatus;
 }
 
-export function redemptionLimitLabel(
-  maxRedemptions: number | null,
-  remaining: number | null,
+export function canCancelPromotion(status: PromotionStatus | string) {
+  return status === "live" || status === "paused" || status === "draft";
+}
+
+export function offerAcceptsNewClaims(
+  promotion: {
+    status: PromotionStatus | string;
+    startsAt?: Date | string | null;
+    endsAt?: Date | string | null;
+  },
+  at = new Date(),
 ) {
-  if (maxRedemptions == null || remaining == null) {
-    return "No redemption limit";
+  if (promotion.status !== "live") return false;
+  if (promotion.startsAt && new Date(promotion.startsAt).getTime() > at.getTime()) {
+    return false;
   }
-  return `${remaining} of ${maxRedemptions} redemptions left`;
+  if (promotion.endsAt && new Date(promotion.endsAt).getTime() <= at.getTime()) {
+    return false;
+  }
+  return true;
 }
 
 export type VoucherStatus =

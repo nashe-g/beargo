@@ -1,34 +1,29 @@
 import Link from "next/link";
 import { MerchantShell, Stat } from "@/components/merchant/MerchantShell";
 import { OfferManageList } from "@/components/offers/OfferManageList";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, formatStamp } from "@/lib/format";
 import { requireMerchant } from "@/lib/merchant-auth";
 import { formatRate, merchantDashboard } from "@/lib/merchant-stats";
-import { offerTitle } from "@/lib/offer";
-import { remainingRedemptions } from "@/lib/promotions";
+import { displayPromotionStatus, offerTitle } from "@/lib/offer";
 
 export const dynamic = "force-dynamic";
 
 export default async function MerchantDashboardPage() {
   const merchant = await requireMerchant();
   const stats = await merchantDashboard(merchant.id);
-  const offers = await Promise.all(
-    stats.promotions.map(async (promotion) => {
-      const remaining = await remainingRedemptions(promotion);
-      return {
-        id: promotion.id,
-        status: promotion.status,
-        title: offerTitle(promotion),
-        subtitle: promotion.location.name,
-        maxRedemptions: promotion.maxRedemptions,
-        remaining: Number.isFinite(remaining) ? remaining : null,
-        testMode: promotion.testMode,
-      };
-    }),
-  );
-  const hasUnlimited = stats.promotions.some(
-    (promotion) => promotion.maxRedemptions == null,
-  );
+  const offers = stats.promotions.map((promotion) => ({
+    id: promotion.id,
+    status: displayPromotionStatus(promotion),
+    title: offerTitle(promotion),
+    subtitle: promotion.location.name,
+    validThrough: promotion.endsAt
+      ? formatStamp(
+          promotion.endsAt.toISOString(),
+          promotion.location.timezone,
+        )
+      : null,
+    testMode: promotion.testMode,
+  }));
 
   return (
     <MerchantShell merchant={merchant} current="/merchant/dashboard">
@@ -56,11 +51,7 @@ export default async function MerchantDashboardPage() {
         <Stat
           label="BearGo fees"
           value={formatMoney(stats.fees)}
-          note={
-            hasUnlimited
-              ? "Billed on confirmed visits"
-              : `${formatMoney(stats.remainingBudget)} left on the redemption limit`
-          }
+          note="Billed on confirmed visits"
         />
       </div>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">

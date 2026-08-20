@@ -6,6 +6,7 @@ import { upsertUser } from "@/lib/auth";
 import { centsFromDollars } from "@/lib/money";
 import { type DiscountType, type TeaserMode, resolvePromotionCategory } from "@/lib/offer";
 import { upsertLocation, upsertMerchant, upsertPromotion } from "@/lib/promotions";
+import { endOfLocalDays, parseZonedDateTime } from "@/lib/zoned";
 
 export async function POST(request: Request) {
   const admin = (await cookies()).get(ADMIN_COOKIE)?.value === "1";
@@ -28,7 +29,10 @@ export async function POST(request: Request) {
     minimumPurchase?: number;
     maxDiscount?: number;
     radiusMiles?: number;
-    maxRedemptions?: number | null | "";
+    validMode?: "days" | "until";
+    validDays?: number | string;
+    endDate?: string;
+    endTime?: string;
     teaserMode?: TeaserMode;
     shortTerms?: string;
     testMode?: boolean;
@@ -72,18 +76,6 @@ export async function POST(request: Request) {
     );
   }
 
-  let maxRedemptions: number | null = null;
-  if (body.maxRedemptions != null && body.maxRedemptions !== "") {
-    const limit = Number(body.maxRedemptions);
-    if (!Number.isInteger(limit) || limit < 1) {
-      return NextResponse.json(
-        { error: "Maximum redemptions must be a whole number of 1 or more." },
-        { status: 400 },
-      );
-    }
-    maxRedemptions = limit;
-  }
-
   const merchant = await upsertMerchant({
     displayName: merchantName,
     category,
@@ -97,6 +89,38 @@ export async function POST(request: Request) {
     lat,
     lng,
   });
+
+  const validMode = body.validMode === "until" ? "until" : "days";
+  let endsAt: Date | null = null;
+  if (validMode === "days") {
+    const days = Number(body.validDays);
+    if (!Number.isInteger(days) || days < 1 || days > 365) {
+      return NextResponse.json(
+        { error: "Offer length must be a whole number of days from 1 to 365." },
+        { status: 400 },
+      );
+    }
+    endsAt = endOfLocalDays(location.timezone, days);
+  } else {
+    endsAt = parseZonedDateTime(
+      location.timezone,
+      String(body.endDate ?? ""),
+      String(body.endTime ?? ""),
+    );
+    if (!endsAt) {
+      return NextResponse.json(
+        { error: "Pick an end date and time." },
+        { status: 400 },
+      );
+    }
+  }
+  if (endsAt.getTime() <= Date.now()) {
+    return NextResponse.json(
+      { error: "Offer end must be in the future." },
+      { status: 400 },
+    );
+  }
+
   const promotion = await upsertPromotion({
     merchantId: merchant.id,
     locationId: location.id,
@@ -120,7 +144,8 @@ export async function POST(request: Request) {
         : "merchant_hidden",
     shortTerms: String(body.shortTerms ?? "").trim(),
     radiusMiles: Number(body.radiusMiles ?? 1.5) || 1.5,
-    maxRedemptions,
+    startsAt: new Date(),
+    endsAt,
     testMode: Boolean(body.testMode),
   });
   await upsertUser({

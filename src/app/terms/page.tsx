@@ -13,7 +13,9 @@ export default function TermsPage() {
           Nearby offers are optional and free to claim. You pay $0. Claiming
           asks for name, email, and phone, then a confirmation link to that
           email. A claimed voucher is not a purchase from BearGo. The promoting
-          merchant applies the discount in their own checkout.
+          merchant applies the discount in their own checkout. A voucher is
+          valid through the time printed on it, even if the merchant later
+          cancels the offer.
         </p>
         <p>Houston, Texas. Contact hello@beargo.pro.</p>
       </div>

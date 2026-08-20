@@ -13,6 +13,7 @@ import {
 } from "./schema";
 import { normalizeEmail } from "../lib/normalize";
 import { SEED_QUESTIONS } from "../lib/questions";
+import { endOfLocalDays } from "../lib/zoned";
 
 const url =
   process.env.DATABASE_URL || "postgresql://beargo:beargo@localhost:5432/beargo";
@@ -130,9 +131,11 @@ const PROMOTIONS = [
     validMinutesStart: 0,
     validMinutesEnd: 24 * 60 - 1,
     voucherExpireHour: 1,
-    maxRedemptions: 200,
+    maxRedemptions: null as number | null,
     radiusMiles: 1.5,
     testMode: true,
+    startsAt: new Date(),
+    endsAt: endOfLocalDays("America/Chicago", 30),
   },
   {
     id: "eastside-20-off",
@@ -152,9 +155,11 @@ const PROMOTIONS = [
     validMinutesStart: 0,
     validMinutesEnd: 24 * 60 - 1,
     voucherExpireHour: 1,
-    maxRedemptions: 100,
+    maxRedemptions: null as number | null,
     radiusMiles: 1.5,
     testMode: true,
+    startsAt: new Date(),
+    endsAt: endOfLocalDays("America/Chicago", 30),
   },
 ];
 
@@ -441,6 +446,8 @@ async function main() {
           validMinutesEnd: sql`excluded.valid_minutes_end`,
           voucherExpireHour: sql`excluded.voucher_expire_hour`,
           maxRedemptions: sql`excluded.max_redemptions`,
+          startsAt: sql`excluded.starts_at`,
+          endsAt: sql`excluded.ends_at`,
           radiusMiles: sql`excluded.radius_miles`,
           testMode: sql`excluded.test_mode`,
         },

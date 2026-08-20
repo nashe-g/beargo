@@ -69,6 +69,33 @@ export function zonedDate(
   return new Date(utc);
 }
 
+export function endOfLocalDays(timeZone: string, days: number, at = new Date()) {
+  const now = localParts(timeZone, at);
+  const civil = shiftCivil(now.year, now.month, now.day, days - 1);
+  return zonedDate(timeZone, civil.year, civil.month, civil.day, 23, 59);
+}
+
+export function parseZonedDateTime(
+  timeZone: string,
+  date: string,
+  time: string,
+) {
+  const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date.trim());
+  const timeMatch = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec(time.trim());
+  if (!dateMatch || !timeMatch) return null;
+  const hour = Number(timeMatch[1]);
+  const minute = Number(timeMatch[2]);
+  if (hour > 23 || minute > 59) return null;
+  return zonedDate(
+    timeZone,
+    Number(dateMatch[1]),
+    Number(dateMatch[2]),
+    Number(dateMatch[3]),
+    hour,
+    minute,
+  );
+}
+
 export function nextLocalHour(timeZone: string, hour: number, at = new Date()) {
   const now = localParts(timeZone, at);
   let target = zonedDate(timeZone, now.year, now.month, now.day, hour, 0);

@@ -10,7 +10,6 @@ import {
 } from "@/lib/offer";
 import {
   listPromotions,
-  remainingRedemptions,
   type PromotionRecord,
 } from "@/lib/promotions";
 import { localParts, urgencyCopy } from "@/lib/zoned";
@@ -61,7 +60,7 @@ function inWindow(promotion: PromotionRecord, at: Date) {
   if (promotion.startsAt && promotion.startsAt.getTime() > at.getTime()) {
     return false;
   }
-  if (promotion.endsAt && promotion.endsAt.getTime() < at.getTime()) {
+  if (promotion.endsAt && promotion.endsAt.getTime() <= at.getTime()) {
     return false;
   }
   const parts = localParts(promotion.location.timezone, at);
@@ -156,8 +155,6 @@ export async function listNearbyOffersForHost(
       continue;
     }
     if (!inWindow(promotion, at)) continue;
-    const remaining = await remainingRedemptions(promotion);
-    if (remaining <= 0) continue;
     if (extra.deviceKey) {
       const [existing] = await db()
         .select({ id: vouchers.id })

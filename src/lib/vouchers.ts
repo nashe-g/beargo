@@ -1,10 +1,10 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { ledgerEntries, promotions, vouchers } from "@/db/schema";
+import { ledgerEntries, vouchers } from "@/db/schema";
 import { isoRequired } from "@/lib/money";
-import { BEARGO_FEE_CENTS, discountForSubtotal, type VoucherStatus } from "@/lib/offer";
-import { getPromotion, remainingRedemptions, type PromotionRecord } from "@/lib/promotions";
+import { BEARGO_FEE_CENTS, discountForSubtotal, offerAcceptsNewClaims, type VoucherStatus } from "@/lib/offer";
+import { getPromotion, type PromotionRecord } from "@/lib/promotions";
 import { nextLocalHour } from "@/lib/zoned";
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -151,15 +151,16 @@ export async function claimVoucher(input: {
     if (existing) return mapVoucher(existing);
   }
 
-  const remaining = await remainingRedemptions(input.promotion);
-  if (remaining <= 0) {
+  if (!offerAcceptsNewClaims(input.promotion)) {
     throw new Error("This offer is no longer available.");
   }
 
-  const expiresAt = nextLocalHour(
-    input.promotion.location.timezone,
-    input.promotion.voucherExpireHour,
-  );
+  const expiresAt = input.promotion.endsAt
+    ? input.promotion.endsAt
+    : nextLocalHour(
+        input.promotion.location.timezone,
+        input.promotion.voucherExpireHour,
+      );
 
   for (let attempt = 0; attempt < 8; attempt += 1) {
     const id = randomUUID();
@@ -321,24 +322,6 @@ export async function redeemVoucher(input: {
           note: "Verified in-person redemption",
         })
         .onConflictDoNothing();
-    }
-
-    if (preview.promotion.maxRedemptions != null) {
-      const [countRow] = await tx
-        .select({ count: sql<number>`count(*)::int` })
-        .from(vouchers)
-        .where(
-          and(
-            eq(vouchers.promotionId, preview.promotion.id),
-            eq(vouchers.status, "redeemed"),
-          ),
-        );
-      if ((countRow?.count ?? 0) >= preview.promotion.maxRedemptions) {
-        await tx
-          .update(promotions)
-          .set({ status: "capped" })
-          .where(eq(promotions.id, preview.promotion.id));
-      }
     }
 
     return {

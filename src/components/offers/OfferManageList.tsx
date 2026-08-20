@@ -6,9 +6,9 @@ import { CardMenu } from "@/components/ui/CardMenu";
 import {
   canCancelPromotion,
   promotionStatusLabel,
-  redemptionLimitLabel,
   type PromotionStatus,
 } from "@/lib/offer";
+import { offerWindowLabel } from "@/lib/format";
 
 export type ManageOfferCard = {
   id: string;
@@ -17,8 +17,7 @@ export type ManageOfferCard = {
   subtitle: string;
   detail?: string;
   shortTerms?: string | null;
-  maxRedemptions: number | null;
-  remaining: number | null;
+  validThrough: string | null;
   testMode: boolean;
 };
 
@@ -96,7 +95,10 @@ export function OfferManageList({
                 <p className="mt-1 text-sm text-ink-soft">{offer.detail}</p>
               ) : null}
               <p className="mt-2 text-sm text-ink-soft">
-                {redemptionLimitLabel(offer.maxRedemptions, offer.remaining)}
+                {offerWindowLabel({
+                  status,
+                  until: offer.validThrough,
+                })}
                 {offer.testMode ? " · test (no $1 fee)" : ""}
               </p>
               {offer.shortTerms ? (

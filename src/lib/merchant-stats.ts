@@ -2,7 +2,6 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { ledgerEntries, vouchers } from "@/db/schema";
 import { dollarsFromCents } from "@/lib/money";
-import { BEARGO_FEE_CENTS } from "@/lib/offer";
 import { listPromotions, redemptionCount } from "@/lib/promotions";
 import { sessionCountsForPromotion } from "@/lib/scan-session";
 
@@ -51,15 +50,6 @@ export async function merchantDashboard(merchantId: string) {
     );
   const feesCents = feeRows.reduce((sum, row) => sum + row.amountCents, 0);
 
-  const remaining = promotions.reduce((sum, promotion) => {
-    if (promotion.maxRedemptions == null) return sum;
-    const used = voucherRows.filter(
-      (row) =>
-        row.promotionId === promotion.id && row.status === "redeemed",
-    ).length;
-    return sum + Math.max(0, promotion.maxRedemptions - used);
-  }, 0);
-
   return {
     teasersShown,
     teasersOpened,
@@ -67,7 +57,6 @@ export async function merchantDashboard(merchantId: string) {
     claims,
     redeemed,
     fees: dollarsFromCents(feesCents),
-    remainingBudget: dollarsFromCents(remaining * BEARGO_FEE_CENTS),
     teaserOpenRate: rate(teasersOpened, teasersShown),
     claimRate: rate(claims, offerViews),
     redemptionRate: rate(redeemed, claims),

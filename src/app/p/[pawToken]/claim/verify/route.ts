@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { offerAcceptsNewClaims } from "@/lib/offer";
 import { getPromotion } from "@/lib/promotions";
 import {
   PLAYER_COOKIE,
@@ -41,7 +42,7 @@ export async function GET(
 
   const paw = await getPaw(pawToken);
   const promotion = await getPromotion(claim.promotionId);
-  if (!promotion || promotion.status !== "live") {
+  if (!promotion || !offerAcceptsNewClaims(promotion)) {
     return NextResponse.redirect(new URL(`/p/${pawToken}/result`, url.origin));
   }
 

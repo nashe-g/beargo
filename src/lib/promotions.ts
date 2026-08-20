@@ -292,11 +292,12 @@ export async function upsertPromotion(input: {
   teaserMode?: TeaserMode;
   shortTerms?: string;
   restrictions?: string | null;
+  startsAt?: Date | null;
+  endsAt?: Date | null;
   validWeekdays?: number[];
   validMinutesStart?: number;
   validMinutesEnd?: number;
   voucherExpireHour?: number;
-  maxRedemptions?: number | null;
   radiusMiles?: number;
   testMode?: boolean;
   eligibleHostIds?: string[];
@@ -318,11 +319,13 @@ export async function upsertPromotion(input: {
       teaserMode: input.teaserMode ?? "merchant_hidden",
       shortTerms: input.shortTerms ?? "",
       restrictions: input.restrictions ?? null,
+      startsAt: input.startsAt ?? new Date(),
+      endsAt: input.endsAt ?? null,
       validWeekdays: input.validWeekdays ?? [0, 1, 2, 3, 4, 5, 6],
       validMinutesStart: input.validMinutesStart ?? 0,
       validMinutesEnd: input.validMinutesEnd ?? 24 * 60 - 1,
       voucherExpireHour: input.voucherExpireHour ?? 1,
-      maxRedemptions: input.maxRedemptions ?? null,
+      maxRedemptions: null,
       radiusMiles: input.radiusMiles ?? 1.5,
       testMode: input.testMode ?? false,
     })
@@ -340,11 +343,13 @@ export async function upsertPromotion(input: {
         teaserMode: input.teaserMode ?? "merchant_hidden",
         shortTerms: input.shortTerms ?? "",
         restrictions: input.restrictions ?? null,
+        startsAt: input.startsAt ?? new Date(),
+        endsAt: input.endsAt ?? null,
         validWeekdays: input.validWeekdays ?? [0, 1, 2, 3, 4, 5, 6],
         validMinutesStart: input.validMinutesStart ?? 0,
         validMinutesEnd: input.validMinutesEnd ?? 24 * 60 - 1,
         voucherExpireHour: input.voucherExpireHour ?? 1,
-        maxRedemptions: input.maxRedemptions ?? null,
+        maxRedemptions: null,
         radiusMiles: input.radiusMiles ?? 1.5,
         testMode: input.testMode ?? false,
       },

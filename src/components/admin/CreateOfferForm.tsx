@@ -42,8 +42,10 @@ export function CreateOfferForm() {
   const [minimum, setMinimum] = useState("30");
   const [maxOff, setMaxOff] = useState("5");
   const [radiusMiles, setRadiusMiles] = useState("1.5");
-  const [capMode, setCapMode] = useState<"none" | "limit">("none");
-  const [maxRedemptions, setMaxRedemptions] = useState("");
+  const [validMode, setValidMode] = useState<"days" | "until">("days");
+  const [validDays, setValidDays] = useState("7");
+  const [endDate, setEndDate] = useState("");
+  const [endTime, setEndTime] = useState("");
   const [teaserMode, setTeaserMode] = useState("merchant_hidden");
   const [shortTerms, setShortTerms] = useState("");
   const [testMode, setTestMode] = useState(false);
@@ -70,8 +72,10 @@ export function CreateOfferForm() {
         minimumPurchase: Number(minimum),
         maxDiscount: Number(maxOff),
         radiusMiles: Number(radiusMiles),
-        maxRedemptions:
-          capMode === "limit" ? Number(maxRedemptions) : null,
+        validMode,
+        validDays: Number(validDays),
+        endDate,
+        endTime,
         teaserMode,
         shortTerms,
         testMode,
@@ -90,8 +94,10 @@ export function CreateOfferForm() {
     setNeighborhood("");
     setLat("");
     setLng("");
-    setCapMode("none");
-    setMaxRedemptions("");
+    setValidMode("days");
+    setValidDays("7");
+    setEndDate("");
+    setEndTime("");
     setShortTerms("");
     setError("");
     router.refresh();
@@ -224,33 +230,56 @@ export function CreateOfferForm() {
           />
         </Field>
       </div>
-      <Field label="Redemption limit">
+      <Field label="How long this offer runs">
         <select
-          value={capMode}
+          value={validMode}
           onChange={(event) =>
-            setCapMode(event.target.value as "none" | "limit")
+            setValidMode(event.target.value as "days" | "until")
           }
           className={fieldClass}
         >
-          <option value="none">No limit — keep running until canceled</option>
-          <option value="limit">Stop after a set number of redemptions</option>
+          <option value="days">A number of days</option>
+          <option value="until">Until a date and time</option>
         </select>
       </Field>
-      {capMode === "limit" ? (
-        <Field label="Maximum redemptions">
+      {validMode === "days" ? (
+        <Field label="Number of days">
           <input
             required
-            value={maxRedemptions}
-            onChange={(event) => setMaxRedemptions(event.target.value)}
+            value={validDays}
+            onChange={(event) => setValidDays(event.target.value)}
             inputMode="numeric"
             min={1}
+            max={365}
             className={fieldClass}
           />
         </Field>
-      ) : null}
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="End date">
+            <input
+              required
+              type="date"
+              value={endDate}
+              onChange={(event) => setEndDate(event.target.value)}
+              className={fieldClass}
+            />
+          </Field>
+          <Field label="End time">
+            <input
+              required
+              type="time"
+              value={endTime}
+              onChange={(event) => setEndTime(event.target.value)}
+              className={fieldClass}
+            />
+          </Field>
+        </div>
+      )}
       <p className="px-1 text-sm text-ink-soft">
-        This limits how many confirmed visits this offer can have. Seeing or
-        claiming the offer does not count. Each confirmed visit bills $1.
+        {validMode === "days"
+          ? "Including today. Ends at 11:59 PM local time on the last day. Players can claim until then. Issued vouchers stay valid through that same end, even if the offer is later canceled."
+          : "Date and time are in the business’s local timezone. Players can claim until this moment. Issued vouchers stay valid through this same end, even if the offer is later canceled."}
       </p>
       <Field label="Teaser">
         <select
