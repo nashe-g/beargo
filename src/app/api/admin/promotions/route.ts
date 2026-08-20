@@ -28,6 +28,7 @@ export async function POST(request: Request) {
     minimumPurchase?: number;
     maxDiscount?: number;
     radiusMiles?: number;
+    maxRedemptions?: number | null | "";
     teaserMode?: TeaserMode;
     shortTerms?: string;
     testMode?: boolean;
@@ -71,6 +72,18 @@ export async function POST(request: Request) {
     );
   }
 
+  let maxRedemptions: number | null = null;
+  if (body.maxRedemptions != null && body.maxRedemptions !== "") {
+    const limit = Number(body.maxRedemptions);
+    if (!Number.isInteger(limit) || limit < 1) {
+      return NextResponse.json(
+        { error: "Maximum redemptions must be a whole number of 1 or more." },
+        { status: 400 },
+      );
+    }
+    maxRedemptions = limit;
+  }
+
   const merchant = await upsertMerchant({
     displayName: merchantName,
     category,
@@ -107,6 +120,7 @@ export async function POST(request: Request) {
         : "merchant_hidden",
     shortTerms: String(body.shortTerms ?? "").trim(),
     radiusMiles: Number(body.radiusMiles ?? 1.5) || 1.5,
+    maxRedemptions,
     testMode: Boolean(body.testMode),
   });
   await upsertUser({

@@ -360,6 +360,15 @@ export async function patchPromotionStatus(id: string, status: PromotionStatus) 
   return getPromotion(id);
 }
 
+export async function cancelPromotion(id: string) {
+  const current = await getPromotion(id);
+  if (!current) return null;
+  if (current.status === "cancelled" || current.status === "ended") {
+    return current;
+  }
+  return patchPromotionStatus(id, "cancelled");
+}
+
 export async function redemptionCount(promotionId: string) {
   const [row] = await db()
     .select({ count: sql<number>`count(*)::int` })

@@ -1,4 +1,5 @@
 import { MerchantShell } from "@/components/merchant/MerchantShell";
+import { OfferManageList } from "@/components/offers/OfferManageList";
 import { requireMerchant } from "@/lib/merchant-auth";
 import { offerTitle } from "@/lib/offer";
 import { listPromotions, remainingRedemptions } from "@/lib/promotions";
@@ -8,55 +9,39 @@ export const dynamic = "force-dynamic";
 export default async function MerchantPromotionsPage() {
   const merchant = await requireMerchant();
   const promotions = await listPromotions(merchant.id);
-  const remainingById = Object.fromEntries(
-    await Promise.all(
-      promotions.map(async (promotion) => [
-        promotion.id,
-        await remainingRedemptions(promotion),
-      ]),
-    ),
-  ) as Record<string, number>;
+
+  const offers = await Promise.all(
+    promotions.map(async (promotion) => {
+      const remaining = await remainingRedemptions(promotion);
+      return {
+        id: promotion.id,
+        status: promotion.status,
+        title: offerTitle(promotion),
+        subtitle: promotion.location.name,
+        detail: promotion.location.address,
+        shortTerms: promotion.shortTerms,
+        maxRedemptions: promotion.maxRedemptions,
+        remaining: Number.isFinite(remaining) ? remaining : null,
+        testMode: promotion.testMode,
+      };
+    }),
+  );
 
   return (
     <MerchantShell merchant={merchant} current="/merchant/promotions">
       <h1 className="font-display text-4xl">Offers</h1>
-      <p className="mt-3 text-ink-soft">
-        BearGo shows one nearby offer after the game. You pay $1 only on
-        redemption.
+      <p className="mt-3 max-w-2xl text-ink-soft">
+        BearGo shows one nearby offer after the game. Players can see it and
+        claim a voucher at no charge. BearGo bills $1 when your staff confirms
+        the visit in person.
       </p>
-      <ul className="mt-8 space-y-4">
-        {promotions.length === 0 ? (
-          <li className="text-ink-soft">
-            No offers yet. Ask BearGo to create one.
-          </li>
-        ) : (
-          promotions.map((promotion) => {
-            const remaining = remainingById[promotion.id];
-            return (
-              <li
-                key={promotion.id}
-                className="rounded-3xl border border-ink/10 px-5 py-5"
-              >
-                <p className="text-sm uppercase tracking-[0.16em] text-ink-soft">
-                  {promotion.status}
-                </p>
-                <h2 className="mt-1 font-display text-3xl">
-                  {offerTitle(promotion)}
-                </h2>
-                <p className="mt-2 text-ink-soft">{promotion.location.name}</p>
-                <p className="mt-2 text-sm text-ink-soft">
-                  Cap {promotion.maxRedemptions ?? "none"} · remaining{" "}
-                  {remaining === Infinity ? "unlimited" : remaining}
-                  {promotion.testMode ? " · test (no $1 fee)" : ""}
-                </p>
-                {promotion.shortTerms ? (
-                  <p className="mt-3">{promotion.shortTerms}</p>
-                ) : null}
-              </li>
-            );
-          })
-        )}
-      </ul>
+      {promotions.length === 0 ? (
+        <p className="mt-8 text-ink-soft">
+          No offers yet. Ask BearGo to create one.
+        </p>
+      ) : (
+        <OfferManageList offers={offers} role="merchant" />
+      )}
     </MerchantShell>
   );
 }

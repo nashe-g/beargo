@@ -42,6 +42,8 @@ export function CreateOfferForm() {
   const [minimum, setMinimum] = useState("30");
   const [maxOff, setMaxOff] = useState("5");
   const [radiusMiles, setRadiusMiles] = useState("1.5");
+  const [capMode, setCapMode] = useState<"none" | "limit">("none");
+  const [maxRedemptions, setMaxRedemptions] = useState("");
   const [teaserMode, setTeaserMode] = useState("merchant_hidden");
   const [shortTerms, setShortTerms] = useState("");
   const [testMode, setTestMode] = useState(false);
@@ -68,6 +70,8 @@ export function CreateOfferForm() {
         minimumPurchase: Number(minimum),
         maxDiscount: Number(maxOff),
         radiusMiles: Number(radiusMiles),
+        maxRedemptions:
+          capMode === "limit" ? Number(maxRedemptions) : null,
         teaserMode,
         shortTerms,
         testMode,
@@ -86,6 +90,8 @@ export function CreateOfferForm() {
     setNeighborhood("");
     setLat("");
     setLng("");
+    setCapMode("none");
+    setMaxRedemptions("");
     setShortTerms("");
     setError("");
     router.refresh();
@@ -218,6 +224,34 @@ export function CreateOfferForm() {
           />
         </Field>
       </div>
+      <Field label="Redemption limit">
+        <select
+          value={capMode}
+          onChange={(event) =>
+            setCapMode(event.target.value as "none" | "limit")
+          }
+          className={fieldClass}
+        >
+          <option value="none">No limit — keep running until canceled</option>
+          <option value="limit">Stop after a set number of redemptions</option>
+        </select>
+      </Field>
+      {capMode === "limit" ? (
+        <Field label="Maximum redemptions">
+          <input
+            required
+            value={maxRedemptions}
+            onChange={(event) => setMaxRedemptions(event.target.value)}
+            inputMode="numeric"
+            min={1}
+            className={fieldClass}
+          />
+        </Field>
+      ) : null}
+      <p className="px-1 text-sm text-ink-soft">
+        This limits how many confirmed visits this offer can have. Seeing or
+        claiming the offer does not count. Each confirmed visit bills $1.
+      </p>
       <Field label="Teaser">
         <select
           value={teaserMode}

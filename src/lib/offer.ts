@@ -46,7 +46,38 @@ export function resolvePromotionCategory(
 
 export type DiscountType = "fixed" | "percentage";
 export type TeaserMode = "merchant_hidden" | "merchant_visible";
-export type PromotionStatus = "draft" | "live" | "paused" | "ended" | "capped";
+export type PromotionStatus =
+  | "draft"
+  | "live"
+  | "paused"
+  | "ended"
+  | "capped"
+  | "cancelled";
+
+export function promotionStatusLabel(status: PromotionStatus | string) {
+  if (status === "cancelled") return "Canceled";
+  if (status === "capped") return "Redemption limit reached";
+  if (status === "live") return "Live";
+  if (status === "paused") return "Paused";
+  if (status === "ended") return "Ended";
+  if (status === "draft") return "Draft";
+  return status.replaceAll("_", " ");
+}
+
+export function canCancelPromotion(status: PromotionStatus | string) {
+  return status !== "cancelled" && status !== "ended";
+}
+
+export function redemptionLimitLabel(
+  maxRedemptions: number | null,
+  remaining: number | null,
+) {
+  if (maxRedemptions == null || remaining == null) {
+    return "No redemption limit";
+  }
+  return `${remaining} of ${maxRedemptions} redemptions left`;
+}
+
 export type VoucherStatus =
   | "claimed"
   | "redeemed"
