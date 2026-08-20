@@ -1,15 +1,20 @@
 import { MerchantShell } from "@/components/merchant/MerchantShell";
+import { CreateOfferForm } from "@/components/offers/CreateOfferForm";
 import { OfferManageList } from "@/components/offers/OfferManageList";
 import { formatStamp } from "@/lib/format";
 import { requireMerchant } from "@/lib/merchant-auth";
 import { displayPromotionStatus, offerTitle } from "@/lib/offer";
-import { listPromotions } from "@/lib/promotions";
+import { listLocations, listPromotions } from "@/lib/promotions";
 
 export const dynamic = "force-dynamic";
 
 export default async function MerchantPromotionsPage() {
   const merchant = await requireMerchant();
-  const promotions = await listPromotions(merchant.id);
+  const [promotions, locations] = await Promise.all([
+    listPromotions(merchant.id),
+    listLocations(merchant.id),
+  ]);
+  const location = locations[0];
   const offers = promotions.map((promotion) => ({
     id: promotion.id,
     status: displayPromotionStatus(promotion),
@@ -35,10 +40,25 @@ export default async function MerchantPromotionsPage() {
         the visit in person. Cancel anytime to stop new claims. Vouchers
         already issued stay valid through the offer end.
       </p>
+      <div className="mt-8">
+        <CreateOfferForm
+          role="merchant"
+          defaultCategory={merchant.category}
+          defaultLocation={
+            location
+              ? {
+                  address: location.address,
+                  city: location.city,
+                  neighborhood: location.neighborhood,
+                  lat: location.lat,
+                  lng: location.lng,
+                }
+              : undefined
+          }
+        />
+      </div>
       {promotions.length === 0 ? (
-        <p className="mt-8 text-ink-soft">
-          No offers yet. Ask BearGo to create one.
-        </p>
+        <p className="mt-8 text-ink-soft">No offers yet.</p>
       ) : (
         <OfferManageList offers={offers} role="merchant" />
       )}

@@ -1,12 +1,15 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { ADMIN_COOKIE } from "@/lib/admin-auth";
+import { MERCHANT_COOKIE } from "@/lib/merchant-auth";
 import { geocodeAddress } from "@/lib/geocode";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
-  const admin = (await cookies()).get(ADMIN_COOKIE)?.value === "1";
-  if (!admin) {
+  const jar = await cookies();
+  const admin = jar.get(ADMIN_COOKIE)?.value === "1";
+  const merchant = Boolean(jar.get(MERCHANT_COOKIE)?.value);
+  if (!admin && !merchant) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!rateLimit(clientKey(request, "geocode"), 20, 60_000)) {
