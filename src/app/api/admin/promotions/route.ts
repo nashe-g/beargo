@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { ADMIN_COOKIE } from "@/lib/admin-auth";
 import { audit } from "@/lib/audit";
 import { upsertUser } from "@/lib/auth";
-import { createLiveOffer, type OfferDraft } from "@/lib/create-offer";
+import { createOffer, type OfferDraft } from "@/lib/create-offer";
 import { resolvePromotionCategory } from "@/lib/offer";
 import { upsertMerchant } from "@/lib/promotions";
 
@@ -41,10 +41,11 @@ export async function POST(request: Request) {
     displayName: merchantName,
     category,
   });
-  const created = await createLiveOffer({
+  const created = await createOffer({
     merchant,
     draft: body,
     testMode: Boolean(body.testMode),
+    status: "live",
   });
   if ("error" in created) {
     return NextResponse.json(

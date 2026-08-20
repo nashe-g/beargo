@@ -18,6 +18,7 @@ export type ManageOfferCard = {
   detail?: string;
   shortTerms?: string | null;
   validThrough: string | null;
+  reviewNote?: string | null;
   testMode: boolean;
 };
 
@@ -68,7 +69,8 @@ export function OfferManageList({
               key={offer.id}
               className="relative rounded-3xl border border-ink/10 px-5 py-5"
             >
-              {canCancelPromotion(status) ? (
+              {canCancelPromotion(status) &&
+              !(role === "admin" && status === "pending") ? (
                 <CardMenu
                   label="Offer actions"
                   disabled={busyId === offer.id}
@@ -98,6 +100,7 @@ export function OfferManageList({
                 {offerWindowLabel({
                   status,
                   until: offer.validThrough,
+                  reviewNote: offer.reviewNote,
                 })}
                 {offer.testMode ? " · test (no $1 fee)" : ""}
               </p>

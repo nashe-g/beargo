@@ -148,6 +148,7 @@ export const promotions = pgTable("promotions", {
   maxRedemptions: integer("max_redemptions"),
   radiusMiles: doublePrecision("radius_miles").notNull().default(1.5),
   testMode: boolean("test_mode").notNull().default(false),
+  rejectionReason: text("rejection_reason"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

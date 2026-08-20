@@ -277,6 +277,7 @@ async function migrateSchema() {
       test_mode boolean NOT NULL DEFAULT false,
       created_at timestamptz NOT NULL DEFAULT now()
     );
+    ALTER TABLE promotions ADD COLUMN IF NOT EXISTS rejection_reason text;
 
     CREATE TABLE IF NOT EXISTS promotion_hosts (
       promotion_id text NOT NULL REFERENCES promotions(id),

@@ -22,6 +22,7 @@ export default async function MerchantDashboardPage() {
           promotion.location.timezone,
         )
       : null,
+    reviewNote: promotion.rejectionReason,
     testMode: promotion.testMode,
   }));
 

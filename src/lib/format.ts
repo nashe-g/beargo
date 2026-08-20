@@ -19,7 +19,16 @@ export function formatStamp(iso: string, timeZone: string) {
 export function offerWindowLabel(input: {
   status: string;
   until: string | null;
+  reviewNote?: string | null;
 }) {
+  if (input.status === "pending") {
+    return "Waiting for BearGo to review. Not live yet.";
+  }
+  if (input.status === "rejected") {
+    return input.reviewNote
+      ? `Declined: ${input.reviewNote}`
+      : "Declined by BearGo.";
+  }
   if (input.status === "cancelled") {
     return input.until
       ? `No new claims. Issued vouchers valid through ${input.until}`

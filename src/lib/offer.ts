@@ -48,14 +48,18 @@ export type DiscountType = "fixed" | "percentage";
 export type TeaserMode = "merchant_hidden" | "merchant_visible";
 export type PromotionStatus =
   | "draft"
+  | "pending"
   | "live"
   | "paused"
   | "ended"
   | "capped"
-  | "cancelled";
+  | "cancelled"
+  | "rejected";
 
 export function promotionStatusLabel(status: PromotionStatus | string) {
   if (status === "cancelled") return "Canceled";
+  if (status === "rejected") return "Declined";
+  if (status === "pending") return "Pending review";
   if (status === "capped") return "Ended";
   if (status === "live") return "Live";
   if (status === "paused") return "Paused";
@@ -71,7 +75,13 @@ export function displayPromotionStatus(
   },
   at = new Date(),
 ): PromotionStatus {
-  if (promotion.status === "cancelled") return "cancelled";
+  if (
+    promotion.status === "cancelled" ||
+    promotion.status === "rejected" ||
+    promotion.status === "pending"
+  ) {
+    return promotion.status;
+  }
   if (promotion.status === "ended" || promotion.status === "capped") {
     return "ended";
   }
@@ -81,7 +91,12 @@ export function displayPromotionStatus(
 }
 
 export function canCancelPromotion(status: PromotionStatus | string) {
-  return status === "live" || status === "paused" || status === "draft";
+  return (
+    status === "live" ||
+    status === "paused" ||
+    status === "draft" ||
+    status === "pending"
+  );
 }
 
 export function offerAcceptsNewClaims(

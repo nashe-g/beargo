@@ -6,6 +6,7 @@ import {
   merchants,
   promotionHosts,
   promotions,
+  users,
   vouchers,
 } from "@/db/schema";
 import { dollarsFromCents } from "@/lib/money";
@@ -62,6 +63,7 @@ export type PromotionRecord = {
   maxRedemptions: number | null;
   radiusMiles: number;
   testMode: boolean;
+  rejectionReason?: string | null;
   eligibleHostIds: string[];
   merchant: MerchantRecord;
   location: MerchantLocationRecord;
@@ -240,6 +242,7 @@ async function hydratePromotion(
     maxRedemptions: row.maxRedemptions,
     radiusMiles: row.radiusMiles,
     testMode: row.testMode,
+    rejectionReason: row.rejectionReason,
     eligibleHostIds: hostRows.map((item) => item.hostId),
     merchant,
     location,
@@ -247,6 +250,7 @@ async function hydratePromotion(
 }
 
 export async function listPromotions(merchantId?: string) {
+  await ensurePromotionReviewColumn();
   const rows = merchantId
     ? await db()
         .select()
@@ -259,6 +263,7 @@ export async function listPromotions(merchantId?: string) {
 }
 
 export async function getPromotion(id: string) {
+  await ensurePromotionReviewColumn();
   const [row] = await db()
     .select()
     .from(promotions)
@@ -372,6 +377,73 @@ export async function cancelPromotion(id: string) {
     return current;
   }
   return patchPromotionStatus(id, "cancelled");
+}
+
+let reviewColumnReady = false;
+
+export async function ensurePromotionReviewColumn() {
+  if (reviewColumnReady) return;
+  await db().execute(
+    sql`ALTER TABLE promotions ADD COLUMN IF NOT EXISTS rejection_reason text`,
+  );
+  reviewColumnReady = true;
+}
+
+export async function emailsForMerchant(merchantId: string) {
+  const rows = await db()
+    .select({ email: users.email })
+    .from(users)
+    .where(eq(users.merchantId, merchantId));
+  return rows.map((row) => row.email);
+}
+
+export async function reviewPendingPromotion(
+  id: string,
+  input: { action: "approve" | "decline"; reason?: string },
+) {
+  const current = await getPromotion(id);
+  if (!current) return { ok: false as const, error: "Not found", status: 404 };
+  if (current.status !== "pending") {
+    return {
+      ok: false as const,
+      error: "This offer is not waiting for review.",
+      status: 400,
+    };
+  }
+  if (input.action === "approve") {
+    if (current.endsAt && current.endsAt.getTime() <= Date.now()) {
+      return {
+        ok: false as const,
+        error: "This offer’s end date has already passed.",
+        status: 400,
+      };
+    }
+    await db()
+      .update(promotions)
+      .set({ status: "live", rejectionReason: null })
+      .where(eq(promotions.id, id));
+    const promotion = await getPromotion(id);
+    return { ok: true as const, action: "approve" as const, promotion };
+  }
+  const reason = String(input.reason ?? "").trim();
+  if (reason.length < 3) {
+    return {
+      ok: false as const,
+      error: "Add a reason for the decline.",
+      status: 400,
+    };
+  }
+  await db()
+    .update(promotions)
+    .set({ status: "rejected", rejectionReason: reason })
+    .where(eq(promotions.id, id));
+  const promotion = await getPromotion(id);
+  return {
+    ok: true as const,
+    action: "decline" as const,
+    promotion,
+    reason,
+  };
 }
 
 export async function redemptionCount(promotionId: string) {

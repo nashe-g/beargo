@@ -1,12 +1,14 @@
 import { centsFromDollars } from "@/lib/money";
 import {
   type DiscountType,
+  type PromotionStatus,
   type TeaserMode,
   resolvePromotionCategory,
 } from "@/lib/offer";
 import {
   upsertLocation,
   upsertPromotion,
+  type MerchantLocationRecord,
   type MerchantRecord,
   type PromotionRecord,
 } from "@/lib/promotions";
@@ -32,27 +34,24 @@ export type OfferDraft = {
   shortTerms?: string;
 };
 
-export async function createLiveOffer(input: {
+export async function createOffer(input: {
   merchant: MerchantRecord;
   draft: OfferDraft;
   testMode: boolean;
+  status: Extract<PromotionStatus, "live" | "pending">;
+  lockedLocation?: MerchantLocationRecord;
 }): Promise<{ promotion: PromotionRecord } | { error: string; status: number }> {
-  const category = resolvePromotionCategory(
-    String(input.draft.category ?? "entertainment"),
-    String(input.draft.categoryOther ?? ""),
-  );
+  const category = input.lockedLocation
+    ? input.merchant.category
+    : resolvePromotionCategory(
+        String(input.draft.category ?? "entertainment"),
+        String(input.draft.categoryOther ?? ""),
+      );
   if (!category) {
     return {
       error: "Pick a category, or type one under Other.",
       status: 400,
     };
-  }
-
-  const address = String(input.draft.address ?? "").trim();
-  const lat = Number(input.draft.lat);
-  const lng = Number(input.draft.lng);
-  if (!address || !Number.isFinite(lat) || !Number.isFinite(lng)) {
-    return { error: "Address and coordinates required", status: 400 };
   }
 
   const discountType: DiscountType =
@@ -64,15 +63,24 @@ export async function createLiveOffer(input: {
     return { error: "Minimum purchase required", status: 400 };
   }
 
-  const location = await upsertLocation({
-    merchantId: input.merchant.id,
-    name: input.merchant.displayName,
-    address,
-    city: String(input.draft.city ?? "Houston"),
-    neighborhood: input.draft.neighborhood || null,
-    lat,
-    lng,
-  });
+  let location = input.lockedLocation ?? null;
+  if (!location) {
+    const address = String(input.draft.address ?? "").trim();
+    const lat = Number(input.draft.lat);
+    const lng = Number(input.draft.lng);
+    if (!address || !Number.isFinite(lat) || !Number.isFinite(lng)) {
+      return { error: "Address and coordinates required", status: 400 };
+    }
+    location = await upsertLocation({
+      merchantId: input.merchant.id,
+      name: input.merchant.displayName,
+      address,
+      city: String(input.draft.city ?? "Houston"),
+      neighborhood: input.draft.neighborhood || null,
+      lat,
+      lng,
+    });
+  }
 
   const endsAt = parseZonedDateTime(
     location.timezone,
@@ -89,7 +97,7 @@ export async function createLiveOffer(input: {
   const promotion = await upsertPromotion({
     merchantId: input.merchant.id,
     locationId: location.id,
-    status: "live",
+    status: input.status,
     discountType,
     discountAmountCents:
       discountType === "fixed"

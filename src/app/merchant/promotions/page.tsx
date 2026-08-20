@@ -28,6 +28,7 @@ export default async function MerchantPromotionsPage() {
           promotion.location.timezone,
         )
       : null,
+    reviewNote: promotion.rejectionReason,
     testMode: promotion.testMode,
   }));
 
@@ -38,24 +39,29 @@ export default async function MerchantPromotionsPage() {
         BearGo shows one nearby offer after the game. Players can see it and
         claim a voucher at no charge. BearGo bills $1 when your staff confirms
         the visit in person. Cancel anytime to stop new claims. Vouchers
-        already issued stay valid through the offer end.
+        already issued stay valid through the offer end. New offers wait for
+        BearGo review before players can see them.
       </p>
       <div className="mt-8">
-        <CreateOfferForm
-          role="merchant"
-          defaultCategory={merchant.category}
-          defaultLocation={
-            location
-              ? {
-                  address: location.address,
-                  city: location.city,
-                  neighborhood: location.neighborhood,
-                  lat: location.lat,
-                  lng: location.lng,
-                }
-              : undefined
-          }
-        />
+        {location ? (
+          <CreateOfferForm
+            role="merchant"
+            lockedName={merchant.displayName}
+            defaultCategory={merchant.category}
+            defaultLocation={{
+              address: location.address,
+              city: location.city,
+              neighborhood: location.neighborhood,
+              lat: location.lat,
+              lng: location.lng,
+            }}
+          />
+        ) : (
+          <p className="rounded-3xl border border-ink/10 px-5 py-5 text-ink-soft">
+            BearGo still needs to set your business address before you can add
+            an offer.
+          </p>
+        )}
       </div>
       {promotions.length === 0 ? (
         <p className="mt-8 text-ink-soft">No offers yet.</p>

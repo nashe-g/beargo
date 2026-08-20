@@ -3,7 +3,11 @@
 import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { AddressFields } from "@/components/admin/AddressFields";
-import { OTHER_CATEGORY, PROMOTION_CATEGORIES } from "@/lib/offer";
+import {
+  OTHER_CATEGORY,
+  PROMOTION_CATEGORIES,
+  categoryLabel,
+} from "@/lib/offer";
 
 const fieldClass =
   "h-12 w-full rounded-full border border-ink/15 px-4 outline-none focus:border-honey";
@@ -34,6 +38,7 @@ export function CreateOfferForm({
   role = "admin",
   defaultLocation,
   defaultCategory,
+  lockedName,
 }: {
   role?: "admin" | "merchant";
   defaultLocation?: {
@@ -44,6 +49,7 @@ export function CreateOfferForm({
     lng: number;
   };
   defaultCategory?: string;
+  lockedName?: string;
 }) {
   const router = useRouter();
   const starting = categoryDefaults(defaultCategory);
@@ -87,14 +93,20 @@ export function CreateOfferForm({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        ...(role === "admin" ? { merchantName, email, testMode } : {}),
-        category,
-        categoryOther,
-        address,
-        city,
-        neighborhood,
-        lat: Number(lat),
-        lng: Number(lng),
+        ...(role === "admin"
+          ? {
+              merchantName,
+              email,
+              testMode,
+              category,
+              categoryOther,
+              address,
+              city,
+              neighborhood,
+              lat: Number(lat),
+              lng: Number(lng),
+            }
+          : {}),
         discountType,
         discountAmount: Number(amount),
         discountPercent: Number(percent),
@@ -140,9 +152,26 @@ export function CreateOfferForm({
       </h2>
       <p className="text-sm text-ink-soft">
         {role === "merchant"
-          ? "Where customers redeem. BearGo uses this address to place the offer near host venues."
+          ? "Your business name and address stay as BearGo has them, so this offer cannot be placed at another shop. BearGo reviews it before players can see it."
           : "This is the business players visit. Enter its address so BearGo can place it near host venues."}
       </p>
+      {role === "merchant" ? (
+        <div className="rounded-3xl bg-ink/5 px-4 py-4 text-sm">
+          <p>{lockedName}</p>
+          <p className="mt-1 text-ink-soft">
+            {[
+              defaultLocation?.address,
+              defaultLocation?.neighborhood,
+              defaultLocation?.city,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+          <p className="mt-1 text-ink-soft">
+            {categoryLabel(defaultCategory ?? "")}
+          </p>
+        </div>
+      ) : null}
       {role === "admin" ? (
         <>
           <input
@@ -160,47 +189,47 @@ export function CreateOfferForm({
             placeholder="Merchant login email"
             className={fieldClass}
           />
+          <Field label="Category">
+            <select
+              value={category}
+              onChange={(event) => setCategory(event.target.value)}
+              className={fieldClass}
+            >
+              {PROMOTION_CATEGORIES.map((row) => (
+                <option key={row.id} value={row.id}>
+                  {row.label}
+                </option>
+              ))}
+              <option value={OTHER_CATEGORY}>Other</option>
+            </select>
+          </Field>
+          {category === OTHER_CATEGORY ? (
+            <Field label="What category is this?">
+              <input
+                required
+                value={categoryOther}
+                onChange={(event) => setCategoryOther(event.target.value)}
+                placeholder="e.g. Bookstore"
+                className={fieldClass}
+              />
+            </Field>
+          ) : null}
+          <AddressFields
+            address={address}
+            city={city}
+            neighborhood={neighborhood}
+            lat={lat}
+            lng={lng}
+            onChange={(patch) => {
+              if (patch.address != null) setAddress(patch.address);
+              if (patch.city != null) setCity(patch.city);
+              if (patch.neighborhood != null) setNeighborhood(patch.neighborhood);
+              if (patch.lat != null) setLat(patch.lat);
+              if (patch.lng != null) setLng(patch.lng);
+            }}
+          />
         </>
       ) : null}
-      <Field label="Category">
-        <select
-          value={category}
-          onChange={(event) => setCategory(event.target.value)}
-          className={fieldClass}
-        >
-          {PROMOTION_CATEGORIES.map((row) => (
-            <option key={row.id} value={row.id}>
-              {row.label}
-            </option>
-          ))}
-          <option value={OTHER_CATEGORY}>Other</option>
-        </select>
-      </Field>
-      {category === OTHER_CATEGORY ? (
-        <Field label="What category is this?">
-          <input
-            required
-            value={categoryOther}
-            onChange={(event) => setCategoryOther(event.target.value)}
-            placeholder="e.g. Bookstore"
-            className={fieldClass}
-          />
-        </Field>
-      ) : null}
-      <AddressFields
-        address={address}
-        city={city}
-        neighborhood={neighborhood}
-        lat={lat}
-        lng={lng}
-        onChange={(patch) => {
-          if (patch.address != null) setAddress(patch.address);
-          if (patch.city != null) setCity(patch.city);
-          if (patch.neighborhood != null) setNeighborhood(patch.neighborhood);
-          if (patch.lat != null) setLat(patch.lat);
-          if (patch.lng != null) setLng(patch.lng);
-        }}
-      />
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Discount">
           <select
@@ -316,7 +345,7 @@ export function CreateOfferForm({
         </label>
       ) : null}
       <button type="submit" className="h-12 rounded-full bg-ink px-5 text-paper">
-        Add live offer
+        {role === "merchant" ? "Submit for review" : "Add live offer"}
       </button>
       {error ? <p className="text-sm text-clay">{error}</p> : null}
     </form>

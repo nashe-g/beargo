@@ -77,9 +77,12 @@ export function StatusPill({ status }: { status: string }) {
       ? "bg-moss text-paper"
       : status === "paused" || status === "pending_verification"
         ? "bg-ink/10 text-ink-soft"
+        : status === "pending"
+          ? "bg-ink/10 text-ink-soft"
         : status === "duplicate" ||
             status === "ended" ||
             status === "cancelled" ||
+            status === "rejected" ||
             status === "inactive"
           ? "bg-clay/15 text-clay"
           : "bg-ink/10 text-ink-soft";
