@@ -1,5 +1,4 @@
 import { GameResult } from "@/components/scanner/GameResult";
-import { challengeForPaw } from "@/lib/daily-challenge";
 import { getHost } from "@/lib/hosts";
 import { getPaw } from "@/lib/paws";
 import { deviceKeyFromCookies } from "@/lib/scan-session";
@@ -13,7 +12,6 @@ export default async function ResultPage({
 }: PageProps<"/p/[pawToken]/result">) {
   const { pawToken } = await params;
   const paw = await getPaw(pawToken);
-  const challenge = await challengeForPaw(paw);
   const host = await getHost(paw.hostId);
   const deviceKey = await deviceKeyFromCookies();
   const claimed = deviceKey
@@ -30,7 +28,6 @@ export default async function ResultPage({
       claimedHref={
         claimed ? `/p/${pawToken}/voucher/${claimed.token}` : null
       }
-      questionIds={challenge.questions.map((question) => question.id)}
     />
   );
 }

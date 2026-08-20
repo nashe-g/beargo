@@ -1,3 +1,9 @@
+export type AttemptAnswer = {
+  questionId: string;
+  choiceId: string;
+  responseMs: number;
+};
+
 export type AttemptSnapshot = {
   correctCount: number;
   totalResponseMs: number;
@@ -5,6 +11,7 @@ export type AttemptSnapshot = {
   playerCount?: number;
   playersBeaten?: number;
   finishedAt: number;
+  answers?: AttemptAnswer[];
 };
 
 function storageKey(token: string) {
