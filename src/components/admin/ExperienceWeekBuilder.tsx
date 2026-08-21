@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -13,42 +13,12 @@ import {
   type InspirationSeed,
 } from "@/lib/experience";
 
-const WEEK_STORAGE_KEY = "beargo:admin:week-slots";
-
 type Slot = {
   seed: InspirationSeed;
   adaptationMode: AdaptationMode;
   notes: string;
   experience?: ExperienceRecord;
 };
-
-type StoredSlot = {
-  seedId: string;
-  adaptationMode: AdaptationMode;
-  notes: string;
-  experienceId?: string;
-};
-
-function readStoredSlots(): StoredSlot[] {
-  try {
-    const raw = sessionStorage.getItem(WEEK_STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as StoredSlot[];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeStoredSlots(slots: Slot[]) {
-  const payload: StoredSlot[] = slots.map((slot) => ({
-    seedId: slot.seed.id,
-    adaptationMode: slot.adaptationMode,
-    notes: slot.notes,
-    experienceId: slot.experience?.id,
-  }));
-  sessionStorage.setItem(WEEK_STORAGE_KEY, JSON.stringify(payload));
-}
 
 export function ExperienceWeekBuilder({
   library,
@@ -61,71 +31,14 @@ export function ExperienceWeekBuilder({
   const [query, setQuery] = useState("");
   const [format, setFormat] = useState("");
   const [paste, setPaste] = useState("");
-  const [slots, setSlots] = useState<Slot[] | null>(null);
+  const [slots, setSlots] = useState<Slot[]>([]);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
-  const readySlots = slots ?? [];
-
-  useEffect(() => {
-    let cancelled = false;
-    async function hydrate() {
-      const stored = readStoredSlots();
-      if (stored.length === 0) {
-        if (!cancelled) setSlots([]);
-        return;
-      }
-      const next: Slot[] = [];
-      for (const row of stored) {
-        const seed = library.find((item) => item.id === row.seedId);
-        if (!seed) continue;
-        let experience: ExperienceRecord | undefined;
-        if (row.experienceId) {
-          try {
-            const response = await fetch(
-              `/api/admin/experiences/${row.experienceId}`,
-            );
-            if (response.ok) {
-              const payload = (await response.json()) as {
-                experience?: ExperienceRecord;
-              };
-              experience = payload.experience;
-            }
-          } catch {
-            /* keep seed slot even if draft fetch fails */
-          }
-        }
-        next.push({
-          seed: flattenSeedForProduct(seed),
-          adaptationMode: adaptationModeForSeed(seed, row.adaptationMode),
-          notes: row.notes ?? "",
-          experience,
-        });
-      }
-      if (!cancelled) {
-        setSlots(next);
-        if (next.length > 0) {
-          setMessage(
-            `Restored ${next.length} day${next.length === 1 ? "" : "s"} from this browser session.`,
-          );
-        }
-      }
-    }
-    void hydrate();
-    return () => {
-      cancelled = true;
-    };
-  }, [library]);
-
-  useEffect(() => {
-    if (slots === null) return;
-    writeStoredSlots(slots);
-  }, [slots]);
-
   const selectedIds = useMemo(
-    () => new Set(readySlots.map((slot) => slot.seed.id)),
-    [readySlots],
+    () => new Set(slots.map((slot) => slot.seed.id)),
+    [slots],
   );
 
   const filtered = useMemo(() => {
@@ -146,7 +59,7 @@ export function ExperienceWeekBuilder({
   }, [library, query, format]);
 
   const warnings = weekDiversityWarnings(
-    readySlots.map((slot) => slot.seed.beargo_primary_format),
+    slots.map((slot) => slot.seed.beargo_primary_format),
   );
 
   function addSeed(seed: InspirationSeed) {
@@ -154,15 +67,14 @@ export function ExperienceWeekBuilder({
     setMessage("");
     const flat = flattenSeedForProduct(seed);
     setSlots((current) => {
-      const list = current ?? [];
-      if (list.some((slot) => slot.seed.id === flat.id)) return list;
-      if (list.length >= 7) {
+      if (current.some((slot) => slot.seed.id === flat.id)) return current;
+      if (current.length >= 7) {
         setError("A week is 7 seeds.");
-        return list;
+        return current;
       }
-      setMessage(`Added ${flat.id} as day ${list.length + 1}.`);
+      setMessage(`Added ${flat.id} as day ${current.length + 1}.`);
       return [
-        ...list,
+        ...current,
         {
           seed: flat,
           adaptationMode: adaptationModeForSeed(flat, "inspired"),
@@ -192,9 +104,7 @@ export function ExperienceWeekBuilder({
           };
         }),
       );
-      setMessage(
-        `Loaded ${rows.length} seed${rows.length === 1 ? "" : "s"} from paste.`,
-      );
+      setMessage(`Loaded ${rows.length} seed${rows.length === 1 ? "" : "s"} from paste.`);
     } catch {
       setError("That paste was not valid JSON.");
     }
@@ -209,7 +119,7 @@ export function ExperienceWeekBuilder({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          items: readySlots.map((slot) => ({
+          items: slots.map((slot) => ({
             seedId: slot.seed.id,
             seed: slot.seed,
             adaptationMode: slot.adaptationMode,
@@ -225,14 +135,12 @@ export function ExperienceWeekBuilder({
         setError(payload.error ?? "Could not create drafts.");
       } else {
         setSlots((current) =>
-          (current ?? []).map((slot, index) => ({
+          current.map((slot, index) => ({
             ...slot,
             experience: payload.experiences?.[index],
           })),
         );
-        setMessage(
-          "Drafts saved. Click Generate, then Edit for phone preview. Back won’t lose this week.",
-        );
+        setMessage("Drafts created. Generate copy next.");
       }
     } catch {
       setError("Could not create drafts.");
@@ -241,7 +149,7 @@ export function ExperienceWeekBuilder({
   }
 
   async function generateOne(index: number) {
-    const slot = readySlots[index];
+    const slot = slots[index];
     if (!slot?.experience) return;
     setBusy(`gen-${slot.experience.id}`);
     setError("");
@@ -258,7 +166,7 @@ export function ExperienceWeekBuilder({
         setError(payload.error ?? "Generate failed.");
       } else {
         setSlots((current) =>
-          (current ?? []).map((item, itemIndex) =>
+          current.map((item, itemIndex) =>
             itemIndex === index
               ? { ...item, experience: payload.experience }
               : item,
@@ -274,7 +182,7 @@ export function ExperienceWeekBuilder({
   async function generateAll() {
     setBusy("generate-all");
     setError("");
-    for (const [index, slot] of readySlots.entries()) {
+    for (const [index, slot] of slots.entries()) {
       if (!slot.experience) continue;
       setBusy(`gen-${slot.experience.id}`);
       try {
@@ -292,7 +200,7 @@ export function ExperienceWeekBuilder({
           return;
         }
         setSlots((current) =>
-          (current ?? []).map((item, itemIndex) =>
+          current.map((item, itemIndex) =>
             itemIndex === index
               ? { ...item, experience: payload.experience }
               : item,
@@ -305,17 +213,17 @@ export function ExperienceWeekBuilder({
       }
     }
     setBusy("");
-    setMessage("All days generated. Open Edit for phone preview.");
+    setMessage("All days generated.");
   }
 
   async function publish() {
     setBusy("publish");
     setError("");
     setMessage("");
-    const ids = readySlots
+    const ids = slots
       .map((slot) => slot.experience?.id)
       .filter((id): id is string => Boolean(id));
-    if (ids.length !== readySlots.length) {
+    if (ids.length !== slots.length) {
       setError("Create drafts first.");
       setBusy("");
       return;
@@ -335,7 +243,6 @@ export function ExperienceWeekBuilder({
           payload.blockers?.join(" ") || payload.error || "Publish failed.",
         );
       } else {
-        sessionStorage.removeItem(WEEK_STORAGE_KEY);
         setMessage("Published. Day 1 is live.");
         router.push("/admin/experiences");
         router.refresh();
@@ -346,17 +253,12 @@ export function ExperienceWeekBuilder({
     setBusy("");
   }
 
-  if (slots === null) {
-    return <p className="text-ink-soft">Loading this week…</p>;
-  }
-
   return (
     <div className="space-y-10">
       <section className="rounded-3xl border border-honey/40 bg-honey/10 px-6 py-6">
         <h2 className="font-display text-2xl">This week</h2>
         <p className="mt-2 text-ink-soft">
-          {readySlots.length} / 7 days. Order: Add → Create drafts → Generate →
-          Edit (phone preview) → Publish.
+          {slots.length} / 7 days. Add seeds below, then create drafts.
         </p>
         {warnings.map((warning) => (
           <p key={warning} className="mt-2 text-sm text-honey-deep">
@@ -365,14 +267,13 @@ export function ExperienceWeekBuilder({
         ))}
         {message ? <p className="mt-2 text-sm text-moss">{message}</p> : null}
         {error ? <p className="mt-2 text-clay">{error}</p> : null}
-        {readySlots.length === 0 ? (
+        {slots.length === 0 ? (
           <p className="mt-4 text-ink-soft">
-            Nothing selected yet. Click Add on a library seed. Drafts already
-            created also appear under Experiences → Recent drafts.
+            Nothing selected yet. Click Add on a library seed.
           </p>
         ) : (
           <ol className="mt-4 space-y-4">
-            {readySlots.map((slot, index) => (
+            {slots.map((slot, index) => (
               <li
                 key={slot.seed.id}
                 className="rounded-3xl border border-ink/10 bg-paper px-5 py-5"
@@ -387,7 +288,7 @@ export function ExperienceWeekBuilder({
                 <p className="mt-1 text-sm text-ink-soft">
                   {slot.seed.id} · {slot.seed.beargo_primary_format}
                   {slot.experience
-                    ? ` · ${slot.experience.body.interactions.length} interactions · ${slot.experience.status}`
+                    ? ` · ${slot.experience.body.interactions.length} interactions`
                     : ""}
                 </p>
                 <div className="mt-4 flex flex-wrap gap-3">
@@ -395,7 +296,7 @@ export function ExperienceWeekBuilder({
                     value={slot.adaptationMode}
                     onChange={(event) =>
                       setSlots((current) =>
-                        (current ?? []).map((item, itemIndex) =>
+                        current.map((item, itemIndex) =>
                           itemIndex === index
                             ? {
                                 ...item,
@@ -419,7 +320,7 @@ export function ExperienceWeekBuilder({
                     value={slot.notes}
                     onChange={(event) =>
                       setSlots((current) =>
-                        (current ?? []).map((item, itemIndex) =>
+                        current.map((item, itemIndex) =>
                           itemIndex === index
                             ? { ...item, notes: event.target.value }
                             : item,
@@ -433,9 +334,7 @@ export function ExperienceWeekBuilder({
                     type="button"
                     onClick={() => {
                       setSlots((current) =>
-                        (current ?? []).filter(
-                          (_, itemIndex) => itemIndex !== index,
-                        ),
+                        current.filter((_, itemIndex) => itemIndex !== index),
                       );
                       setMessage("");
                     }}
@@ -459,7 +358,7 @@ export function ExperienceWeekBuilder({
                         href={`/admin/experiences/${slot.experience.id}`}
                         className="flex h-11 items-center rounded-full border border-ink/20 px-4 text-sm"
                       >
-                        Edit
+                        Edit / preview
                       </Link>
                     </>
                   ) : null}
@@ -472,7 +371,7 @@ export function ExperienceWeekBuilder({
         <div className="mt-6 flex flex-wrap gap-3">
           <button
             type="button"
-            disabled={Boolean(busy) || readySlots.length === 0}
+            disabled={Boolean(busy) || slots.length === 0}
             onClick={createDrafts}
             className="h-12 rounded-full bg-ink px-5 text-paper disabled:opacity-40"
           >
@@ -483,7 +382,7 @@ export function ExperienceWeekBuilder({
             disabled={
               Boolean(busy) ||
               !configured ||
-              readySlots.some((slot) => !slot.experience)
+              slots.some((slot) => !slot.experience)
             }
             onClick={generateAll}
             className="h-12 rounded-full border border-ink/20 px-5 disabled:opacity-40"
@@ -496,27 +395,14 @@ export function ExperienceWeekBuilder({
             type="button"
             disabled={
               Boolean(busy) ||
-              readySlots.length === 0 ||
-              readySlots.some((slot) => !slot.experience)
+              slots.length === 0 ||
+              slots.some((slot) => !slot.experience)
             }
             onClick={publish}
             className="h-12 rounded-full bg-honey px-5 font-semibold text-ink disabled:opacity-40"
           >
             {busy === "publish" ? "Publishing…" : "Publish week"}
           </button>
-          {readySlots.length > 0 ? (
-            <button
-              type="button"
-              onClick={() => {
-                sessionStorage.removeItem(WEEK_STORAGE_KEY);
-                setSlots([]);
-                setMessage("Cleared this week tray.");
-              }}
-              className="h-12 rounded-full border border-ink/20 px-5 text-sm"
-            >
-              Clear tray
-            </button>
-          ) : null}
         </div>
       </section>
 
@@ -575,7 +461,7 @@ export function ExperienceWeekBuilder({
                   </div>
                   <button
                     type="button"
-                    disabled={added || readySlots.length >= 7}
+                    disabled={added || slots.length >= 7}
                     onClick={() => addSeed(seed)}
                     className={`h-10 rounded-full px-4 text-sm ${
                       added

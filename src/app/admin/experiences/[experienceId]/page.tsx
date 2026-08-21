@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { AdminShell, StatusPill } from "@/components/admin/AdminShell";
 import { ExperienceEditor } from "@/components/admin/ExperienceEditor";
 import { requireAdmin } from "@/lib/admin-auth";
@@ -22,13 +21,7 @@ export default async function ExperienceEditPage({
 
   return (
     <AdminShell current="/admin/experiences">
-      <Link
-        href="/admin/experiences/new"
-        className="text-sm text-ink-soft underline-offset-2 hover:underline"
-      >
-        ← Back to this week
-      </Link>
-      <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-sm tracking-[0.2em] uppercase text-ink-soft">
             {experience.format} · {experience.adaptationMode.replace("_", " ")}
@@ -36,10 +29,6 @@ export default async function ExperienceEditPage({
           <h1 className="mt-2 font-display text-4xl">
             {experience.title || experience.seedId}
           </h1>
-          <p className="mt-2 max-w-2xl text-ink-soft">
-            Generate a draft first, then use Preview on phone. Your week tray
-            is saved in this browser until you publish or clear it.
-          </p>
         </div>
         <StatusPill status={experience.status} />
       </div>

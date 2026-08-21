@@ -166,8 +166,8 @@ export function payoffKindForFormat(format: string): ExperiencePayoff["kind"] {
 export function emptyExperienceBody(format: string, seed?: InspirationSeed): ExperienceBody {
   const live = liveFormat(format);
   return {
-    title: seed?.source_title || seed?.original_beargo_inspiration?.slice(0, 80) || "",
-    hook: seed?.hook_pattern || seed?.original_beargo_inspiration || "",
+    title: seed?.original_beargo_inspiration?.slice(0, 80) || seed?.source_title || "",
+    hook: seed?.hook_pattern || "",
     format: live,
     estimatedDurationSeconds: seed?.suggested_beargo_length_seconds ?? 45,
     interactions: [],
