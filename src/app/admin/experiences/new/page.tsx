@@ -17,7 +17,9 @@ export default async function NewExperienceWeekPage() {
       </p>
       <div className="mt-8">
         <ExperienceWeekBuilder
-          library={loadInspirationLibrary()}
+          library={JSON.parse(
+            JSON.stringify(loadInspirationLibrary()),
+          ) as ReturnType<typeof loadInspirationLibrary>}
           configured={llmConfigured()}
         />
       </div>
