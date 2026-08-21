@@ -1,6 +1,8 @@
 export const APP_NAME = "BearGo";
 export const CANONICAL_HOST = "beargo.pro";
 export const CANONICAL_ORIGIN = "https://beargo.pro";
+export const BEARGO_DAY_ZONE = "America/Chicago";
+export const GLOBAL_CHALLENGE_HOST = "global";
 
 export function pawScanUrl(token: string, origin: string = CANONICAL_ORIGIN) {
   return `${origin.replace(/\/$/, "")}/p/${encodeURIComponent(token)}`;

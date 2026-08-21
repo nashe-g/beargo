@@ -10,7 +10,7 @@ function badge(
     return { label: "Blocked", className: "bg-ink/10 text-ink-soft" };
   }
   if (item.promotion.id === shownId) {
-    return { label: "Shown after rank", className: "bg-moss text-paper" };
+    return { label: "Shown after the game", className: "bg-moss text-paper" };
   }
   return { label: "In range", className: "bg-ink/10 text-ink-soft" };
 }

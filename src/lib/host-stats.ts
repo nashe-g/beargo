@@ -5,7 +5,6 @@ import type { Play } from "@/lib/rank";
 export type HostTodayStats = {
   localDate: string;
   gamesFinished: number;
-  fastestPerfectMs: number | null;
 };
 
 export type HostMonthStats = {
@@ -18,16 +17,10 @@ export function hostTodayStats(host: HostRecord, plays: Play[]): HostTodayStats 
   const todayPlays = plays.filter(
     (play) => play.hostId === host.id && play.localDate === localDate,
   );
-  const perfect = todayPlays.filter((play) => play.correctCount === 3);
-  const fastestPerfectMs =
-    perfect.length === 0
-      ? null
-      : Math.min(...perfect.map((play) => play.totalResponseMs));
 
   return {
     localDate,
     gamesFinished: todayPlays.length,
-    fastestPerfectMs,
   };
 }
 

@@ -6,10 +6,9 @@ import { BearGuide } from "@/components/bear/BearGuide";
 import { PointingFinger } from "@/components/scanner/PointingFinger";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
 import { StampSession } from "@/components/scanner/StampSession";
-import { beatCopy, formatDuration, loadAttempt } from "@/lib/attempt";
+import { formatDuration, loadAttempt } from "@/lib/attempt";
 import { BEAR_DURATIONS, type BearState } from "@/lib/bear";
 import type { OfferCard } from "@/lib/select-promotion";
-import { QUESTIONS_PER_CHALLENGE } from "@/lib/questions";
 import type { PawRecord } from "@/lib/paws";
 
 export function GameResult({
@@ -25,10 +24,12 @@ export function GameResult({
   const [bearState, setBearState] = useState<BearState>("celebrate");
   const [score, setScore] = useState({
     correctCount: 0,
+    questionCount: 0,
     totalResponseMs: 0,
-    rank: 0,
-    playerCount: 0,
-    playersBeaten: 0,
+    headline: "",
+    body: "",
+    scoreLine: "" as string | undefined,
+    format: "Quick Trivia",
     hasAttempt: false,
   });
   const host = paw.hostDisplayName;
@@ -39,10 +40,12 @@ export function GameResult({
     if (attempt) {
       setScore({
         correctCount: attempt.correctCount,
+        questionCount: attempt.questionCount,
         totalResponseMs: attempt.totalResponseMs,
-        rank: attempt.rank ?? 0,
-        playerCount: attempt.playerCount ?? 0,
-        playersBeaten: attempt.playersBeaten ?? 0,
+        headline: attempt.headline,
+        body: attempt.body,
+        scoreLine: attempt.scoreLine,
+        format: attempt.format,
         hasAttempt: true,
       });
     }
@@ -82,21 +85,21 @@ export function GameResult({
           <BearGuide state={bearState} size="sm" />
           {score.hasAttempt ? (
             <>
-              <p className="mt-2 font-display text-4xl sm:text-5xl">
-                {score.correctCount} / {QUESTIONS_PER_CHALLENGE}
-              </p>
-              <p className="mt-1 text-base text-paper/70 sm:text-lg">
-                {formatDuration(score.totalResponseMs)}
-              </p>
+              {score.scoreLine ? (
+                <p className="mt-2 font-display text-4xl sm:text-5xl">
+                  {score.scoreLine}
+                </p>
+              ) : null}
               <h1 className="mt-3 font-display text-xl leading-tight sm:text-2xl">
-                {score.rank > 0
-                  ? `#${score.rank} at ${host} today`
-                  : `On the board at ${host}`}
+                {score.headline || `That’s today’s BearGo at ${host}.`}
               </h1>
-              <p className="mt-1 text-sm text-paper/65 sm:text-base">
-                {score.rank > 0
-                  ? beatCopy(score.playersBeaten, score.playerCount)
-                  : "Rank will show on the next play."}
+              {score.body ? (
+                <p className="mt-2 max-w-[22rem] text-base text-paper/75">
+                  {score.body}
+                </p>
+              ) : null}
+              <p className="mt-2 text-sm text-paper/50">
+                {formatDuration(score.totalResponseMs)} · {host}
               </p>
               {!hasOffer && bearState === "thanks" ? (
                 <p className="mt-6 text-paper/65">Thanks for playing.</p>
@@ -105,7 +108,7 @@ export function GameResult({
           ) : (
             <>
               <h1 className="mt-6 font-display text-3xl leading-tight">
-                Play to see how you rank at {host} today.
+                Play today’s BearGo at {host}.
               </h1>
               <Link
                 href={`/p/${paw.token}/play`}

@@ -37,13 +37,13 @@ export function PrintSign({
 
         <div className="space-y-3 text-center">
           <p className="font-condensed text-3xl font-semibold tracking-[0.22em] print:text-4xl">
-            3 QUESTIONS
+            TODAY’S BEARGO
           </p>
           <p className="font-display text-2xl leading-tight print:text-3xl">
-            How do you rank here today?
+            About a minute.
           </p>
           <PawDomain className="font-condensed text-lg tracking-[0.28em] text-ink-soft uppercase" />
-          <p className="text-sm text-ink-soft">~30 seconds</p>
+          <p className="text-sm text-ink-soft">About a minute</p>
         </div>
 
         <p className="text-xs tracking-wide text-ink-soft">

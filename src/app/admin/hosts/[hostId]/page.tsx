@@ -47,7 +47,7 @@ export default async function AdminHostPage({
       <section className="mt-12">
         <h2 className="font-display text-2xl">Nearby offers</h2>
         <p className="mt-2 max-w-2xl text-ink-soft">
-          Players see one offer after they rank: the closest live offer this
+          Players see one offer after they finish: the closest live offer this
           room allows. Blocked offers stay listed here.
         </p>
         <NearbyOfferCards

@@ -31,6 +31,10 @@
   animation: bear-breathe 2.8s ease-in-out infinite;
 }
 
+.bear-guide[data-state="reactAck"] .bear-root {
+  animation: bear-nod 280ms ease-in-out;
+}
+
 .bear-guide[data-state="reactCorrect"] .bear-root {
   animation: bear-pop 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }

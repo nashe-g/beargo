@@ -37,7 +37,7 @@ export default async function AdminOverviewPage() {
       <p className="text-sm tracking-[0.2em] uppercase text-ink-soft">{today}</p>
       <h1 className="mt-2 font-display text-4xl">Network</h1>
       <p className="mt-3 max-w-2xl text-ink-soft">
-        Game first. One nearby offer after rank. BearGo bills $1 when a
+        Game first. One nearby offer after the game. BearGo bills $1 when a
         merchant confirms the visit in person.
       </p>
       <h2 className="mt-10 font-display text-2xl">Game</h2>
