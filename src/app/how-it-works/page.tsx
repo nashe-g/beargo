@@ -6,12 +6,12 @@ const STEPS = [
     body: "A printed mark at the venue. No app install.",
   },
   {
-    title: "Play today’s BearGo.",
-    body: "Same short game at every venue today. About a minute. No account.",
+    title: "Three questions.",
+    body: "Same set for everyone here today. Correct answers and speed set your rank.",
   },
   {
-    title: "See your result.",
-    body: "That’s the game. If a nearby offer is worth it, you’ll see it on the same screen.",
+    title: "See how you rank.",
+    body: "That’s the game. If a nearby offer is worth it, you’ll see the value on the same screen.",
   },
 ];
 

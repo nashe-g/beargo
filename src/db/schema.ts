@@ -95,36 +95,6 @@ export const challengeSets = pgTable(
   (table) => [uniqueIndex("challenge_sets_host_date").on(table.hostId, table.localDate)],
 );
 
-export const experiences = pgTable("experiences", {
-  id: text("id").primaryKey(),
-  seedId: text("seed_id").notNull(),
-  adaptationMode: text("adaptation_mode").notNull().default("inspired"),
-  format: text("format").notNull(),
-  status: text("status").notNull().default("draft"),
-  title: text("title").notNull().default(""),
-  notes: text("notes"),
-  body: jsonb("body").$type<Record<string, unknown>>().notNull().default({}),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
-
-export const experienceCohorts = pgTable("experience_cohorts", {
-  id: text("id").primaryKey(),
-  dayOneDate: text("day_one_date").notNull(),
-  experienceIds: jsonb("experience_ids").$type<string[]>().notNull(),
-  publishedAt: timestamp("published_at", { withTimezone: true }).notNull().defaultNow(),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
-
-export const experienceSchedule = pgTable("experience_schedule", {
-  localDate: text("local_date").primaryKey(),
-  experienceId: text("experience_id")
-    .notNull()
-    .references(() => experiences.id),
-  cohortId: text("cohort_id"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
-
 export const merchants = pgTable("merchants", {
   id: text("id").primaryKey(),
   displayName: text("display_name").notNull(),

@@ -4,15 +4,7 @@ import { ScannerShell } from "@/components/scanner/ScannerShell";
 import { StampSession } from "@/components/scanner/StampSession";
 import type { PawRecord } from "@/lib/paws";
 
-export function GameIntro({
-  paw,
-  title,
-  hook,
-}: {
-  paw: PawRecord;
-  title?: string;
-  hook?: string;
-}) {
+export function GameIntro({ paw }: { paw: PawRecord }) {
   return (
     <ScannerShell>
       <StampSession pawToken={paw.token} event="scanned" />
@@ -23,10 +15,10 @@ export function GameIntro({
             Today at {paw.hostDisplayName}
           </p>
           <h1 className="font-display text-3xl leading-tight sm:text-4xl">
-            {title?.trim() || "Today’s BearGo"}
+            Today’s BearGo Challenge
           </h1>
           <p className="max-w-[18rem] text-base text-paper/80 sm:text-lg">
-            {hook?.trim() || "A short daily game. Same one everywhere today."}
+            3 questions. Correct answers + speed determine your rank.
           </p>
         </div>
 
@@ -37,7 +29,7 @@ export function GameIntro({
           >
             PLAY
           </Link>
-          <p className="text-sm text-paper/50">No account. About a minute.</p>
+          <p className="text-sm text-paper/50">No account. About 30 seconds.</p>
         </div>
       </div>
     </ScannerShell>

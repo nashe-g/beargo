@@ -1,4 +1,5 @@
 import { HostShell } from "@/components/host/HostShell";
+import { formatClock } from "@/lib/format";
 import { requireHost } from "@/lib/host-auth";
 import { localDateInZone } from "@/lib/dates";
 import { listPlays } from "@/lib/store";
@@ -17,6 +18,11 @@ export default async function HostDashboardPage() {
   const monthPlays = plays.filter(
     (play) => play.hostId === host.id && play.localDate.startsWith(month),
   );
+  const perfect = todayPlays.filter((play) => play.correctCount === 3);
+  const fastestPerfectMs =
+    perfect.length === 0
+      ? null
+      : Math.min(...perfect.map((play) => play.totalResponseMs));
 
   return (
     <HostShell host={host} current="/host/dashboard">
@@ -25,14 +31,25 @@ export default async function HostDashboardPage() {
       </p>
       <h1 className="mt-2 font-display text-4xl">Today</h1>
       <p className="mt-3 text-ink-soft">
-        The game is the same at every BearGo today. Block a specific offer on
-        Offers if it competes with this room.
+        The game runs either way. Block a specific offer on Offers if it
+        competes with this room.
       </p>
 
       <div className="mt-8 grid grid-cols-2 gap-3">
         <Stat label="Games finished" value={String(todayPlays.length)} />
         <Stat label="This month" value={String(monthPlays.length)} />
       </div>
+
+      <p className="mt-8 rounded-3xl bg-ink px-5 py-6 text-paper">
+        <span className="text-sm tracking-[0.16em] uppercase text-paper/55">
+          Fastest 3 / 3 today
+        </span>
+        <span className="mt-2 block font-display text-3xl">
+          {fastestPerfectMs == null
+            ? "Nobody yet"
+            : formatClock(fastestPerfectMs)}
+        </span>
+      </p>
 
       <Link
         href="/host/paws"

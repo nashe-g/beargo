@@ -6,7 +6,7 @@ export default function Home() {
     <PublicShell>
       <div className="relative">
         <h1 className="relative max-w-2xl font-display text-4xl leading-[1.08] sm:text-6xl">
-          Scan the paw. Play today’s BearGo. No account.
+          Scan the paw. Three questions. How do you rank here today?
         </h1>
         <p className="relative mt-5 max-w-xl text-lg text-ink-soft sm:text-xl">
           BearGo is a daily challenge at real places. No account to play.

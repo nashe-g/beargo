@@ -341,34 +341,6 @@ async function migrateSchema() {
 
     ALTER TABLE vouchers ADD COLUMN IF NOT EXISTS player_id text REFERENCES players(id);
 
-    CREATE TABLE IF NOT EXISTS experiences (
-      id text PRIMARY KEY,
-      seed_id text NOT NULL,
-      adaptation_mode text NOT NULL DEFAULT 'inspired',
-      format text NOT NULL,
-      status text NOT NULL DEFAULT 'draft',
-      title text NOT NULL DEFAULT '',
-      notes text,
-      body jsonb NOT NULL DEFAULT '{}'::jsonb,
-      created_at timestamptz NOT NULL DEFAULT now(),
-      updated_at timestamptz NOT NULL DEFAULT now()
-    );
-
-    CREATE TABLE IF NOT EXISTS experience_cohorts (
-      id text PRIMARY KEY,
-      day_one_date text NOT NULL,
-      experience_ids jsonb NOT NULL,
-      published_at timestamptz NOT NULL DEFAULT now(),
-      created_at timestamptz NOT NULL DEFAULT now()
-    );
-
-    CREATE TABLE IF NOT EXISTS experience_schedule (
-      local_date text PRIMARY KEY,
-      experience_id text NOT NULL REFERENCES experiences(id),
-      cohort_id text,
-      created_at timestamptz NOT NULL DEFAULT now()
-    );
-
     DROP TABLE IF EXISTS lead_exports CASCADE;
     DROP TABLE IF EXISTS consent_receipts CASCADE;
     DROP TABLE IF EXISTS leads CASCADE;
@@ -387,9 +359,6 @@ async function main() {
   if (fresh) {
     await db.execute(sql`
       TRUNCATE TABLE
-        experience_schedule,
-        experience_cohorts,
-        experiences,
         vouchers,
         claim_links,
         players,

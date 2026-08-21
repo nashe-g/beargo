@@ -5,9 +5,9 @@ import { plays } from "@/db/schema";
 import { localDateInZone } from "@/lib/dates";
 import { isoRequired } from "@/lib/money";
 import type { PawRecord } from "@/lib/paws";
-import type { Play } from "@/lib/rank";
+import { rankPlay, type Play, type RankResult } from "@/lib/rank";
 
-export type RecordedPlay = Play;
+export type RecordedPlay = Play & RankResult;
 
 function mapPlay(row: typeof plays.$inferSelect): Play {
   return {
@@ -79,5 +79,19 @@ export async function recordPlay(input: {
     deviceKey: input.deviceKey ?? null,
   });
 
-  return play;
+  const boardRows = await db()
+    .select()
+    .from(plays)
+    .where(
+      and(
+        eq(plays.hostId, play.hostId),
+        eq(plays.localDate, play.localDate),
+        eq(plays.challengeId, play.challengeId),
+      ),
+    );
+  const board = boardRows
+    .map(mapPlay)
+    .filter((entry) => entry.rankingEligible !== false || entry.id === play.id);
+
+  return { ...play, ...rankPlay(board, play) };
 }

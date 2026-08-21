@@ -130,7 +130,7 @@ export function HostNearbyOffers({
                   {isBlocked
                     ? "Blocked"
                     : shown
-                      ? "Shown after the game"
+                      ? "Shown after rank"
                       : "In range"}
                 </span>
               </p>

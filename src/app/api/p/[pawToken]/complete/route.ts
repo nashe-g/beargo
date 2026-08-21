@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
-import { playForPaw } from "@/lib/play-session";
-import { resolvePayoff, type PlayAnswer } from "@/lib/play";
+import { challengeForPaw, scoreChallenge } from "@/lib/daily-challenge";
 import { getPaw } from "@/lib/paws";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
 import {
@@ -38,55 +37,30 @@ export async function POST(
     return Response.json({ error: "Invalid answers" }, { status: 400 });
   }
 
-  const answers: PlayAnswer[] = record.answers.map((entry) => {
+  const answers = record.answers.map((entry) => {
     const row = entry as {
-      interactionId?: unknown;
       questionId?: unknown;
-      choiceIds?: unknown;
       choiceId?: unknown;
-      text?: unknown;
-      order?: unknown;
       responseMs?: unknown;
     };
-    const choiceIds = Array.isArray(row.choiceIds)
-      ? row.choiceIds.map((id) => String(id))
-      : row.choiceId
-        ? [String(row.choiceId)]
-        : [];
     return {
-      interactionId: String(row.interactionId ?? row.questionId ?? ""),
-      choiceIds,
-      text: row.text ? String(row.text) : undefined,
-      order: Array.isArray(row.order) ? row.order.map((id) => String(id)) : undefined,
+      questionId: String(row.questionId ?? ""),
+      choiceId: String(row.choiceId ?? ""),
       responseMs: Number(row.responseMs),
     };
   });
 
-  if (
-    answers.some(
-      (answer) =>
-        !answer.interactionId ||
-        !Number.isFinite(answer.responseMs) ||
-        answer.responseMs < 0,
-    )
-  ) {
-    return Response.json({ error: "Invalid answers" }, { status: 400 });
-  }
-
-  const play = await playForPaw(paw);
-  const totalResponseMs = Math.round(
-    answers.reduce((sum, answer) => sum + answer.responseMs, 0),
-  );
-  if (totalResponseMs > MAX_MS) {
+  const challenge = await challengeForPaw(paw);
+  const scored = scoreChallenge(challenge, answers);
+  if (!scored || scored.totalResponseMs > MAX_MS) {
     return Response.json({ error: "Invalid score" }, { status: 400 });
   }
 
-  const payoff = resolvePayoff(play.body, answers);
-  const recorded = await recordPlay({
+  const play = await recordPlay({
     paw,
-    challengeId: play.id,
-    correctCount: payoff.correctCount,
-    totalResponseMs,
+    challengeId: scored.challengeId,
+    correctCount: scored.correctCount,
+    totalResponseMs: scored.totalResponseMs,
     sessionId,
     deviceKey,
   });
@@ -96,12 +70,10 @@ export async function POST(
   }
 
   return Response.json({
-    format: play.format,
-    correctCount: recorded.correctCount,
-    questionCount: payoff.questionCount,
-    totalResponseMs: recorded.totalResponseMs,
-    headline: payoff.headline,
-    body: payoff.body,
-    scoreLine: payoff.scoreLine,
+    correctCount: play.correctCount,
+    totalResponseMs: play.totalResponseMs,
+    rank: play.rank,
+    playerCount: play.playerCount,
+    playersBeaten: play.playersBeaten,
   });
 }

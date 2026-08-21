@@ -4,9 +4,10 @@ import { PawMark } from "@/components/paw/PawMark";
 
 const LINKS = [
   { href: "/admin/overview", label: "Overview" },
-  { href: "/admin/experiences", label: "Experiences" },
   { href: "/admin/hosts", label: "Hosts" },
   { href: "/admin/paws", label: "Paws" },
+  { href: "/admin/challenges", label: "Challenges" },
+  { href: "/admin/questions", label: "Questions" },
   { href: "/admin/promotions", label: "Offers" },
   { href: "/admin/players", label: "Players" },
   { href: "/admin/applications", label: "Apply" },
@@ -72,7 +73,7 @@ export function Stat({
 
 export function StatusPill({ status }: { status: string }) {
   const tone =
-        status === "live" || status === "active" || status === "qualified" || status === "verified" || status === "published" || status === "ready"
+        status === "live" || status === "active" || status === "qualified" || status === "verified"
       ? "bg-moss text-paper"
       : status === "paused" || status === "pending_verification"
         ? "bg-ink/10 text-ink-soft"
