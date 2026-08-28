@@ -86,7 +86,7 @@ function llmConfig() {
   };
 }
 
-async function completeJson(user: string) {
+async function completeJson(user: string, temperature = 0.95) {
   const config = llmConfig();
   if (!config.ok) return config;
 
@@ -98,7 +98,7 @@ async function completeJson(user: string) {
     },
     body: JSON.stringify({
       model: config.model,
-      temperature: 0.8,
+      temperature,
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: generationSystemPrompt() },
@@ -169,13 +169,13 @@ function extractDayDrafts(parsed: unknown, dates: string[]) {
 
 function weekUserPrompt(dates: string[], note?: string) {
   return [
-    `Generate the daily trivia slate for these calendar dates: ${dates.join(", ")}.`,
+    `Write a fresh trivia slate for these dates: ${dates.join(", ")}.`,
     "Return JSON as {\"days\":[{\"localDate\":\"YYYY-MM-DD\",\"questions\":[easy, medium, hard]}]}.",
-    "Each day needs exactly three questions: one easy, one medium, one hard, in that order.",
-    "The three questions on a day should feel like one sitting at the same table — a round people will want again next visit.",
-    "Match the gold-standard voice in the system prompt: bar arguments, drinks, pub games, sports rules, music, movies, food fights. Not city trivia.",
-    "Vary categories across the week. No two prompts should be near-duplicates.",
-    "Never name a city. Never write local history. The same round has to work in any American bar.",
+    "Each day is one easy, one medium, one hard, in that order.",
+    "Treat the week as a mixtape, not a theme night. Categories should jump around: music, movies, food, animals, science, language, history, tech, pop, weird true facts.",
+    "Across the whole week, at most two questions total may be about alcohol, bar equipment, darts, or sports rules. The rest must come from other worlds.",
+    "No two prompts should feel like cousins. If a day has a movie question, the next day should not.",
+    "Never name a city. Never write local history.",
     note ? `Operator note: ${note}` : "",
   ]
     .filter(Boolean)
@@ -191,7 +191,7 @@ export async function generateQuestionCandidates(input: {
     `Generate ${count} questions.`,
     "Return JSON as {\"questions\":[...]}.",
     "Return 2 easy, 2 medium, and 2 hard if count is 6.",
-    "Match the gold-standard voice: bar arguments, drinks, pub games, sports rules. Not city trivia. Never name a city.",
+    "Wide mix of domains. Do not default to beer, darts, or sports.",
     input.note ? `Operator note: ${input.note}` : "",
   ]
     .filter(Boolean)

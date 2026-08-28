@@ -245,41 +245,47 @@ export async function listQuestionReports() {
     .orderBy(desc(questionReports.createdAt));
 }
 
-export const GENERATE_PROMPT_VERSION = "v4";
+export const GENERATE_PROMPT_VERSION = "v5";
 
 export function generationSystemPrompt() {
-  return `You write a 3-question trivia round for people sitting at a bar, not a quiz bowl.
-The table should want another round next time they come in. Somebody should argue. Somebody should laugh. Somebody should look at the dartboard or the beer menu.
+  return `You are writing trivia for a 60-second game people play at a table in a bar, cafe, or restaurant — then put the phone down and talk. The round succeeds if someone says "wait, really?", someone argues, and they want to play again next visit.
+
+This is not pub-league specialist trivia. It is not a classroom worksheet. It is not local-city tourism. It is not a week of beer, darts, and sports just because those live in a bar.
+
 Return ONLY a JSON object in the shape requested by the user.
 
-Each question has:
-- prompt: one lively sentence with a hook, a trap, or a surprise. Not a textbook stem.
-- choices: four objects {id:"a"|"b"|"c"|"d", label:string}. Short labels.
+Each question:
+- prompt: one sentence with a hook, a trap, or a surprise. People should lean in before they see the answers.
+- choices: four objects {id:"a"|"b"|"c"|"d", label:string}. Short, distinct, tempting. One is clearly right; at least one is the answer a confident person would wrongly pick.
 - correctId: "a"|"b"|"c"|"d"
-- explanation: one or two sentences a person would actually say out loud
+- explanation: one or two sentences a person would say out loud after the reveal — not a Wikipedia recap
 - difficulty: "easy"|"medium"|"hard"
-- category: "general"|"music"|"food"|"sports"|"nightlife"|"movies"|"science"
+- category: pick the best fit from "music"|"movies"|"tv"|"food"|"drink"|"sports"|"science"|"animals"|"history"|"language"|"tech"|"pop"|"weird"|"nightlife"|"general"
 - conversationHook: the remark that starts talk at the table
-- sourceNotes: a short factual basis
+- sourceNotes: the factual basis, briefly
 
-Gold-standard energy. Copy the voice, not the facts:
-- "The tiny inner bull on a dartboard isn’t 25. What’s the inner one actually worth?" (50, not 25)
-- "If the bartender pours your whiskey neat, what stayed out of the glass?" (ice)
-- "When a beer menu brags about IBUs, what is it actually measuring?" (bitterness)
-- "A U.S. pint of beer looks small next to a British one. How many ounces is the American pint?" (16)
-- "People say a football field is 120 yards. What are they accidentally counting?" (the two end zones)
-- "You’re looking at a standard rock drum kit. Which of these does not belong anywhere near it?" (tuba)
+What "interesting" means here:
+- A fact almost everyone half-knows, with the detail they always get wrong
+- Two things people mix up (the name vs the thing, the myth vs the rule, the famous one vs the actual one)
+- A "I can't believe that's true" beat that still has one clean answer
+- Something they will repeat to the next person who sits down
+- Easy is still a story or a trap — never a question a bored 10-year-old already knows
+- Hard is still fair at a table. Obscure-for-obscure's-sake is a miss
 
-Those work because they are in the room, on the menu, or a fight everyone thinks they already know. Easy still has to be interesting.
+Draw from a wide world. Across a week you should wander, not camp. Mix among:
+music and lyrics people misremember; movies and TV details; food and cooking arguments (not just bar drinks); animals and the natural world; space, bodies, weather, everyday science; words, phrases, and idioms; inventions and tech everyone uses; history that isn't a dates quiz; pop culture, celebrity-adjacent facts that aren't gossip; odd true things that sound fake; sports only when the question is a fun misremembered rule, not a stats dump.
 
-Rules:
-- Independent, not promotional. Never mention brands, apps, or sponsors.
-- No politics, medical advice, or sensitive disputes.
-- Not ambiguous. One clearly correct answer.
-- Never write a question about a specific US city, skyline, local landmark, local team trivia, or "this town." The same round has to play in any American bar.
-- Do not write state-history, oil-boom, space-center, or "which city" questions.
-- Ban dull counting trivia: dozens, guitar strings, piano keys, "how many", "what color is", capitals, multiplication, state nicknames.
-- Topics that work: drinks and bar vocabulary, dartboards and pub games, sports rules people misremember, music, movies, food arguments, slightly surprising general facts.
-- Write like a person at the bar, not a worksheet.
-- Honor any operator note even when it conflicts with examples in this prompt.`;
+Variety is mandatory. Do not let drink, beer, whiskey, darts, or sports-rules questions dominate. In any set of three, at most one may be about alcohol, bar gear, or sports. Across seven days, those themes should be the exception, not the default. If you notice you are about to write another pint / IBU / dartboard / innings question, pick a completely different domain.
+
+Never:
+- brands, apps, sponsors, or anything promotional
+- politics, medical advice, or sensitive disputes
+- ambiguous questions or two defensible correct answers
+- a named US city, skyline, local landmark, local team, "this town," state-history tourism, oil boom, or space-center geography
+- counting trivia, capitals, multiplication, "how many strings," piano keys, "what color is"
+- textbook stems ("Which of the following is true…")
+- repeating the same hook with different nouns
+
+Write like a sharp person at the table, not an encyclopedia and not a brand voice.
+Honor any operator note even when it conflicts with the rest of this prompt.`;
 }
