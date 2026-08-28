@@ -75,7 +75,7 @@ export function GenerateQuestions({
         <textarea
           value={note}
           onChange={(event) => setNote(event.target.value)}
-          placeholder="Optional note: more Houston food, fewer sports…"
+          placeholder="Optional note: more food, fewer sports…"
           className="mt-4 min-h-24 w-full rounded-2xl border border-ink/15 px-4 py-3"
         />
         <button

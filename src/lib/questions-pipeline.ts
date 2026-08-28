@@ -15,6 +15,20 @@ const SPONSOR_WORDS = [
   "beargo",
 ];
 
+const LOCAL_PLACE_WORDS = [
+  "houston",
+  "beaumont",
+  "galveston",
+  "montrose",
+  "midland",
+  "huntsville",
+  "sam houston",
+  "spindletop",
+  "johnson space",
+  "rice university",
+  "the rustic",
+];
+
 export type CandidateDraft = {
   prompt: string;
   choices: { id: string; label: string }[];
@@ -75,9 +89,12 @@ export function validateQuestionDraft(draft: CandidateDraft): string[] {
   if (!draft.explanation?.trim() || draft.explanation.trim().length < 8) {
     errors.push("Explanation is missing.");
   }
-  const blob = `${prompt} ${labels.join(" ")} ${draft.explanation ?? ""}`.toLowerCase();
+  const blob = `${prompt} ${labels.join(" ")} ${draft.explanation ?? ""} ${draft.conversationHook ?? ""}`.toLowerCase();
   if (SPONSOR_WORDS.some((word) => blob.includes(word))) {
     errors.push("Question looks promotional or mentions BearGo/sponsors.");
+  }
+  if (LOCAL_PLACE_WORDS.some((word) => blob.includes(word))) {
+    errors.push("Question is too local. Keep it a bar argument anyone in the US could have.");
   }
   if (/\b(best|should you)\b/i.test(prompt) && /app|brand|product/i.test(prompt)) {
     errors.push("Question looks like a disguised ad.");
@@ -228,28 +245,41 @@ export async function listQuestionReports() {
     .orderBy(desc(questionReports.createdAt));
 }
 
-export const GENERATE_PROMPT_VERSION = "v2";
+export const GENERATE_PROMPT_VERSION = "v4";
 
 export function generationSystemPrompt() {
-  return `You write questions for a local bar/restaurant game in Houston.
-The table should want to argue, laugh, or tell a story — not feel like a worksheet.
-Return ONLY a JSON object: {"questions":[...]}.
+  return `You write a 3-question trivia round for people sitting at a bar, not a quiz bowl.
+The table should want another round next time they come in. Somebody should argue. Somebody should laugh. Somebody should look at the dartboard or the beer menu.
+Return ONLY a JSON object in the shape requested by the user.
+
 Each question has:
-- prompt (string, one lively sentence with a hook or a surprise)
-- choices: four objects {id:"a"|"b"|"c"|"d", label:string}
+- prompt: one lively sentence with a hook, a trap, or a surprise. Not a textbook stem.
+- choices: four objects {id:"a"|"b"|"c"|"d", label:string}. Short labels.
 - correctId: "a"|"b"|"c"|"d"
-- explanation: one or two sentences people would actually say out loud
+- explanation: one or two sentences a person would actually say out loud
 - difficulty: "easy"|"medium"|"hard"
-- category: "general"|"houston"|"music"|"food"|"sports"|"nightlife"
+- category: "general"|"music"|"food"|"sports"|"nightlife"|"movies"|"science"
 - conversationHook: the remark that starts talk at the table
 - sourceNotes: a short factual basis
+
+Gold-standard energy. Copy the voice, not the facts:
+- "The tiny inner bull on a dartboard isn’t 25. What’s the inner one actually worth?" (50, not 25)
+- "If the bartender pours your whiskey neat, what stayed out of the glass?" (ice)
+- "When a beer menu brags about IBUs, what is it actually measuring?" (bitterness)
+- "A U.S. pint of beer looks small next to a British one. How many ounces is the American pint?" (16)
+- "People say a football field is 120 yards. What are they accidentally counting?" (the two end zones)
+- "You’re looking at a standard rock drum kit. Which of these does not belong anywhere near it?" (tuba)
+
+Those work because they are in the room, on the menu, or a fight everyone thinks they already know. Easy still has to be interesting.
 
 Rules:
 - Independent, not promotional. Never mention brands, apps, or sponsors.
 - No politics, medical advice, or sensitive disputes.
 - Not ambiguous. One clearly correct answer.
-- Mix Houston/Texas/bar/food/sports with a few sharp general facts.
-- Ban dull counting trivia: dozens, guitar strings, piano keys, "how many", "what color is", capitals, multiplication.
-- Easy still has to be interesting. A question a 10-year-old already knows is a miss.
-- Write like a person at the bar, not a textbook.`;
+- Never write a question about a specific US city, skyline, local landmark, local team trivia, or "this town." The same round has to play in any American bar.
+- Do not write state-history, oil-boom, space-center, or "which city" questions.
+- Ban dull counting trivia: dozens, guitar strings, piano keys, "how many", "what color is", capitals, multiplication, state nicknames.
+- Topics that work: drinks and bar vocabulary, dartboards and pub games, sports rules people misremember, music, movies, food arguments, slightly surprising general facts.
+- Write like a person at the bar, not a worksheet.
+- Honor any operator note even when it conflicts with examples in this prompt.`;
 }

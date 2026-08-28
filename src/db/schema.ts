@@ -95,6 +95,16 @@ export const challengeSets = pgTable(
   (table) => [uniqueIndex("challenge_sets_host_date").on(table.hostId, table.localDate)],
 );
 
+export const questionSlates = pgTable("question_slates", {
+  localDate: text("local_date").primaryKey(),
+  status: text("status").notNull().default("draft"),
+  questionIds: jsonb("question_ids").$type<string[]>().notNull(),
+  snapshot: jsonb("snapshot").$type<unknown>().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  publishedAt: timestamp("published_at", { withTimezone: true }),
+});
+
 export const merchants = pgTable("merchants", {
   id: text("id").primaryKey(),
   displayName: text("display_name").notNull(),

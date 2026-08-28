@@ -11,12 +11,14 @@ import { db } from "@/db";
 import { ledgerEntries } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import Link from "next/link";
+import { BEARGO_DAY_ZONE } from "@/lib/config";
+import { listHorizonSlates, horizonReadyCount } from "@/lib/question-slate-store";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminOverviewPage() {
   await requireAdmin();
-  const [plays, hosts, paws, merchants, promotions, fees, playerRows] =
+  const [plays, hosts, paws, merchants, promotions, fees, playerRows, days] =
     await Promise.all([
     listPlays(),
     listHosts(),
@@ -28,9 +30,11 @@ export default async function AdminOverviewPage() {
       .from(ledgerEntries)
       .where(eq(ledgerEntries.kind, "merchant_fee")),
     listPlayers(),
+    listHorizonSlates(),
   ]);
-  const today = localDateInZone("America/Chicago");
+  const today = localDateInZone(BEARGO_DAY_ZONE);
   const gamesToday = plays.filter((play) => play.localDate === today).length;
+  const weekReady = horizonReadyCount(days);
 
   return (
     <AdminShell current="/admin/overview">
@@ -44,9 +48,19 @@ export default async function AdminOverviewPage() {
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Games today" value={String(gamesToday)} />
         <Stat label="Games all-time" value={String(plays.length)} />
+        <Stat
+          label="Next 7 days"
+          value={`${weekReady}/7`}
+          note="Published network slates"
+        />
         <Stat label="Hosts" value={String(hosts.length)} />
         <Stat label="Paws" value={String(paws.length)} />
       </div>
+      <p className="mt-4 text-sm text-ink-soft">
+        <Link href="/admin/challenges" className="underline-offset-2 hover:underline">
+          Generate next week’s questions
+        </Link>
+      </p>
       <h2 className="mt-10 font-display text-2xl">Promotions</h2>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Merchants" value={String(merchants.length)} />

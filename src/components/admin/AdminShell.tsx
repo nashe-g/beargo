@@ -73,7 +73,11 @@ export function Stat({
 
 export function StatusPill({ status }: { status: string }) {
   const tone =
-        status === "live" || status === "active" || status === "qualified" || status === "verified"
+        status === "live" ||
+        status === "active" ||
+        status === "qualified" ||
+        status === "verified" ||
+        status === "published"
       ? "bg-moss text-paper"
       : status === "paused" || status === "pending_verification"
         ? "bg-ink/10 text-ink-soft"

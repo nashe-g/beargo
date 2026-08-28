@@ -341,6 +341,16 @@ async function migrateSchema() {
 
     ALTER TABLE vouchers ADD COLUMN IF NOT EXISTS player_id text REFERENCES players(id);
 
+    CREATE TABLE IF NOT EXISTS question_slates (
+      local_date text PRIMARY KEY,
+      status text NOT NULL DEFAULT 'draft',
+      question_ids jsonb NOT NULL,
+      snapshot jsonb NOT NULL,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now(),
+      published_at timestamptz
+    );
+
     DROP TABLE IF EXISTS lead_exports CASCADE;
     DROP TABLE IF EXISTS consent_receipts CASCADE;
     DROP TABLE IF EXISTS leads CASCADE;
@@ -371,6 +381,7 @@ async function main() {
         merchants,
         paws,
         challenge_sets,
+        question_slates,
         applications,
         magic_links,
         hosts

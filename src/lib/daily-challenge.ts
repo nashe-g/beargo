@@ -2,8 +2,10 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { challengeSets } from "@/db/schema";
 import { listQuestions } from "@/lib/catalog";
+import { BEARGO_DAY_ZONE } from "@/lib/config";
 import { localDateInZone } from "@/lib/dates";
 import type { PawRecord } from "@/lib/paws";
+import { getPublishedSlate } from "@/lib/question-slate-store";
 import {
   QUESTIONS_PER_CHALLENGE,
   type Question,
@@ -15,6 +17,7 @@ export type DailyChallenge = {
   id: string;
   localDate: string;
   questions: Question[];
+  source: "network" | "host";
 };
 
 export type ChallengeAnswer = {
@@ -53,6 +56,17 @@ export async function getDailyChallenge(
   timezone: string,
   at = new Date(),
 ): Promise<DailyChallenge> {
+  const networkDate = localDateInZone(BEARGO_DAY_ZONE, at);
+  const networkQuestions = await getPublishedSlate(networkDate);
+  if (networkQuestions) {
+    return {
+      id: `${hostId}:${networkDate}`,
+      localDate: networkDate,
+      questions: networkQuestions,
+      source: "network",
+    };
+  }
+
   const localDate = localDateInZone(timezone, at);
   const id = `${hostId}:${localDate}`;
 
@@ -69,6 +83,7 @@ export async function getDailyChallenge(
       id: existing.id,
       localDate: existing.localDate,
       questions: existing.snapshot as Question[],
+      source: "host",
     };
   }
 
@@ -98,6 +113,7 @@ export async function getDailyChallenge(
     id: frozen?.id ?? id,
     localDate,
     questions: (frozen?.snapshot as Question[] | undefined) ?? questions,
+    source: "host",
   };
 }
 

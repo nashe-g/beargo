@@ -18,16 +18,25 @@ export default async function AdminQuestionsPage() {
         <div>
           <h1 className="font-display text-4xl">Questions</h1>
           <p className="mt-3 max-w-xl text-ink-soft">
-            Approved pool. Daily picker takes one easy, one medium, one hard
-            per host and freezes that set for the local day.
+            Approved pool. A published week slate is what players see. On days
+            without a slate, the picker still takes one easy, one medium, and
+            one hard per host.
           </p>
         </div>
-        <Link
-          href="/admin/questions/generate"
-          className="flex h-12 items-center rounded-full bg-ink px-5 text-paper"
-        >
-          Generate drafts
-        </Link>
+        <div className="flex gap-3">
+          <Link
+            href="/admin/challenges"
+            className="flex h-12 items-center rounded-full border border-ink/20 px-5"
+          >
+            Week calendar
+          </Link>
+          <Link
+            href="/admin/questions/generate"
+            className="flex h-12 items-center rounded-full bg-ink px-5 text-paper"
+          >
+            Generate drafts
+          </Link>
+        </div>
       </div>
 
       <div className="mt-8 grid gap-3 sm:grid-cols-3">

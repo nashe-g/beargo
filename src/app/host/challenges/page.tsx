@@ -12,9 +12,11 @@ export default async function HostChallengesPage() {
     <HostShell host={host} current="/host/challenges">
       <h1 className="font-display text-4xl">Today’s challenge</h1>
       <p className="mt-3 text-ink-soft">
-        {challenge.localDate}. Same three questions for every player here
-        today. A new set tomorrow. You can look — you can’t change the live
-        answers.
+        {challenge.localDate}.{" "}
+        {challenge.source === "network"
+          ? "Same three questions at every BearGo host today."
+          : "Same three questions for every player here today. Drawn from the pool until a network week is published."}{" "}
+        You can look — you can’t change the live answers.
       </p>
 
       <ol className="mt-8 space-y-6">

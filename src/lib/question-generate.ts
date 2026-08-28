@@ -4,6 +4,10 @@ import {
   generationSystemPrompt,
   type CandidateDraft,
 } from "@/lib/questions-pipeline";
+import {
+  questionsFromDrafts,
+  upsertGeneratedDraft,
+} from "@/lib/question-slate-store";
 
 type GeneratedPayload = {
   questions?: unknown;
@@ -63,10 +67,7 @@ export function llmConfigured() {
   return Boolean(process.env.OPENAI_API_KEY);
 }
 
-export async function generateQuestionCandidates(input: {
-  count?: number;
-  note?: string;
-}) {
+function llmConfig() {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return {
@@ -74,29 +75,29 @@ export async function generateQuestionCandidates(input: {
       error: "No OPENAI_API_KEY. Add it to generate drafts from the app.",
     };
   }
+  return {
+    ok: true as const,
+    apiKey,
+    baseUrl: (process.env.OPENAI_BASE_URL || "https://api.openai.com/v1").replace(
+      /\/$/,
+      "",
+    ),
+    model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
+  };
+}
 
-  const count = Math.min(12, Math.max(3, input.count ?? 6));
-  const baseUrl = (process.env.OPENAI_BASE_URL || "https://api.openai.com/v1").replace(
-    /\/$/,
-    "",
-  );
-  const model = process.env.OPENAI_MODEL || "gpt-4.1-mini";
-  const user = [
-    `Generate ${count} questions.`,
-    "Return 2 easy, 2 medium, and 2 hard if count is 6.",
-    input.note ? `Operator note: ${input.note}` : "",
-  ]
-    .filter(Boolean)
-    .join("\n");
+async function completeJson(user: string) {
+  const config = llmConfig();
+  if (!config.ok) return config;
 
-  const response = await fetch(`${baseUrl}/chat/completions`, {
+  const response = await fetch(`${config.baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: `Bearer ${config.apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model,
+      model: config.model,
       temperature: 0.8,
       response_format: { type: "json_object" },
       messages: [
@@ -119,13 +120,87 @@ export async function generateQuestionCandidates(input: {
     choices?: { message?: { content?: string } }[];
   };
   const content = payload.choices?.[0]?.message?.content ?? "";
-  let parsed: GeneratedPayload;
   try {
-    parsed = JSON.parse(content) as GeneratedPayload;
+    return {
+      ok: true as const,
+      model: config.model,
+      parsed: JSON.parse(content) as unknown,
+    };
   } catch {
     return { ok: false as const, error: "LLM returned JSON that could not be parsed." };
   }
+}
 
+function draftsFromUnknown(value: unknown): CandidateDraft[] {
+  if (!Array.isArray(value)) return [];
+  return value.map(asDraft).filter((draft): draft is CandidateDraft => Boolean(draft));
+}
+
+function extractDayDrafts(parsed: unknown, dates: string[]) {
+  const byDate = new Map<string, CandidateDraft[]>();
+  if (!parsed || typeof parsed !== "object") return byDate;
+  const root = parsed as Record<string, unknown>;
+  const days = Array.isArray(root.days) ? root.days : null;
+  if (days) {
+    for (const item of days) {
+      if (!item || typeof item !== "object") continue;
+      const row = item as Record<string, unknown>;
+      const localDate = String(row.localDate ?? row.date ?? "");
+      if (!dates.includes(localDate)) continue;
+      byDate.set(localDate, draftsFromUnknown(row.questions));
+    }
+    return byDate;
+  }
+  for (const date of dates) {
+    const row = root[date];
+    if (!row || typeof row !== "object") continue;
+    const value = row as Record<string, unknown>;
+    if (Array.isArray(value.questions)) {
+      byDate.set(date, draftsFromUnknown(value.questions));
+    } else {
+      byDate.set(
+        date,
+        draftsFromUnknown([value.easy, value.medium, value.hard].filter(Boolean)),
+      );
+    }
+  }
+  return byDate;
+}
+
+function weekUserPrompt(dates: string[], note?: string) {
+  return [
+    `Generate the daily trivia slate for these calendar dates: ${dates.join(", ")}.`,
+    "Return JSON as {\"days\":[{\"localDate\":\"YYYY-MM-DD\",\"questions\":[easy, medium, hard]}]}.",
+    "Each day needs exactly three questions: one easy, one medium, one hard, in that order.",
+    "The three questions on a day should feel like one sitting at the same table — a round people will want again next visit.",
+    "Match the gold-standard voice in the system prompt: bar arguments, drinks, pub games, sports rules, music, movies, food fights. Not city trivia.",
+    "Vary categories across the week. No two prompts should be near-duplicates.",
+    "Never name a city. Never write local history. The same round has to work in any American bar.",
+    note ? `Operator note: ${note}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+export async function generateQuestionCandidates(input: {
+  count?: number;
+  note?: string;
+}) {
+  const count = Math.min(12, Math.max(3, input.count ?? 6));
+  const user = [
+    `Generate ${count} questions.`,
+    "Return JSON as {\"questions\":[...]}.",
+    "Return 2 easy, 2 medium, and 2 hard if count is 6.",
+    "Match the gold-standard voice: bar arguments, drinks, pub games, sports rules. Not city trivia. Never name a city.",
+    input.note ? `Operator note: ${input.note}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const result = await completeJson(user);
+  if (!result.ok) return result;
+
+  const parsed = result.parsed as GeneratedPayload;
   const rows = Array.isArray(parsed.questions) ? parsed.questions : [];
   if (rows.length === 0) {
     return { ok: false as const, error: "LLM returned no questions." };
@@ -137,7 +212,7 @@ export async function generateQuestionCandidates(input: {
     if (!draft) continue;
     queued.push(
       await enqueueCandidate(draft, {
-        model,
+        model: result.model,
         promptVersion: GENERATE_PROMPT_VERSION,
       }),
     );
@@ -145,8 +220,75 @@ export async function generateQuestionCandidates(input: {
 
   return {
     ok: true as const,
-    model,
+    model: result.model,
     created: queued.length,
     candidates: queued,
+  };
+}
+
+export async function generateWeekSlates(input: {
+  dates: string[];
+  note?: string;
+}) {
+  const dates = input.dates;
+  if (dates.length === 0) {
+    return { ok: true as const, created: [] as string[], failed: [] as string[] };
+  }
+
+  let pending = [...dates];
+  const created: string[] = [];
+  const failed: { localDate: string; errors: string[] }[] = [];
+
+  for (let attempt = 0; attempt < 2 && pending.length > 0; attempt += 1) {
+    const result = await completeJson(weekUserPrompt(pending, input.note));
+    if (!result.ok) {
+      if (created.length === 0) {
+        return {
+          ok: false as const,
+          error: result.error,
+          created,
+          failed: pending,
+        };
+      }
+      return { ok: true as const, created, failed: pending };
+    }
+    const byDate = extractDayDrafts(result.parsed, pending);
+    const stillMissing: string[] = [];
+    for (const localDate of pending) {
+      const drafts = byDate.get(localDate) ?? [];
+      const built = questionsFromDrafts(localDate, drafts);
+      if (!built.ok) {
+        stillMissing.push(localDate);
+        if (attempt === 1) {
+          failed.push({ localDate, errors: built.errors });
+        }
+        continue;
+      }
+      const saved = await upsertGeneratedDraft(localDate, built.questions);
+      if (!saved.ok) {
+        stillMissing.push(localDate);
+        if (attempt === 1) {
+          failed.push({ localDate, errors: saved.errors });
+        }
+        continue;
+      }
+      created.push(localDate);
+    }
+    pending = stillMissing;
+  }
+
+  if (created.length === 0 && failed.length > 0) {
+    return {
+      ok: false as const,
+      error: "Could not generate a valid slate for any empty day.",
+      created,
+      failed: failed.map((row) => row.localDate),
+    };
+  }
+
+  return {
+    ok: true as const,
+    created,
+    failed: failed.map((row) => row.localDate),
   };
 }
