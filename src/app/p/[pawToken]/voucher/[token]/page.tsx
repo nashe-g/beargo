@@ -1,6 +1,6 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { VoucherTicket } from "@/components/scanner/VoucherTicket";
-import { publicOrigin } from "@/lib/config";
+import { PLAYER_OFFERS_ENABLED, publicOrigin } from "@/lib/config";
 import { getPromotion } from "@/lib/promotions";
 import { getVoucherByToken } from "@/lib/vouchers";
 import { headers } from "next/headers";
@@ -10,7 +10,8 @@ export const dynamic = "force-dynamic";
 export default async function VoucherPage({
   params,
 }: PageProps<"/p/[pawToken]/voucher/[token]">) {
-  const { token } = await params;
+  const { pawToken, token } = await params;
+  if (!PLAYER_OFFERS_ENABLED) redirect(`/p/${pawToken}/result`);
   const voucher = await getVoucherByToken(token);
   if (!voucher) notFound();
   const promotion = await getPromotion(voucher.promotionId);

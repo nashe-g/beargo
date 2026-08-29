@@ -1,4 +1,5 @@
 import { GameResult } from "@/components/scanner/GameResult";
+import { PLAYER_OFFERS_ENABLED } from "@/lib/config";
 import { getHost } from "@/lib/hosts";
 import { getPaw } from "@/lib/paws";
 import { deviceKeyFromCookies } from "@/lib/scan-session";
@@ -12,6 +13,9 @@ export default async function ResultPage({
 }: PageProps<"/p/[pawToken]/result">) {
   const { pawToken } = await params;
   const paw = await getPaw(pawToken);
+  if (!PLAYER_OFFERS_ENABLED) {
+    return <GameResult paw={paw} offer={null} claimedHref={null} />;
+  }
   const host = await getHost(paw.hostId);
   const deviceKey = await deviceKeyFromCookies();
   const claimed = deviceKey

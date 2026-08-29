@@ -1,5 +1,6 @@
 import { getHost } from "@/lib/hosts";
 import { getPaw } from "@/lib/paws";
+import { PLAYER_OFFERS_ENABLED } from "@/lib/config";
 import { claimMailOrigin, sendClaimVerification } from "@/lib/claim-mail";
 import {
   createClaimLink,
@@ -22,6 +23,9 @@ export async function POST(
   context: { params: Promise<{ pawToken: string; promotionId: string }> },
 ) {
   const { pawToken, promotionId } = await context.params;
+  if (!PLAYER_OFFERS_ENABLED) {
+    return Response.json({ error: "Offers are paused." }, { status: 404 });
+  }
   if (!rateLimit(clientKey(request, "claim"), 20, 60_000)) {
     return Response.json({ error: "Slow down" }, { status: 429 });
   }

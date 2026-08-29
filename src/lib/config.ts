@@ -3,6 +3,9 @@ export const CANONICAL_HOST = "beargo.pro";
 export const CANONICAL_ORIGIN = "https://beargo.pro";
 export const BEARGO_DAY_ZONE = "America/Chicago";
 
+/** Player-facing offers after gameplay. Keep merchant/admin architecture; flip this after takeoff. */
+export const PLAYER_OFFERS_ENABLED = false;
+
 export function pawScanUrl(token: string, origin: string = CANONICAL_ORIGIN) {
   return `${origin.replace(/\/$/, "")}/p/${encodeURIComponent(token)}`;
 }

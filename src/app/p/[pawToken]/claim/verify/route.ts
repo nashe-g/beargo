@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { PLAYER_OFFERS_ENABLED } from "@/lib/config";
 import { offerAcceptsNewClaims } from "@/lib/offer";
 import { getPromotion } from "@/lib/promotions";
 import {
@@ -30,6 +31,9 @@ export async function GET(
 ) {
   const { pawToken } = await context.params;
   const url = new URL(request.url);
+  if (!PLAYER_OFFERS_ENABLED) {
+    return NextResponse.redirect(new URL(`/p/${pawToken}/result`, url.origin));
+  }
   const token = url.searchParams.get("t");
   if (!token) {
     return NextResponse.redirect(new URL(`/p/${pawToken}/offer`, url.origin));
