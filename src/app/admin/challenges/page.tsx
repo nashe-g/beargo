@@ -23,8 +23,7 @@ export default async function AdminChallengesPage() {
       <h1 className="font-display text-4xl">Challenges</h1>
       <p className="mt-3 max-w-2xl text-ink-soft">
         Each week, generate the next 7 days, edit the drafts, then publish.
-        Published days are the same three questions at every host. Empty days
-        still fall back to the reviewed pool.
+        Published days are the same three questions at every host.
       </p>
       <p className="mt-4 text-sm text-ink-soft">
         Next 7 days: {ready}/7 published

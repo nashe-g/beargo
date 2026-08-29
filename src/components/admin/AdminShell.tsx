@@ -7,7 +7,6 @@ const LINKS = [
   { href: "/admin/hosts", label: "Hosts" },
   { href: "/admin/paws", label: "Paws" },
   { href: "/admin/challenges", label: "Challenges" },
-  { href: "/admin/questions", label: "Questions" },
   { href: "/admin/promotions", label: "Offers" },
   { href: "/admin/players", label: "Players" },
   { href: "/admin/applications", label: "Apply" },
