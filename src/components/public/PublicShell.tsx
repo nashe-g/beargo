@@ -36,7 +36,6 @@ export function PublicShell({ children }: { children: ReactNode }) {
         <Link href="/privacy">Privacy</Link>
         <Link href="/terms">Terms</Link>
         <Link href="/host-terms">Host terms</Link>
-        <Link href="/merchant-terms">Legacy merchant terms</Link>
         <Link href="/p/demo">Play the demo</Link>
       </footer>
     </div>
