@@ -341,6 +341,54 @@ async function migrateSchema() {
 
     ALTER TABLE vouchers ADD COLUMN IF NOT EXISTS player_id text REFERENCES players(id);
 
+    CREATE TABLE IF NOT EXISTS affiliate_advertisers (
+      id text PRIMARY KEY,
+      network text NOT NULL DEFAULT 'CJ',
+      network_advertiser_id text,
+      name text NOT NULL,
+      relationship_status text NOT NULL DEFAULT 'pending',
+      serviceable_countries jsonb NOT NULL DEFAULT '["US"]'::jsonb,
+      terms_reviewed_at timestamptz,
+      active boolean NOT NULL DEFAULT false,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS affiliate_offers (
+      id text PRIMARY KEY,
+      advertiser_id text NOT NULL REFERENCES affiliate_advertisers(id),
+      network text NOT NULL DEFAULT 'CJ',
+      offer_type text NOT NULL DEFAULT 'advertiser_landing',
+      title text NOT NULL,
+      body text NOT NULL,
+      cta_label text NOT NULL,
+      affiliate_click_url text NOT NULL,
+      advertiser_destination text,
+      image_url text,
+      source_link_id text,
+      source_product_id text,
+      starts_at timestamptz,
+      ends_at timestamptz,
+      target_countries jsonb NOT NULL DEFAULT '["US"]'::jsonb,
+      admin_weight integer NOT NULL DEFAULT 1,
+      compliance_reviewed boolean NOT NULL DEFAULT false,
+      active boolean NOT NULL DEFAULT false,
+      last_verified_at timestamptz,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS affiliate_events (
+      id text PRIMARY KEY,
+      kind text NOT NULL,
+      placement text NOT NULL DEFAULT 'post_game_leaderboard',
+      offer_id text NOT NULL,
+      advertiser_id text NOT NULL,
+      host_id text,
+      country text,
+      created_at timestamptz NOT NULL DEFAULT now()
+    );
+
     CREATE TABLE IF NOT EXISTS question_slates (
       local_date text PRIMARY KEY,
       status text NOT NULL DEFAULT 'draft',
@@ -382,6 +430,9 @@ async function main() {
         paws,
         challenge_sets,
         question_slates,
+        affiliate_events,
+        affiliate_offers,
+        affiliate_advertisers,
         applications,
         magic_links,
         hosts

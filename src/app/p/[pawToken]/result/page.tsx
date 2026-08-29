@@ -1,4 +1,5 @@
 import { GameResult } from "@/components/scanner/GameResult";
+import { selectAffiliateCard } from "@/lib/affiliate";
 import { PLAYER_OFFERS_ENABLED } from "@/lib/config";
 import { getHost } from "@/lib/hosts";
 import { getPaw } from "@/lib/paws";
@@ -13,8 +14,21 @@ export default async function ResultPage({
 }: PageProps<"/p/[pawToken]/result">) {
   const { pawToken } = await params;
   const paw = await getPaw(pawToken);
+  let affiliate = null;
+  try {
+    affiliate = await selectAffiliateCard({ hostId: paw.hostId });
+  } catch {
+    affiliate = null;
+  }
   if (!PLAYER_OFFERS_ENABLED) {
-    return <GameResult paw={paw} offer={null} claimedHref={null} />;
+    return (
+      <GameResult
+        paw={paw}
+        offer={null}
+        claimedHref={null}
+        affiliate={affiliate}
+      />
+    );
   }
   const host = await getHost(paw.hostId);
   const deviceKey = await deviceKeyFromCookies();
@@ -32,6 +46,7 @@ export default async function ResultPage({
       claimedHref={
         claimed ? `/p/${pawToken}/voucher/${claimed.token}` : null
       }
+      affiliate={affiliate}
     />
   );
 }

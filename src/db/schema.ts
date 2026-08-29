@@ -328,6 +328,62 @@ export const questionReports = pgTable("question_reports", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const affiliateAdvertisers = pgTable("affiliate_advertisers", {
+  id: text("id").primaryKey(),
+  network: text("network").notNull().default("CJ"),
+  networkAdvertiserId: text("network_advertiser_id"),
+  name: text("name").notNull(),
+  relationshipStatus: text("relationship_status").notNull().default("pending"),
+  serviceableCountries: jsonb("serviceable_countries")
+    .$type<string[]>()
+    .notNull()
+    .default(["US"]),
+  termsReviewedAt: timestamp("terms_reviewed_at", { withTimezone: true }),
+  active: boolean("active").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const affiliateOffers = pgTable("affiliate_offers", {
+  id: text("id").primaryKey(),
+  advertiserId: text("advertiser_id")
+    .notNull()
+    .references(() => affiliateAdvertisers.id),
+  network: text("network").notNull().default("CJ"),
+  offerType: text("offer_type").notNull().default("advertiser_landing"),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  ctaLabel: text("cta_label").notNull(),
+  affiliateClickUrl: text("affiliate_click_url").notNull(),
+  advertiserDestination: text("advertiser_destination"),
+  imageUrl: text("image_url"),
+  sourceLinkId: text("source_link_id"),
+  sourceProductId: text("source_product_id"),
+  startsAt: timestamp("starts_at", { withTimezone: true }),
+  endsAt: timestamp("ends_at", { withTimezone: true }),
+  targetCountries: jsonb("target_countries")
+    .$type<string[]>()
+    .notNull()
+    .default(["US"]),
+  adminWeight: integer("admin_weight").notNull().default(1),
+  complianceReviewed: boolean("compliance_reviewed").notNull().default(false),
+  active: boolean("active").notNull().default(false),
+  lastVerifiedAt: timestamp("last_verified_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const affiliateEvents = pgTable("affiliate_events", {
+  id: text("id").primaryKey(),
+  kind: text("kind").notNull(),
+  placement: text("placement").notNull().default("post_game_leaderboard"),
+  offerId: text("offer_id").notNull(),
+  advertiserId: text("advertiser_id").notNull(),
+  hostId: text("host_id"),
+  country: text("country"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const auditLogs = pgTable("audit_logs", {
   id: text("id").primaryKey(),
   actor: text("actor").notNull(),

@@ -13,6 +13,10 @@ const STEPS = [
     title: "See how you rank.",
     body: "That’s the game. Rank is for this place, today.",
   },
+  {
+    title: "Optional offers after the game.",
+    body: "After you see your result, BearGo may show a sponsored or affiliate offer from a third party. Viewing or clicking it is optional and does not affect your score or rank.",
+  },
 ];
 
 export default function HowItWorksPage() {

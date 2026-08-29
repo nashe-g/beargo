@@ -10,15 +10,35 @@ export default function PrivacyPage() {
           details. Rank is local to the venue and the day.
         </p>
         <p>
-          Claiming a nearby offer asks for name, email, and phone. We email a
-          link so you can confirm the address is yours before the voucher is
-          issued. We keep that contact for BearGo. We do not sell it as a lead
-          to the promoting merchant.
+          BearGo records that a game was played at a venue: the paw token, host,
+          challenge, score, and timing needed to rank that day. We use this to
+          run the board and understand how the game is used. We do not ask for
+          your name, email, or phone to play.
         </p>
         <p>
-          Hosts see game counts, not player contact details. Merchants see
-          voucher redemptions for their offers. Admin may access operational
-          records for support and fraud.
+          After you see your result, BearGo may show an optional sponsored or
+          affiliate offer from a third party. If that card appears, we may
+          record that it was shown and whether it was clicked, including the
+          offer, advertiser, venue, and time. We do not put your name, email,
+          phone, or trivia answers into those records or into affiliate
+          tracking parameters.
+        </p>
+        <p>
+          Clicking an affiliate link leaves BearGo and sends you to a third
+          party such as an advertiser site. CJ Affiliate and/or the advertiser
+          may use cookies or other identifiers on their sites to attribute a
+          qualifying purchase. Those sites operate under their own privacy
+          practices.
+        </p>
+        <p>
+          BearGo’s affiliate measurement uses a normal tracked link after your
+          click. We do not install a global third-party affiliate tag on every
+          page. You can control cookies in your browser settings.
+        </p>
+        <p>
+          We keep gameplay and affiliate measurement records for operations,
+          fraud, and reporting. Hosts see game counts, not player contact
+          details. We do not sell player contact as a lead.
         </p>
         <p>Questions: hello@beargo.pro</p>
       </div>

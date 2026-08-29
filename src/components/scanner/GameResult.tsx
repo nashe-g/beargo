@@ -8,6 +8,8 @@ import { ScannerShell } from "@/components/scanner/ScannerShell";
 import { StampSession } from "@/components/scanner/StampSession";
 import { beatCopy, formatDuration, loadAttempt } from "@/lib/attempt";
 import { BEAR_DURATIONS, type BearState } from "@/lib/bear";
+import { AffiliateCard } from "@/components/scanner/AffiliateCard";
+import type { AffiliateCardView } from "@/lib/affiliate";
 import type { OfferCard } from "@/lib/select-promotion";
 import { QUESTIONS_PER_CHALLENGE } from "@/lib/questions";
 import type { PawRecord } from "@/lib/paws";
@@ -16,10 +18,12 @@ export function GameResult({
   paw,
   offer,
   claimedHref,
+  affiliate,
 }: {
   paw: PawRecord;
   offer: OfferCard | null;
   claimedHref?: string | null;
+  affiliate?: AffiliateCardView | null;
 }) {
   const [showOffer, setShowOffer] = useState(false);
   const [bearState, setBearState] = useState<BearState>("celebrate");
@@ -155,6 +159,8 @@ export function GameResult({
             </div>
           </div>
         ) : null}
+
+        {score.hasAttempt && affiliate ? <AffiliateCard card={affiliate} /> : null}
       </div>
     </ScannerShell>
   );

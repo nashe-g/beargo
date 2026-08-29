@@ -5,7 +5,6 @@ import { PawMark } from "@/components/paw/PawMark";
 const LINKS = [
   { href: "/how-it-works", label: "How it works" },
   { href: "/for-hosts", label: "Hosts" },
-  { href: "/for-merchants", label: "Merchants" },
 ];
 
 export function PublicShell({ children }: { children: ReactNode }) {
@@ -37,7 +36,7 @@ export function PublicShell({ children }: { children: ReactNode }) {
         <Link href="/privacy">Privacy</Link>
         <Link href="/terms">Terms</Link>
         <Link href="/host-terms">Host terms</Link>
-        <Link href="/merchant-terms">Merchant terms</Link>
+        <Link href="/merchant-terms">Legacy merchant terms</Link>
         <Link href="/p/demo">Play the demo</Link>
       </footer>
     </div>
