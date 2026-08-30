@@ -9,7 +9,9 @@ export const dynamic = "force-dynamic";
 
 export default async function PourPage({
   params,
-}: PageProps<"/p/[pawToken]/pour">) {
+}: {
+  params: Promise<{ pawToken: string }>;
+}) {
   const { pawToken } = await params;
   if (!POUR_ENABLED) redirect(`/p/${pawToken}/play`);
   const paw = await getPaw(pawToken);

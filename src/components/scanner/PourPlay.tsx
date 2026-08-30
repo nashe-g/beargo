@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { PourRound } from "@/components/lab/pour/PourRound";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
 import "@/components/lab/pour/pour.css";
-import { loadAttempt, saveAttempt } from "@/lib/attempt";
+import { attemptNeedsPour, loadAttempt, saveAttempt } from "@/lib/attempt";
 import type { PawRecord } from "@/lib/paws";
 import type { PourRoundSeed } from "@/lib/pour";
 
@@ -21,16 +21,25 @@ export function PourPlay({
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    const attempt = loadAttempt(paw.token);
-    if (attempt?.rank != null) {
-      router.replace(`/p/${paw.token}/result`);
-      return;
+    function openIfReady() {
+      const attempt = loadAttempt(paw.token);
+      if (attemptNeedsPour(attempt)) {
+        setReady(true);
+        return true;
+      }
+      if (attempt?.pourMg != null) {
+        router.replace(`/p/${paw.token}/result`);
+        return true;
+      }
+      return false;
     }
-    if (!attempt?.answers || attempt.answers.length !== 3) {
+
+    if (openIfReady()) return;
+    const retry = window.setTimeout(() => {
+      if (openIfReady()) return;
       router.replace(`/p/${paw.token}/play`);
-      return;
-    }
-    setReady(true);
+    }, 80);
+    return () => window.clearTimeout(retry);
   }, [paw.token, router]);
 
   async function complete(fills: number[]) {

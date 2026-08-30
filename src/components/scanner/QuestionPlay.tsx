@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BearGuide } from "@/components/bear/BearGuide";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
-import { loadAttempt, saveAttempt, type AttemptAnswer } from "@/lib/attempt";
+import { attemptNeedsPour, loadAttempt, saveAttempt, type AttemptAnswer } from "@/lib/attempt";
 import { POUR_ENABLED } from "@/lib/config";
 import { BEAR_DURATIONS, type BearState } from "@/lib/bear";
 import { StampSession } from "@/components/scanner/StampSession";
@@ -42,11 +42,7 @@ export function QuestionPlay({
 
   useEffect(() => {
     const attempt = loadAttempt(paw.token);
-    if (
-      POUR_ENABLED &&
-      attempt?.answers?.length === challenge.questions.length &&
-      attempt.rank == null
-    ) {
+    if (attemptNeedsPour(attempt)) {
       router.replace(`/p/${paw.token}/pour`);
       return;
     }
@@ -107,7 +103,7 @@ export function QuestionPlay({
 
         if (POUR_ENABLED) {
           saveAttempt(paw.token, snapshot);
-          router.push(`/p/${paw.token}/pour`);
+          router.replace(`/p/${paw.token}/pour`);
           return;
         }
 
@@ -236,7 +232,11 @@ export function QuestionPlay({
               </button>
               {last ? (
                 <Link
-                  href={`/p/${paw.token}/result`}
+                  href={
+                    POUR_ENABLED
+                      ? `/p/${paw.token}/pour`
+                      : `/p/${paw.token}/result`
+                  }
                   className="flex h-12 flex-1 items-center justify-center rounded-full bg-honey text-sm font-semibold tracking-[0.16em] text-ink"
                 >
                   See rank

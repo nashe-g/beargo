@@ -1,3 +1,6 @@
+import { POUR_ENABLED } from "@/lib/config";
+import { QUESTIONS_PER_CHALLENGE } from "@/lib/questions";
+
 export type AttemptAnswer = {
   questionId: string;
   choiceId: string;
@@ -39,6 +42,12 @@ export function loadAttempt(token: string): AttemptSnapshot | null {
   } catch {
     return null;
   }
+}
+
+export function attemptNeedsPour(attempt: AttemptSnapshot | null) {
+  if (!POUR_ENABLED || !attempt?.answers) return false;
+  if (attempt.answers.length < QUESTIONS_PER_CHALLENGE) return false;
+  return attempt.pourMg == null;
 }
 
 export function formatDuration(ms: number) {

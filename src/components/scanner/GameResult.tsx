@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { BearGuide } from "@/components/bear/BearGuide";
 import { PointingFinger } from "@/components/scanner/PointingFinger";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
 import { StampSession } from "@/components/scanner/StampSession";
-import { beatCopy, formatDuration, loadAttempt } from "@/lib/attempt";
+import { attemptNeedsPour, beatCopy, formatDuration, loadAttempt } from "@/lib/attempt";
 import { BEAR_DURATIONS, type BearState } from "@/lib/bear";
 import { AffiliateCard } from "@/components/scanner/AffiliateCard";
 import type { AffiliateCardView } from "@/lib/affiliate";
@@ -25,6 +26,7 @@ export function GameResult({
   claimedHref?: string | null;
   affiliate?: AffiliateCardView | null;
 }) {
+  const router = useRouter();
   const [showOffer, setShowOffer] = useState(false);
   const [bearState, setBearState] = useState<BearState>("celebrate");
   const [score, setScore] = useState({
@@ -41,6 +43,10 @@ export function GameResult({
 
   useEffect(() => {
     const attempt = loadAttempt(paw.token);
+    if (attemptNeedsPour(attempt)) {
+      router.replace(`/p/${paw.token}/pour`);
+      return;
+    }
     if (attempt) {
       setScore({
         correctCount: attempt.correctCount,
@@ -63,7 +69,7 @@ export function GameResult({
     }, BEAR_DURATIONS.celebrate);
 
     return () => window.clearTimeout(look);
-  }, [paw.token, hasOffer]);
+  }, [paw.token, hasOffer, router]);
 
   const nearbyLine = offer
     ? [offer.distanceLabel, offer.urgency].filter(Boolean).join(" · ")
