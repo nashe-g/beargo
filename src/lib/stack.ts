@@ -33,9 +33,9 @@ export const STACK = {
   taller: 0.07,
   dampOmega: 1.7,
   dampTray: 2.4,
-  tapImpulse: 0.24,
-  holdForce: 2.6,
-  tapForce: 2.0,
+  tapImpulse: 0.38,
+  holdForce: 2.7,
+  tapForce: 2.45,
   tapDecay: 2.6,
   joltV: 0.15,
   wander: 0.015,
@@ -84,21 +84,16 @@ export function stackSlide(x: number) {
   return Math.max(-1, Math.min(1, x / STACK.maxX));
 }
 
-/** Bleed a fall. Do not reverse it past upright. */
+/** Catch a fall and send it back. A late or hard tap can overshoot. */
 export function tapCatch(body: StackBody, side: -1 | 1, glasses = 3): StackBody {
   const extra = Math.max(0, glasses - 3);
-  const lean = body.theta > 0.025 ? 1 : body.theta < -0.025 ? -1 : 0;
-  const next = {
+  const returnKick = 0.48 + extra * 0.12;
+  return {
     ...body,
     v: body.v + side * STACK.tapImpulse,
+    theta: body.theta * (0.78 + extra * 0.05),
+    omega: body.omega - side * returnKick,
   };
-  if (lean === 0 || lean === side) {
-    next.theta = body.theta * (0.45 + extra * 0.08);
-    next.omega = body.omega * (0.28 + extra * 0.1);
-    return next;
-  }
-  next.omega = body.omega - side * 0.12;
-  return next;
 }
 
 export function chicagoStackDate(offsetDays = 0) {

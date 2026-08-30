@@ -166,7 +166,7 @@ export function PourRound({
               }}
               onContextMenu={(event) => event.preventDefault()}
             >
-              <div className={`${live ? "h-[14.5rem]" : "h-[17rem]"} w-44 overflow-hidden`}>
+              <div className={`${live ? "h-[18.5rem]" : "h-[19.5rem]"} w-56 overflow-hidden`}>
                 <VesselGlass
                   spec={spec}
                   fill={currentFill}
@@ -176,7 +176,7 @@ export function PourRound({
                   streamCut={hold.streamCut}
                   zoomed={zoomed}
                   reveal={locked}
-                  className={`${live ? "h-[14.5rem]" : "h-[17rem]"} w-44`}
+                  className={`${live ? "h-[18.5rem]" : "h-[19.5rem]"} w-56`}
                 />
               </div>
               <p className="mt-4 text-sm text-paper/55">
