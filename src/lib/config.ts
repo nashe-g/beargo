@@ -10,8 +10,24 @@ export const LEGACY_LOCAL_COUPON_PUBLIC_ENABLED = PLAYER_OFFERS_ENABLED;
 /** Post-game CJ affiliate card. Kill switch; still serves nothing without an eligible offer. */
 export const AFFILIATE_POSTGAME_ENABLED = true;
 
-/** Head-on-it pour after trivia. Combined rank. */
+/** Head-on-it pour after trivia. Combined rank. Lab stays even when live skill is stack. */
 export const POUR_ENABLED = true;
+
+/** Wobbly Stack after trivia. When on, live play uses the tray instead of the pour. */
+export const STACK_ENABLED = true;
+
+export function liveSkill(): "stack" | "pour" | null {
+  if (STACK_ENABLED) return "stack";
+  if (POUR_ENABLED) return "pour";
+  return null;
+}
+
+export function liveSkillPath(pawToken: string) {
+  const skill = liveSkill();
+  if (skill === "stack") return `/p/${encodeURIComponent(pawToken)}/stack`;
+  if (skill === "pour") return `/p/${encodeURIComponent(pawToken)}/pour`;
+  return `/p/${encodeURIComponent(pawToken)}/result`;
+}
 
 export function pawScanUrl(token: string, origin: string = CANONICAL_ORIGIN) {
   return `${origin.replace(/\/$/, "")}/p/${encodeURIComponent(token)}`;

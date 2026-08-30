@@ -7,7 +7,13 @@ import { BearGuide } from "@/components/bear/BearGuide";
 import { PointingFinger } from "@/components/scanner/PointingFinger";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
 import { StampSession } from "@/components/scanner/StampSession";
-import { attemptNeedsPour, beatCopy, formatDuration, loadAttempt } from "@/lib/attempt";
+import {
+  attemptNeedsSkill,
+  beatCopy,
+  formatDuration,
+  loadAttempt,
+  skillHref,
+} from "@/lib/attempt";
 import { BEAR_DURATIONS, type BearState } from "@/lib/bear";
 import { AffiliateCard } from "@/components/scanner/AffiliateCard";
 import type { AffiliateCardView } from "@/lib/affiliate";
@@ -33,6 +39,7 @@ export function GameResult({
     correctCount: 0,
     totalResponseMs: 0,
     pourMg: null as number | null,
+    stackWobble: null as number | null,
     rank: 0,
     playerCount: 0,
     playersBeaten: 0,
@@ -43,8 +50,8 @@ export function GameResult({
 
   useEffect(() => {
     const attempt = loadAttempt(paw.token);
-    if (attemptNeedsPour(attempt)) {
-      router.replace(`/p/${paw.token}/pour`);
+    if (attemptNeedsSkill(attempt)) {
+      router.replace(skillHref(paw.token));
       return;
     }
     if (attempt) {
@@ -52,6 +59,7 @@ export function GameResult({
         correctCount: attempt.correctCount,
         totalResponseMs: attempt.totalResponseMs,
         pourMg: attempt.pourMg ?? null,
+        stackWobble: attempt.stackWobble ?? null,
         rank: attempt.rank ?? 0,
         playerCount: attempt.playerCount ?? 0,
         playersBeaten: attempt.playersBeaten ?? 0,
@@ -100,6 +108,9 @@ export function GameResult({
               <p className="mt-1 text-base text-paper/70 sm:text-lg">
                 {formatDuration(score.totalResponseMs)}
                 {score.pourMg != null ? ` · ${score.pourMg} mg off the pour` : ""}
+                {score.stackWobble != null
+                  ? ` · ${score.stackWobble} wobble`
+                  : ""}
               </p>
               <h1 className="mt-3 font-display text-xl leading-tight sm:text-2xl">
                 {score.rank > 0

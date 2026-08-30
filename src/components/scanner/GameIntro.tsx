@@ -18,8 +18,8 @@ export function GameIntro({ paw }: { paw: PawRecord }) {
             Today’s BearGo Challenge
           </h1>
           <p className="max-w-[18rem] text-base text-paper/80 sm:text-lg">
-            3 questions, then a pour. Answers, the pour, and speed set your
-            rank.
+            3 questions, then carry the tray. Answers, the carry, and speed
+            set your rank.
           </p>
         </div>
 

@@ -5,8 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BearGuide } from "@/components/bear/BearGuide";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
-import { attemptNeedsPour, loadAttempt, saveAttempt, type AttemptAnswer } from "@/lib/attempt";
-import { POUR_ENABLED } from "@/lib/config";
+import {
+  attemptNeedsSkill,
+  loadAttempt,
+  saveAttempt,
+  skillHref,
+  type AttemptAnswer,
+} from "@/lib/attempt";
+import { liveSkill } from "@/lib/config";
 import { BEAR_DURATIONS, type BearState } from "@/lib/bear";
 import { StampSession } from "@/components/scanner/StampSession";
 import type { DailyChallenge } from "@/lib/daily-challenge";
@@ -42,8 +48,8 @@ export function QuestionPlay({
 
   useEffect(() => {
     const attempt = loadAttempt(paw.token);
-    if (attemptNeedsPour(attempt)) {
-      router.replace(`/p/${paw.token}/pour`);
+    if (attemptNeedsSkill(attempt)) {
+      router.replace(skillHref(paw.token));
       return;
     }
     if (attempt) {
@@ -101,9 +107,9 @@ export function QuestionPlay({
           answers: nextAnswers,
         };
 
-        if (POUR_ENABLED) {
+        if (liveSkill()) {
           saveAttempt(paw.token, snapshot);
-          router.replace(`/p/${paw.token}/pour`);
+          router.replace(skillHref(paw.token));
           return;
         }
 
@@ -232,11 +238,7 @@ export function QuestionPlay({
               </button>
               {last ? (
                 <Link
-                  href={
-                    POUR_ENABLED
-                      ? `/p/${paw.token}/pour`
-                      : `/p/${paw.token}/result`
-                  }
+                  href={liveSkill() ? skillHref(paw.token) : `/p/${paw.token}/result`}
                   className="flex h-12 flex-1 items-center justify-center rounded-full bg-honey text-sm font-semibold tracking-[0.16em] text-ink"
                 >
                   See rank

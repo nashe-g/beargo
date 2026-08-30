@@ -103,6 +103,38 @@ export function stackScore(toppled: boolean, maxLean: number, integral: number) 
   return stackWobble(maxLean, integral) + (toppled ? 240 : 0);
 }
 
+const STACK_WOBBLE_CAP = 2000;
+
+export function scoreStackRound(
+  date: string,
+  hostId: string,
+  carries: unknown,
+): { wobbles: number[]; stackWobble: number } | null {
+  const seed = seedStackRound(date, hostId);
+  if (!Array.isArray(carries) || carries.length !== seed.carries.length) {
+    return null;
+  }
+  const wobbles: number[] = [];
+  let stackWobble = 0;
+  for (let i = 0; i < seed.carries.length; i += 1) {
+    const row = carries[i] as { wobble?: unknown; glasses?: unknown };
+    const wobble = Number(row?.wobble);
+    const glasses = Number(row?.glasses);
+    if (
+      !Number.isFinite(wobble) ||
+      wobble < 0 ||
+      wobble > STACK_WOBBLE_CAP ||
+      glasses !== seed.carries[i]?.glasses
+    ) {
+      return null;
+    }
+    const value = Math.round(wobble);
+    wobbles.push(value);
+    stackWobble += value;
+  }
+  return { wobbles, stackWobble };
+}
+
 export function stackPatronBand(band: StackBand): PourBand {
   if (band === "still") return "nail";
   if (band === "wobbly") return "close";

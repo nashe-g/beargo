@@ -149,9 +149,13 @@ export function StackCarryPlay({
 export function StackRound({
   seed,
   onReplay,
+  onComplete,
+  live = false,
 }: {
   seed: StackRoundSeed;
   onReplay?: () => void;
+  onComplete?: (results: StackCarryResult[]) => void;
+  live?: boolean;
 }) {
   const [index, setIndex] = useState(0);
   const [results, setResults] = useState<StackCarryResult[]>([]);
@@ -165,6 +169,10 @@ export function StackRound({
     next[index] = result;
     setResults(next);
     if (last) {
+      if (live) {
+        onComplete?.(next);
+        return;
+      }
       setStreak(recordStackStreak(seed.date).count);
       setFinished(true);
       return;
@@ -173,8 +181,14 @@ export function StackRound({
   }
 
   return (
-    <div className="scanner-stage overflow-hidden rounded-[1.8rem] text-paper">
-      <div className="flex min-h-[36rem] flex-col px-5 py-6">
+    <div
+      className={
+        live
+          ? "flex min-h-0 flex-1 flex-col text-paper"
+          : "scanner-stage overflow-hidden rounded-[1.8rem] text-paper"
+      }
+    >
+      <div className={live ? "flex min-h-0 flex-1 flex-col px-1 py-2" : "flex min-h-[36rem] flex-col px-5 py-6"}>
         {finished ? (
           <div className="mt-6 flex flex-1 flex-col items-center text-center">
             <p className="font-condensed text-sm tracking-[0.22em] text-honey">
@@ -223,7 +237,7 @@ export function StackRound({
             carry={carry}
             coach={index === 0 ? "full" : "countdown"}
             label={`CARRY ${String(index + 1).padStart(2, "0")} / 03`}
-            doneLabel={last ? "See round" : "Next"}
+            doneLabel={last ? (live ? "See rank" : "See round") : "Next"}
             onDone={finishCarry}
           />
         ) : null}

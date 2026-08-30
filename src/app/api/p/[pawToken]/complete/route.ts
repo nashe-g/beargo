@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { POUR_ENABLED } from "@/lib/config";
+import { liveSkill } from "@/lib/config";
 import { challengeForPaw, scoreChallenge } from "@/lib/daily-challenge";
 import { localDateInZone } from "@/lib/dates";
 import { getPaw } from "@/lib/paws";
@@ -10,6 +10,7 @@ import {
   SCAN_COOKIE,
   stampSession,
 } from "@/lib/scan-session";
+import { scoreStackRound } from "@/lib/stack";
 import { recordPlay } from "@/lib/store";
 
 const MAX_MS = 10 * 60 * 1000;
@@ -35,7 +36,11 @@ export async function POST(
     return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const record = body as { answers?: unknown; pourFills?: unknown };
+  const record = body as {
+    answers?: unknown;
+    pourFills?: unknown;
+    stackCarries?: unknown;
+  };
   if (!Array.isArray(record.answers)) {
     return Response.json({ error: "Invalid answers" }, { status: 400 });
   }
@@ -59,13 +64,18 @@ export async function POST(
     return Response.json({ error: "Invalid score" }, { status: 400 });
   }
 
+  const skill = liveSkill();
   let pourMg: number | null = null;
-  if (POUR_ENABLED) {
-    const poured = scorePourRound(
-      localDateInZone(paw.timezone),
-      paw.hostId,
-      record.pourFills,
-    );
+  let stackWobble: number | null = null;
+  const date = localDateInZone(paw.timezone);
+  if (skill === "stack") {
+    const stacked = scoreStackRound(date, paw.hostId, record.stackCarries);
+    if (!stacked) {
+      return Response.json({ error: "Invalid stack" }, { status: 400 });
+    }
+    stackWobble = stacked.stackWobble;
+  } else if (skill === "pour") {
+    const poured = scorePourRound(date, paw.hostId, record.pourFills);
     if (!poured) {
       return Response.json({ error: "Invalid pour" }, { status: 400 });
     }
@@ -78,6 +88,7 @@ export async function POST(
     correctCount: scored.correctCount,
     totalResponseMs: scored.totalResponseMs,
     pourMg,
+    stackWobble,
     sessionId,
     deviceKey,
   });
@@ -90,6 +101,7 @@ export async function POST(
     correctCount: play.correctCount,
     totalResponseMs: play.totalResponseMs,
     pourMg: play.pourMg,
+    stackWobble: play.stackWobble,
     rank: play.rank,
     playerCount: play.playerCount,
     playersBeaten: play.playersBeaten,

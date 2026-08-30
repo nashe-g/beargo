@@ -7,6 +7,7 @@ export type Play = {
   correctCount: number;
   totalResponseMs: number;
   pourMg?: number | null;
+  stackWobble?: number | null;
   rankingEligible?: boolean;
   createdAt: string;
 };
@@ -25,6 +26,13 @@ export function comparePlays(a: Play, b: Play) {
     a.pourMg !== b.pourMg
   ) {
     return a.pourMg - b.pourMg;
+  }
+  if (
+    a.stackWobble != null &&
+    b.stackWobble != null &&
+    a.stackWobble !== b.stackWobble
+  ) {
+    return a.stackWobble - b.stackWobble;
   }
   if (a.totalResponseMs !== b.totalResponseMs) {
     return a.totalResponseMs - b.totalResponseMs;

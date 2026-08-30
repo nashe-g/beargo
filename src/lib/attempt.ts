@@ -1,4 +1,4 @@
-import { POUR_ENABLED } from "@/lib/config";
+import { liveSkill, liveSkillPath } from "@/lib/config";
 import { QUESTIONS_PER_CHALLENGE } from "@/lib/questions";
 
 export type AttemptAnswer = {
@@ -11,6 +11,7 @@ export type AttemptSnapshot = {
   correctCount: number;
   totalResponseMs: number;
   pourMg?: number;
+  stackWobble?: number;
   rank?: number;
   playerCount?: number;
   playersBeaten?: number;
@@ -44,10 +45,21 @@ export function loadAttempt(token: string): AttemptSnapshot | null {
   }
 }
 
-export function attemptNeedsPour(attempt: AttemptSnapshot | null) {
-  if (!POUR_ENABLED || !attempt?.answers) return false;
+export function attemptNeedsSkill(attempt: AttemptSnapshot | null) {
+  if (!attempt?.answers) return false;
   if (attempt.answers.length < QUESTIONS_PER_CHALLENGE) return false;
-  return attempt.pourMg == null;
+  const skill = liveSkill();
+  if (skill === "stack") return attempt.stackWobble == null;
+  if (skill === "pour") return attempt.pourMg == null;
+  return false;
+}
+
+export function attemptNeedsPour(attempt: AttemptSnapshot | null) {
+  return liveSkill() === "pour" && attemptNeedsSkill(attempt);
+}
+
+export function skillHref(token: string) {
+  return liveSkillPath(token);
 }
 
 export function formatDuration(ms: number) {
