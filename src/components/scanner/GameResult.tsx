@@ -12,8 +12,8 @@ import {
   beatCopy,
   formatDuration,
   loadAttempt,
-  skillHref,
 } from "@/lib/attempt";
+import { nextPlayPath } from "@/lib/play-rounds";
 import { BEAR_DURATIONS, type BearState } from "@/lib/bear";
 import { AffiliateCard } from "@/components/scanner/AffiliateCard";
 import type { AffiliateCardView } from "@/lib/affiliate";
@@ -51,7 +51,7 @@ export function GameResult({
   useEffect(() => {
     const attempt = loadAttempt(paw.token);
     if (attemptNeedsSkill(attempt)) {
-      router.replace(skillHref(paw.token));
+      router.replace(nextPlayPath(paw.token, attempt));
       return;
     }
     if (attempt) {

@@ -20,11 +20,13 @@ export function PourRound({
   onReplay,
   onComplete,
   live = false,
+  lastCta,
 }: {
   seed: PourRoundSeed;
   onReplay?: () => void;
   onComplete?: (fills: number[]) => void;
   live?: boolean;
+  lastCta?: string;
 }) {
   const [index, setIndex] = useState(0);
   const [locked, setLocked] = useState(false);
@@ -63,7 +65,9 @@ export function PourRound({
   function nextPour() {
     if (lastPour) {
       if (live) {
-        onComplete?.(results);
+        const fills = [...results];
+        fills[index] = results[index] ?? currentFill;
+        onComplete?.(fills);
         return;
       }
       setStreak(recordPourStreak(seed.date).count);
@@ -202,7 +206,11 @@ export function PourRound({
                   onClick={nextPour}
                   className="btn-honey mt-4 mb-2 inline-flex h-12 items-center rounded-full bg-honey px-7 font-semibold text-ink"
                 >
-                  {lastPour ? (live ? "See rank" : "See round") : "Next pour"}
+                  {lastPour
+                    ? live
+                      ? (lastCta ?? "See rank")
+                      : "See round"
+                    : "Next pour"}
                 </button>
               </div>
             ) : null}

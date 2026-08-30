@@ -4,19 +4,25 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BearGuide } from "@/components/bear/BearGuide";
+import { RoundIntro } from "@/components/scanner/RoundIntro";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
 import {
   attemptNeedsSkill,
   loadAttempt,
   saveAttempt,
-  skillHref,
   type AttemptAnswer,
 } from "@/lib/attempt";
-import { liveSkill } from "@/lib/config";
+import { POUR_ENABLED, STACK_ENABLED } from "@/lib/config";
 import { BEAR_DURATIONS, type BearState } from "@/lib/bear";
 import { StampSession } from "@/components/scanner/StampSession";
 import type { DailyChallenge } from "@/lib/daily-challenge";
 import type { PawRecord } from "@/lib/paws";
+import {
+  PLAY_ROUNDS,
+  afterTriviaLine,
+  nextHandsCta,
+  nextPlayPath,
+} from "@/lib/play-rounds";
 
 type Phase = "asking" | "feedback";
 
@@ -35,6 +41,7 @@ export function QuestionPlay({
   const [answers, setAnswers] = useState<AttemptAnswer[]>([]);
   const [review, setReview] = useState(false);
   const [ready, setReady] = useState(false);
+  const [intro, setIntro] = useState(true);
   const [reported, setReported] = useState(false);
   const questionStartedAt = useRef(0);
   const advanceTimer = useRef<number>(0);
@@ -45,16 +52,19 @@ export function QuestionPlay({
     review
       ? answers.find((entry) => entry.questionId === question.id)?.choiceId
       : selectedId;
+  const attempt = ready ? loadAttempt(paw.token) : null;
+  const nextHref = nextPlayPath(paw.token, attempt);
 
   useEffect(() => {
-    const attempt = loadAttempt(paw.token);
-    if (attemptNeedsSkill(attempt)) {
-      router.replace(skillHref(paw.token));
+    const snapshot = loadAttempt(paw.token);
+    if (attemptNeedsSkill(snapshot)) {
+      router.replace(nextPlayPath(paw.token, snapshot));
       return;
     }
-    if (attempt) {
-      setAnswers(attempt.answers ?? []);
+    if (snapshot) {
+      setAnswers(snapshot.answers ?? []);
       setReview(true);
+      setIntro(false);
       setPhase("feedback");
       setBearState("idle");
     }
@@ -62,9 +72,9 @@ export function QuestionPlay({
   }, [challenge.questions.length, paw.token, router]);
 
   useEffect(() => {
-    if (review) return;
+    if (review || intro) return;
     questionStartedAt.current = performance.now();
-  }, [index, review]);
+  }, [index, review, intro]);
 
   useEffect(() => {
     return () => window.clearTimeout(advanceTimer.current);
@@ -107,9 +117,9 @@ export function QuestionPlay({
           answers: nextAnswers,
         };
 
-        if (liveSkill()) {
+        if (POUR_ENABLED || STACK_ENABLED) {
           saveAttempt(paw.token, snapshot);
-          router.replace(skillHref(paw.token));
+          router.replace(nextPlayPath(paw.token, snapshot));
           return;
         }
 
@@ -167,6 +177,18 @@ export function QuestionPlay({
     return <ScannerShell><div className="flex-1" /></ScannerShell>;
   }
 
+  if (intro && !review) {
+    return (
+      <ScannerShell>
+        <RoundIntro
+          round="trivia"
+          kicker="First test. The easy one to talk through."
+          onGo={() => setIntro(false)}
+        />
+      </ScannerShell>
+    );
+  }
+
   return (
     <ScannerShell>
       {review ? null : (
@@ -175,6 +197,8 @@ export function QuestionPlay({
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pt-2 sm:gap-5">
         <div className="flex items-center justify-between">
           <p className="text-sm tracking-[0.2em] text-paper/55 uppercase">
+            {PLAY_ROUNDS.trivia.n} · {PLAY_ROUNDS.trivia.name}
+            {" · "}
             {index + 1} / {challenge.questions.length}
             {review ? " · review" : ""}
           </p>
@@ -219,6 +243,9 @@ export function QuestionPlay({
             {question.conversationHook ? (
               <p className="text-honey/90">{question.conversationHook}</p>
             ) : null}
+            {last && !review ? (
+              <p className="text-sm text-honey/80">{afterTriviaLine()}</p>
+            ) : null}
           </div>
         ) : null}
 
@@ -238,10 +265,10 @@ export function QuestionPlay({
               </button>
               {last ? (
                 <Link
-                  href={liveSkill() ? skillHref(paw.token) : `/p/${paw.token}/result`}
+                  href={nextHref}
                   className="flex h-12 flex-1 items-center justify-center rounded-full bg-honey text-sm font-semibold tracking-[0.16em] text-ink"
                 >
-                  See rank
+                  {nextHandsCta(attempt)}
                 </Link>
               ) : (
                 <button

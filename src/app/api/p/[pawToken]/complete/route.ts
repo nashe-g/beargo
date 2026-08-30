@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { liveSkill } from "@/lib/config";
+import { POUR_ENABLED, STACK_ENABLED } from "@/lib/config";
 import { challengeForPaw, scoreChallenge } from "@/lib/daily-challenge";
 import { localDateInZone } from "@/lib/dates";
 import { getPaw } from "@/lib/paws";
@@ -64,22 +64,22 @@ export async function POST(
     return Response.json({ error: "Invalid score" }, { status: 400 });
   }
 
-  const skill = liveSkill();
   let pourMg: number | null = null;
   let stackWobble: number | null = null;
   const date = localDateInZone(paw.timezone);
-  if (skill === "stack") {
-    const stacked = scoreStackRound(date, paw.hostId, record.stackCarries);
-    if (!stacked) {
-      return Response.json({ error: "Invalid stack" }, { status: 400 });
-    }
-    stackWobble = stacked.stackWobble;
-  } else if (skill === "pour") {
+  if (POUR_ENABLED) {
     const poured = scorePourRound(date, paw.hostId, record.pourFills);
     if (!poured) {
       return Response.json({ error: "Invalid pour" }, { status: 400 });
     }
     pourMg = poured.pourMg;
+  }
+  if (STACK_ENABLED) {
+    const stacked = scoreStackRound(date, paw.hostId, record.stackCarries);
+    if (!stacked) {
+      return Response.json({ error: "Invalid stack" }, { status: 400 });
+    }
+    stackWobble = stacked.stackWobble;
   }
 
   const play = await recordPlay({

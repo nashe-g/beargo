@@ -3,11 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PourRound } from "@/components/lab/pour/PourRound";
+import { RoundIntro } from "@/components/scanner/RoundIntro";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
 import "@/components/lab/pour/pour.css";
 import { attemptNeedsPour, loadAttempt, saveAttempt } from "@/lib/attempt";
+import { STACK_ENABLED } from "@/lib/config";
 import type { PawRecord } from "@/lib/paws";
-import type { PourRoundSeed } from "@/lib/pour";
+import { afterTriviaLine, nextPlayPath } from "@/lib/play-rounds";
+import { scorePourRound, type PourRoundSeed } from "@/lib/pour";
 
 export function PourPlay({
   paw,
@@ -18,6 +21,7 @@ export function PourPlay({
 }) {
   const router = useRouter();
   const [ready, setReady] = useState(false);
+  const [intro, setIntro] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -27,8 +31,8 @@ export function PourPlay({
         setReady(true);
         return true;
       }
-      if (attempt?.pourMg != null) {
-        router.replace(`/p/${paw.token}/result`);
+      if (attempt) {
+        router.replace(nextPlayPath(paw.token, attempt));
         return true;
       }
       return false;
@@ -50,6 +54,20 @@ export function PourPlay({
       return;
     }
     setSubmitting(true);
+    const scored = scorePourRound(seed.date, paw.hostId, fills);
+    const next = {
+      ...attempt,
+      pourFills: fills,
+      pourMg: scored?.pourMg,
+      finishedAt: Date.now(),
+    };
+    saveAttempt(paw.token, next);
+
+    if (STACK_ENABLED) {
+      router.push(nextPlayPath(paw.token, next));
+      return;
+    }
+
     try {
       const response = await fetch(`/api/p/${paw.token}/complete`, {
         method: "POST",
@@ -66,18 +84,17 @@ export function PourPlay({
           playersBeaten: number;
         };
         saveAttempt(paw.token, {
-          ...attempt,
+          ...next,
           correctCount: ranked.correctCount,
           totalResponseMs: ranked.totalResponseMs,
           pourMg: ranked.pourMg,
           rank: ranked.rank,
           playerCount: ranked.playerCount,
           playersBeaten: ranked.playersBeaten,
-          finishedAt: Date.now(),
         });
       }
     } catch {
-      saveAttempt(paw.token, attempt);
+      saveAttempt(paw.token, next);
     }
     router.push(`/p/${paw.token}/result`);
   }
@@ -90,9 +107,26 @@ export function PourPlay({
     );
   }
 
+  if (intro) {
+    return (
+      <ScannerShell>
+        <RoundIntro
+          round="pour"
+          kicker={afterTriviaLine()}
+          onGo={() => setIntro(false)}
+        />
+      </ScannerShell>
+    );
+  }
+
   return (
     <ScannerShell>
-      <PourRound live seed={seed} onComplete={complete} />
+      <PourRound
+        live
+        seed={seed}
+        lastCta={STACK_ENABLED ? "The tray" : "See rank"}
+        onComplete={complete}
+      />
     </ScannerShell>
   );
 }

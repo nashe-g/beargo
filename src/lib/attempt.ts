@@ -1,5 +1,7 @@
-import { liveSkill, liveSkillPath } from "@/lib/config";
-import { QUESTIONS_PER_CHALLENGE } from "@/lib/questions";
+import {
+  attemptNeedsHands,
+  nextPlayPath,
+} from "@/lib/play-rounds";
 
 export type AttemptAnswer = {
   questionId: string;
@@ -11,6 +13,7 @@ export type AttemptSnapshot = {
   correctCount: number;
   totalResponseMs: number;
   pourMg?: number;
+  pourFills?: number[];
   stackWobble?: number;
   rank?: number;
   playerCount?: number;
@@ -46,20 +49,13 @@ export function loadAttempt(token: string): AttemptSnapshot | null {
 }
 
 export function attemptNeedsSkill(attempt: AttemptSnapshot | null) {
-  if (!attempt?.answers) return false;
-  if (attempt.answers.length < QUESTIONS_PER_CHALLENGE) return false;
-  const skill = liveSkill();
-  if (skill === "stack") return attempt.stackWobble == null;
-  if (skill === "pour") return attempt.pourMg == null;
-  return false;
+  return attemptNeedsHands(attempt);
 }
 
-export function attemptNeedsPour(attempt: AttemptSnapshot | null) {
-  return liveSkill() === "pour" && attemptNeedsSkill(attempt);
-}
+export { attemptNeedsPour, attemptNeedsStack } from "@/lib/play-rounds";
 
-export function skillHref(token: string) {
-  return liveSkillPath(token);
+export function skillHref(token: string, attempt?: AttemptSnapshot | null) {
+  return nextPlayPath(token, attempt ?? null);
 }
 
 export function formatDuration(ms: number) {
@@ -72,3 +68,4 @@ export function beatCopy(playersBeaten: number, playerCount: number) {
   if (playersBeaten === 1) return "You beat 1 player.";
   return `You beat ${playersBeaten} players.`;
 }
+

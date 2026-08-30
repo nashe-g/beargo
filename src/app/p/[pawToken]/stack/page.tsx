@@ -1,5 +1,5 @@
 import { StackPlay } from "@/components/scanner/StackPlay";
-import { liveSkill } from "@/lib/config";
+import { STACK_ENABLED } from "@/lib/config";
 import { localDateInZone } from "@/lib/dates";
 import { getPaw } from "@/lib/paws";
 import { seedStackRound } from "@/lib/stack";
@@ -13,7 +13,7 @@ export default async function StackPage({
   params: Promise<{ pawToken: string }>;
 }) {
   const { pawToken } = await params;
-  if (liveSkill() !== "stack") redirect(`/p/${pawToken}/play`);
+  if (!STACK_ENABLED) redirect(`/p/${pawToken}/play`);
   const paw = await getPaw(pawToken);
   const seed = seedStackRound(localDateInZone(paw.timezone), paw.hostId);
   return <StackPlay paw={paw} seed={seed} />;
