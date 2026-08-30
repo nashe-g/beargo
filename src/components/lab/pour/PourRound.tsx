@@ -190,7 +190,7 @@ export function PourRound({
                     ? "Stream landing…"
                     : hold.settling
                       ? "Head settling…"
-                      : "Hold to pour. The stream still lands after you let go."}
+                      : "Tap and hold to pour. The stream still lands after you let go."}
               </p>
             </button>
             {locked && pour ? (

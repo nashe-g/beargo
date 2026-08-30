@@ -21,10 +21,7 @@ export function GameIntro({ paw }: { paw: PawRecord }) {
           <h1 className="mt-3 font-display text-3xl leading-tight sm:text-4xl">
             {PLAY_HOOK.title}
           </h1>
-          <p className="mt-3 max-w-[20rem] text-base text-paper/80 sm:text-lg">
-            {PLAY_HOOK.body}
-          </p>
-          <ol className="mt-4 w-full max-w-[20rem] space-y-2 text-left">
+          <ol className="mt-5 w-full max-w-[20rem] space-y-2 text-left">
             {rounds.map((round) => (
               <li
                 key={round.id}

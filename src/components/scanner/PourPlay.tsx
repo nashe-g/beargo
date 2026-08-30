@@ -124,7 +124,7 @@ export function PourPlay({
       <PourRound
         live
         seed={seed}
-        lastCta={STACK_ENABLED ? "The tray" : "See rank"}
+        lastCta={STACK_ENABLED ? "Next, the tray" : "See rank"}
         onComplete={complete}
       />
     </ScannerShell>

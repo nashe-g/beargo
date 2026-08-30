@@ -21,6 +21,28 @@ import type { OfferCard } from "@/lib/select-promotion";
 import { QUESTIONS_PER_CHALLENGE } from "@/lib/questions";
 import type { PawRecord } from "@/lib/paws";
 
+function ScoreRow({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  hint: string;
+}) {
+  return (
+    <li className="rounded-2xl border border-paper/10 bg-paper/6 px-4 py-3 text-left">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-sm tracking-[0.16em] text-paper/50 uppercase">
+          {label}
+        </span>
+        <span className="font-semibold text-paper">{value}</span>
+      </div>
+      <p className="mt-1 text-sm text-paper/50">{hint}</p>
+    </li>
+  );
+}
+
 export function GameResult({
   paw,
   offer,
@@ -82,6 +104,10 @@ export function GameResult({
   const nearbyLine = offer
     ? [offer.distanceLabel, offer.urgency].filter(Boolean).join(" · ")
     : "";
+  const showPromo =
+    score.hasAttempt &&
+    showOffer &&
+    (Boolean(claimedHref) || Boolean(offer && !claimedHref));
 
   return (
     <ScannerShell>
@@ -98,38 +124,46 @@ export function GameResult({
         />
       ) : null}
       <div className="relative flex min-h-0 flex-1 flex-col">
-        <div className="flex min-h-0 flex-1 flex-col items-center overflow-hidden pt-2 text-center">
+        <div className="flex min-h-0 flex-1 flex-col items-center overflow-y-auto pt-2 text-center">
           <BearGuide state={bearState} size="sm" />
           {score.hasAttempt ? (
             <>
-              <p className="mt-2 font-display text-4xl sm:text-5xl">
-                {score.correctCount} / {QUESTIONS_PER_CHALLENGE}
-              </p>
-              <p className="mt-1 text-base text-paper/70 sm:text-lg">
-                {formatDuration(score.totalResponseMs)}
-                {score.pourMg != null ? ` · ${score.pourMg} mg off the pour` : ""}
-                {score.stackWobble != null
-                  ? ` · ${score.stackWobble} wobble`
-                  : ""}
-              </p>
-              <h1 className="mt-3 font-display text-xl leading-tight sm:text-2xl">
+              <h1 className="mt-3 font-display text-3xl leading-tight sm:text-4xl">
                 {score.rank > 0
                   ? `#${score.rank} at ${host} today`
                   : `On the board at ${host}`}
               </h1>
-              <p className="mt-1 text-sm text-paper/65 sm:text-base">
+              <p className="mt-2 text-base text-paper/70 sm:text-lg">
                 {score.rank > 0
                   ? beatCopy(score.playersBeaten, score.playerCount)
                   : "Rank will show on the next play."}
               </p>
-              {!hasOffer && bearState === "thanks" ? (
-                <p className="mt-6 text-paper/65">Thanks for playing.</p>
-              ) : null}
+              <ul className="mt-6 w-full max-w-xs space-y-2">
+                <ScoreRow
+                  label="Trivia"
+                  value={`${score.correctCount} of ${QUESTIONS_PER_CHALLENGE}`}
+                  hint={`${formatDuration(score.totalResponseMs)} on the questions`}
+                />
+                {score.pourMg != null ? (
+                  <ScoreRow
+                    label="Pour"
+                    value={`${score.pourMg.toLocaleString()} mg off`}
+                    hint="How far you missed the line. Closer is better."
+                  />
+                ) : null}
+                {score.stackWobble != null ? (
+                  <ScoreRow
+                    label="Tray"
+                    value={score.stackWobble.toLocaleString()}
+                    hint="How much the glasses leaned. Lower is steadier."
+                  />
+                ) : null}
+              </ul>
             </>
           ) : (
             <>
               <h1 className="mt-6 font-display text-3xl leading-tight">
-                Play to see how you rank at {host} today.
+                Play to see where you stand at {host} today.
               </h1>
               <Link
                 href={`/p/${paw.token}/play`}
@@ -141,8 +175,8 @@ export function GameResult({
           )}
         </div>
 
-        {score.hasAttempt && claimedHref && showOffer ? (
-          <div className="mt-auto shrink-0">
+        <div className="mt-4 min-h-[10.5rem] shrink-0">
+          {score.hasAttempt && claimedHref && showOffer ? (
             <Link href={claimedHref} className="teaser-card block">
               <span className="block text-xs font-semibold tracking-[0.22em] text-honey-deep">
                 YOUR VOUCHER
@@ -151,36 +185,42 @@ export function GameResult({
                 SHOW THIS WHEN YOU PAY
               </span>
             </Link>
-          </div>
-        ) : null}
+          ) : null}
 
-        {score.hasAttempt && offer && !claimedHref && showOffer ? (
-          <div className="mt-auto shrink-0">
-            <div className="flex justify-center">
-              <PointingFinger className="pointing-finger" />
+          {score.hasAttempt && offer && !claimedHref && showOffer ? (
+            <div>
+              <div className="flex justify-center">
+                <PointingFinger className="pointing-finger" />
+              </div>
+              <div className="teaser-card teaser-card-pulse">
+                <p className="text-xs font-semibold tracking-[0.22em] text-honey-deep">
+                  YOU UNLOCKED
+                </p>
+                <p className="mt-2 font-display text-3xl leading-tight">
+                  {offer.offerTitle}
+                </p>
+                {offer.teaserMode === "merchant_visible" ? (
+                  <p className="mt-2 text-lg">{offer.merchantName}</p>
+                ) : null}
+                <p className="mt-2 text-sm text-ink-soft">{nearbyLine}</p>
+                <Link
+                  href={`/p/${paw.token}/offer`}
+                  className="btn-honey mt-6 flex h-14 w-full items-center justify-center rounded-full bg-honey text-lg font-semibold tracking-[0.18em] text-ink"
+                >
+                  VIEW OFFER
+                </Link>
+              </div>
             </div>
-            <div className="teaser-card teaser-card-pulse">
-              <p className="text-xs font-semibold tracking-[0.22em] text-honey-deep">
-                YOU UNLOCKED
-              </p>
-              <p className="mt-2 font-display text-3xl leading-tight">
-                {offer.offerTitle}
-              </p>
-              {offer.teaserMode === "merchant_visible" ? (
-                <p className="mt-2 text-lg">{offer.merchantName}</p>
-              ) : null}
-              <p className="mt-2 text-sm text-ink-soft">{nearbyLine}</p>
-              <Link
-                href={`/p/${paw.token}/offer`}
-                className="btn-honey mt-6 flex h-14 w-full items-center justify-center rounded-full bg-honey text-lg font-semibold tracking-[0.18em] text-ink"
-              >
-                VIEW OFFER
-              </Link>
-            </div>
-          </div>
-        ) : null}
+          ) : null}
 
-        {score.hasAttempt && affiliate ? <AffiliateCard card={affiliate} /> : null}
+          {score.hasAttempt && affiliate ? (
+            <AffiliateCard card={affiliate} />
+          ) : null}
+
+          {score.hasAttempt && !showPromo && !affiliate && bearState === "thanks" ? (
+            <p className="pt-2 text-center text-paper/65">Thanks for playing.</p>
+          ) : null}
+        </div>
       </div>
     </ScannerShell>
   );

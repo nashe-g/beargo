@@ -17,7 +17,7 @@ export type PlayRoundCopy = {
 export const PLAY_HOOK = {
   title: "Who’s still got it?",
   body: "Three bar questions. Pour three beers to the line. Keep a leaning tray of glasses up. Two minutes. Rank at this bar today.",
-  dare: "Dare the person next to you to scan too.",
+  dare: "Dare the person next to you to play too.",
   cta: "Let’s go",
 } as const;
 
@@ -28,7 +28,7 @@ export const PLAY_ROUNDS: Record<PlayRoundId, PlayRoundCopy> = {
     name: "Trivia",
     title: "Three bar questions.",
     tease: "Same ones for everyone here.",
-    body: "Same three for everyone at this bar today. Yell them out if you want.",
+    body: "Same three for everyone at this bar today.",
     cta: "Start",
   },
   pour: {
