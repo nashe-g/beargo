@@ -30,6 +30,7 @@ export function GameResult({
   const [score, setScore] = useState({
     correctCount: 0,
     totalResponseMs: 0,
+    pourMg: null as number | null,
     rank: 0,
     playerCount: 0,
     playersBeaten: 0,
@@ -44,6 +45,7 @@ export function GameResult({
       setScore({
         correctCount: attempt.correctCount,
         totalResponseMs: attempt.totalResponseMs,
+        pourMg: attempt.pourMg ?? null,
         rank: attempt.rank ?? 0,
         playerCount: attempt.playerCount ?? 0,
         playersBeaten: attempt.playersBeaten ?? 0,
@@ -91,6 +93,7 @@ export function GameResult({
               </p>
               <p className="mt-1 text-base text-paper/70 sm:text-lg">
                 {formatDuration(score.totalResponseMs)}
+                {score.pourMg != null ? ` · ${score.pourMg} mg off the pour` : ""}
               </p>
               <h1 className="mt-3 font-display text-xl leading-tight sm:text-2xl">
                 {score.rank > 0

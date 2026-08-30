@@ -202,6 +202,8 @@ const DEMO_USERS = [
 
 async function migrateSchema() {
   await db.execute(sql`
+    ALTER TABLE plays ADD COLUMN IF NOT EXISTS pour_mg integer;
+
     ALTER TABLE hosts ADD COLUMN IF NOT EXISTS lat double precision;
     ALTER TABLE hosts ADD COLUMN IF NOT EXISTS lng double precision;
     ALTER TABLE hosts ADD COLUMN IF NOT EXISTS excluded_categories jsonb NOT NULL DEFAULT '[]'::jsonb;

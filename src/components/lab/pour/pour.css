@@ -1,0 +1,155 @@
+.pour-stream {
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+}
+
+.pour-impact {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: pour-impact 0.22s ease-out infinite;
+}
+
+.pour-glass {
+  transition: transform 720ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.pour-glass-zoom {
+  transform: scale(2.45);
+}
+
+.pour-miss {
+  animation: pour-miss-in 480ms ease-out 1;
+}
+
+.pour-bubble {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: pour-bubble-drift 2.1s ease-in-out infinite;
+}
+
+.pour-drip {
+  animation: pour-drip 0.7s ease-in infinite;
+}
+
+.pour-drip-delay {
+  animation-delay: 0.18s;
+}
+
+.patron-figure {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  transition: transform 280ms ease;
+}
+
+.patron-figure[data-reaction="nail"] {
+  transform: translateY(-4px) scale(1.04);
+}
+
+.patron-figure[data-reaction="close"] {
+  transform: translateY(-1px);
+}
+
+.patron-figure[data-reaction="short"] {
+  transform: translateY(6px) scale(0.96);
+}
+
+.patron-figure[data-reaction="flood"] {
+  transform: rotate(-8deg) translateX(4px);
+}
+
+.pour-juice-close {
+  animation: pour-nudge 420ms ease-out 1;
+}
+
+.pour-juice-nail {
+  animation: pour-pop 480ms ease-out 1;
+}
+
+@keyframes pour-nudge {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  55% {
+    transform: translateX(4px);
+  }
+}
+
+@keyframes pour-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.03);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pour-stream,
+  .pour-impact,
+  .pour-drip,
+  .pour-bubble,
+  .patron-figure,
+  .pour-juice-close,
+  .pour-juice-nail,
+  .pour-miss {
+    animation: none;
+    transition: none;
+  }
+
+  .pour-glass,
+  .pour-glass-zoom {
+    transition: none;
+    transform: none;
+  }
+}
+
+@keyframes pour-impact {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scaleX(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleX(1.35);
+  }
+}
+
+@keyframes pour-miss-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes pour-drip {
+  0% {
+    transform: translateY(0);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(18px);
+    opacity: 0;
+  }
+}
+
+@keyframes pour-bubble-drift {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.82;
+  }
+  50% {
+    transform: translateY(-2px);
+    opacity: 1;
+  }
+}

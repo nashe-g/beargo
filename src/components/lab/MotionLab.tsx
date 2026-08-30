@@ -28,6 +28,15 @@ export function MotionLab() {
             Paw geometry and bear states live here until the rest of the app
             wires them in.
           </p>
+          <p className="flex gap-4 text-sm">
+            <span className="text-ink">Motion</span>
+            <Link
+              href="/lab/pour"
+              className="underline decoration-honey underline-offset-4"
+            >
+              Pour
+            </Link>
+          </p>
         </header>
 
         <section className="space-y-4">

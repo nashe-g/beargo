@@ -7,6 +7,7 @@ export type AttemptAnswer = {
 export type AttemptSnapshot = {
   correctCount: number;
   totalResponseMs: number;
+  pourMg?: number;
   rank?: number;
   playerCount?: number;
   playersBeaten?: number;

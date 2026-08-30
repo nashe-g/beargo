@@ -18,7 +18,8 @@ export function GameIntro({ paw }: { paw: PawRecord }) {
             Today’s BearGo Challenge
           </h1>
           <p className="max-w-[18rem] text-base text-paper/80 sm:text-lg">
-            3 questions. Correct answers + speed determine your rank.
+            3 questions, then a pour. Answers, the pour, and speed set your
+            rank.
           </p>
         </div>
 
@@ -29,7 +30,7 @@ export function GameIntro({ paw }: { paw: PawRecord }) {
           >
             PLAY
           </Link>
-          <p className="text-sm text-paper/50">No account. About 30 seconds.</p>
+          <p className="text-sm text-paper/50">No account. About a minute.</p>
         </div>
       </div>
     </ScannerShell>

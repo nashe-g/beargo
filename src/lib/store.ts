@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { db } from "@/db";
 import { plays } from "@/db/schema";
@@ -18,6 +18,7 @@ function mapPlay(row: typeof plays.$inferSelect): Play {
     localDate: row.localDate,
     correctCount: row.correctCount,
     totalResponseMs: row.totalResponseMs,
+    pourMg: row.pourMg,
     rankingEligible: row.rankingEligible,
     createdAt: isoRequired(row.createdAt),
   };
@@ -28,14 +29,24 @@ export async function listPlays() {
   return rows.map(mapPlay);
 }
 
+let pourColumnReady = false;
+
+async function ensurePourMgColumn() {
+  if (pourColumnReady) return;
+  await db().execute(sql`ALTER TABLE plays ADD COLUMN IF NOT EXISTS pour_mg integer`);
+  pourColumnReady = true;
+}
+
 export async function recordPlay(input: {
   paw: PawRecord;
   challengeId: string;
   correctCount: number;
   totalResponseMs: number;
+  pourMg?: number | null;
   sessionId?: string | null;
   deviceKey?: string | null;
 }): Promise<RecordedPlay> {
+  await ensurePourMgColumn();
   const localDate = localDateInZone(input.paw.timezone);
   let rankingEligible = true;
   if (input.deviceKey) {
@@ -62,6 +73,7 @@ export async function recordPlay(input: {
     localDate,
     correctCount: input.correctCount,
     totalResponseMs: input.totalResponseMs,
+    pourMg: input.pourMg ?? null,
     rankingEligible,
     createdAt: new Date().toISOString(),
   };
@@ -75,6 +87,7 @@ export async function recordPlay(input: {
     localDate: play.localDate,
     correctCount: play.correctCount,
     totalResponseMs: play.totalResponseMs,
+    pourMg: play.pourMg,
     rankingEligible,
     deviceKey: input.deviceKey ?? null,
   });

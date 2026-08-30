@@ -6,6 +6,7 @@ export type Play = {
   localDate: string;
   correctCount: number;
   totalResponseMs: number;
+  pourMg?: number | null;
   rankingEligible?: boolean;
   createdAt: string;
 };
@@ -18,6 +19,13 @@ export type RankResult = {
 
 export function comparePlays(a: Play, b: Play) {
   if (b.correctCount !== a.correctCount) return b.correctCount - a.correctCount;
+  if (
+    a.pourMg != null &&
+    b.pourMg != null &&
+    a.pourMg !== b.pourMg
+  ) {
+    return a.pourMg - b.pourMg;
+  }
   if (a.totalResponseMs !== b.totalResponseMs) {
     return a.totalResponseMs - b.totalResponseMs;
   }

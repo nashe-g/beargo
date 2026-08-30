@@ -18,12 +18,12 @@ export function HomePawSign() {
           label="BearGo demo paw"
         />
         <p className="mt-7 font-condensed text-center text-lg font-semibold tracking-[0.2em]">
-          3 QUESTIONS
+          3 QUESTIONS + A POUR
         </p>
         <p className="mt-2 text-center font-display text-2xl leading-tight">
           How do you rank here today?
         </p>
-        <p className="mt-4 text-center text-sm text-ink-soft">~30 seconds</p>
+        <p className="mt-4 text-center text-sm text-ink-soft">~1 minute</p>
       </div>
     </div>
   );

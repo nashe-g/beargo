@@ -7,8 +7,8 @@ const STEPS = [
     body: "A printed mark at the venue. No app install.",
   },
   {
-    title: "Three questions.",
-    body: "Same set for everyone here today. Correct answers and speed set your rank.",
+    title: "Three questions, then a pour.",
+    body: "Same set for everyone here today. Answers, the pour, and speed set your rank.",
   },
   {
     title: "See how you rank.",
@@ -25,7 +25,7 @@ export default function HowItWorksPage() {
     <PublicShell>
       <PublicHeading kicker="THE GAME" title="How it works" />
       <p className="mt-5 max-w-xl text-lg leading-relaxed text-ink-soft">
-        No account to play. About 30 seconds.
+        No account to play. About a minute.
       </p>
       <ol className="mt-10 grid gap-4 sm:grid-cols-2">
         {STEPS.map((step, index) => (

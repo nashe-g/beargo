@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { BearGuide } from "@/components/bear/BearGuide";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
 import { loadAttempt, saveAttempt, type AttemptAnswer } from "@/lib/attempt";
+import { POUR_ENABLED } from "@/lib/config";
 import { BEAR_DURATIONS, type BearState } from "@/lib/bear";
 import { StampSession } from "@/components/scanner/StampSession";
 import type { DailyChallenge } from "@/lib/daily-challenge";
@@ -41,6 +42,14 @@ export function QuestionPlay({
 
   useEffect(() => {
     const attempt = loadAttempt(paw.token);
+    if (
+      POUR_ENABLED &&
+      attempt?.answers?.length === challenge.questions.length &&
+      attempt.rank == null
+    ) {
+      router.replace(`/p/${paw.token}/pour`);
+      return;
+    }
     if (attempt) {
       setAnswers(attempt.answers ?? []);
       setReview(true);
@@ -48,7 +57,7 @@ export function QuestionPlay({
       setBearState("idle");
     }
     setReady(true);
-  }, [paw.token]);
+  }, [challenge.questions.length, paw.token, router]);
 
   useEffect(() => {
     if (review) return;
@@ -95,6 +104,12 @@ export function QuestionPlay({
           finishedAt: Date.now(),
           answers: nextAnswers,
         };
+
+        if (POUR_ENABLED) {
+          saveAttempt(paw.token, snapshot);
+          router.push(`/p/${paw.token}/pour`);
+          return;
+        }
 
         try {
           const response = await fetch(`/api/p/${paw.token}/complete`, {

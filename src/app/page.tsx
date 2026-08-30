@@ -10,8 +10,8 @@ const BEATS = [
   },
   {
     n: "02",
-    title: "Three questions.",
-    body: "The same set for everyone here today. Correct answers and speed set your place.",
+    title: "Three questions, then a pour.",
+    body: "The same set for everyone here today. Answers, the pour, and speed set your place.",
   },
   {
     n: "03",
@@ -29,11 +29,12 @@ export default function Home() {
             A DAILY CHALLENGE AT REAL PLACES
           </p>
           <h1 className="mt-4 max-w-xl font-display text-[2.4rem] leading-[1.06] tracking-tight sm:text-6xl">
-            Scan the paw. Three questions. How do you rank here today?
+            Scan the paw. Three questions and a pour. How do you rank here
+            today?
           </h1>
           <p className="mt-6 max-w-md text-lg leading-relaxed text-ink-soft sm:text-xl">
             BearGo lives on a printed mark in the room. No account to play.
-            About 30 seconds.
+            About a minute.
           </p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <Link

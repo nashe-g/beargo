@@ -184,6 +184,7 @@ export const plays = pgTable("plays", {
   localDate: text("local_date").notNull(),
   correctCount: integer("correct_count").notNull(),
   totalResponseMs: integer("total_response_ms").notNull(),
+  pourMg: integer("pour_mg"),
   rankingEligible: boolean("ranking_eligible").notNull().default(true),
   deviceKey: text("device_key"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

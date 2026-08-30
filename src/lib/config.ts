@@ -10,6 +10,9 @@ export const LEGACY_LOCAL_COUPON_PUBLIC_ENABLED = PLAYER_OFFERS_ENABLED;
 /** Post-game CJ affiliate card. Kill switch; still serves nothing without an eligible offer. */
 export const AFFILIATE_POSTGAME_ENABLED = true;
 
+/** Head-on-it pour after trivia. Combined rank. */
+export const POUR_ENABLED = true;
+
 export function pawScanUrl(token: string, origin: string = CANONICAL_ORIGIN) {
   return `${origin.replace(/\/$/, "")}/p/${encodeURIComponent(token)}`;
 }

@@ -1,6 +1,9 @@
 import { cookies } from "next/headers";
+import { POUR_ENABLED } from "@/lib/config";
 import { challengeForPaw, scoreChallenge } from "@/lib/daily-challenge";
+import { localDateInZone } from "@/lib/dates";
 import { getPaw } from "@/lib/paws";
+import { scorePourRound } from "@/lib/pour";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
 import {
   DEVICE_COOKIE,
@@ -32,7 +35,7 @@ export async function POST(
     return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const record = body as { answers?: unknown };
+  const record = body as { answers?: unknown; pourFills?: unknown };
   if (!Array.isArray(record.answers)) {
     return Response.json({ error: "Invalid answers" }, { status: 400 });
   }
@@ -56,11 +59,25 @@ export async function POST(
     return Response.json({ error: "Invalid score" }, { status: 400 });
   }
 
+  let pourMg: number | null = null;
+  if (POUR_ENABLED) {
+    const poured = scorePourRound(
+      localDateInZone(paw.timezone),
+      paw.hostId,
+      record.pourFills,
+    );
+    if (!poured) {
+      return Response.json({ error: "Invalid pour" }, { status: 400 });
+    }
+    pourMg = poured.pourMg;
+  }
+
   const play = await recordPlay({
     paw,
     challengeId: scored.challengeId,
     correctCount: scored.correctCount,
     totalResponseMs: scored.totalResponseMs,
+    pourMg,
     sessionId,
     deviceKey,
   });
@@ -72,6 +89,7 @@ export async function POST(
   return Response.json({
     correctCount: play.correctCount,
     totalResponseMs: play.totalResponseMs,
+    pourMg: play.pourMg,
     rank: play.rank,
     playerCount: play.playerCount,
     playersBeaten: play.playersBeaten,
