@@ -160,6 +160,12 @@ export function PourLab() {
               Motion
             </Link>
             <span className="text-ink">Pour</span>
+            <Link
+              href="/lab/stack"
+              className="underline decoration-honey underline-offset-4"
+            >
+              Stack
+            </Link>
           </p>
         </header>
 

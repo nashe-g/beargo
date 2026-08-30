@@ -36,6 +36,12 @@ export function MotionLab() {
             >
               Pour
             </Link>
+            <Link
+              href="/lab/stack"
+              className="underline decoration-honey underline-offset-4"
+            >
+              Stack
+            </Link>
           </p>
         </header>
 
