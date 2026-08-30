@@ -15,9 +15,9 @@ export type PlayRoundCopy = {
 };
 
 export const PLAY_HOOK = {
-  kicker: "How steady are you tonight.",
-  title: "Head. Hands. Nerves.",
-  body: "Three tests. Two minutes. Brain first, then a pour, then you walk the tray. Same table. Pass the phone when you’re done.",
+  title: "Who’s still got it?",
+  body: "Three bar questions. Pour three beers to the line. Keep a leaning tray of glasses up. Two minutes. Rank at this bar today.",
+  dare: "Dare the person next to you to scan too.",
   cta: "Let’s go",
 } as const;
 
@@ -25,19 +25,19 @@ export const PLAY_ROUNDS: Record<PlayRoundId, PlayRoundCopy> = {
   trivia: {
     id: "trivia",
     n: "01",
-    name: "The brain",
-    title: "Three questions.",
-    tease: "Talk it out if you want.",
-    body: "Same ones for everyone here today. Wrong is still a story. Hands and the tray wait.",
-    cta: "Start the brain",
+    name: "Trivia",
+    title: "Three bar questions.",
+    tease: "Same ones for everyone here.",
+    body: "Same three for everyone at this bar today. Yell them out if you want.",
+    cta: "Start",
   },
   pour: {
     id: "pour",
     n: "02",
     name: "The pour",
-    title: "Your hands.",
-    tease: "Hold to the mark.",
-    body: "Three glasses. Hold to the line. Let go — the stream still lands and the head settles. That’s the test.",
+    title: "Now, the pour.",
+    tease: "Fill three glasses to the line.",
+    body: "Three glasses. Hold to the gold line, then let go.",
     cta: "Pour it",
   },
   stack: {
@@ -45,8 +45,8 @@ export const PLAY_ROUNDS: Record<PlayRoundId, PlayRoundCopy> = {
     n: "03",
     name: "The tray",
     title: "Last one. Don’t drop it.",
-    tease: "Friends will watch.",
-    body: "It leans on its own. Tap the arrow on the side it’s falling. Three carries. Don’t make them mop.",
+    tease: "Keep the glasses from falling.",
+    body: "The glasses lean on their own. Tap the arrow on the side they’re falling. Three carries. Don’t make them mop.",
     cta: "Carry it",
   },
 };
@@ -94,13 +94,12 @@ export function nextHandsCta(attempt: AttemptSnapshot | null) {
   return "See rank";
 }
 
-export function afterTriviaLine() {
-  if (POUR_ENABLED) return "Brain’s in. Hands next.";
-  if (STACK_ENABLED) return "Brain’s in. Tray next.";
-  return "That’s the set.";
-}
-
-export function afterPourLine() {
-  if (STACK_ENABLED) return "Hands are warm. One more — the tray.";
-  return "That’s the set.";
+export function afterTriviaRoast(
+  correct: number,
+  total = QUESTIONS_PER_CHALLENGE,
+) {
+  if (correct >= total) return "Three for three. Don’t get cute.";
+  if (correct === 2) return "Two. We’ll allow it.";
+  if (correct === 1) return "One. The pour might save you.";
+  return "Zero. At least you’re honest.";
 }

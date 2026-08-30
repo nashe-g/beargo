@@ -77,16 +77,23 @@ export function StackCarryPlay({
   return (
     <div className="flex flex-1 flex-col">
       <p className="font-condensed text-center text-sm tracking-[0.22em] text-honey">
-        {label ?? `${carry.glasses} HIGH`}
+        {coach.phase === "demo"
+          ? "DEMO — WATCH"
+          : (label ?? `${carry.glasses} HIGH`)}
       </p>
       <p
         className={`mt-2 text-center font-display ${coach.counting ? "text-5xl" : "text-xl"}`}
       >
         {headline}
       </p>
+      {!locked && coach.phase === "demo" ? (
+        <p className="mt-1 text-center text-sm text-paper/55">
+          This is a demo. You play after the countdown.
+        </p>
+      ) : null}
       {!locked && coach.playing ? (
         <p className="mt-1 text-center text-sm text-paper/55">
-          Tap the arrow on the side it’s falling.
+          Tap the arrow on the side the glasses are falling.
         </p>
       ) : null}
       <div className="relative mt-2 flex flex-1 flex-col justify-end">

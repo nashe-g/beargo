@@ -19,7 +19,6 @@ import type { DailyChallenge } from "@/lib/daily-challenge";
 import type { PawRecord } from "@/lib/paws";
 import {
   PLAY_ROUNDS,
-  afterTriviaLine,
   nextHandsCta,
   nextPlayPath,
 } from "@/lib/play-rounds";
@@ -182,7 +181,6 @@ export function QuestionPlay({
       <ScannerShell>
         <RoundIntro
           round="trivia"
-          kicker="First test. The easy one to talk through."
           onGo={() => setIntro(false)}
         />
       </ScannerShell>
@@ -242,9 +240,6 @@ export function QuestionPlay({
             <p className="text-paper/75">{question.explanation}</p>
             {question.conversationHook ? (
               <p className="text-honey/90">{question.conversationHook}</p>
-            ) : null}
-            {last && !review ? (
-              <p className="text-sm text-honey/80">{afterTriviaLine()}</p>
             ) : null}
           </div>
         ) : null}

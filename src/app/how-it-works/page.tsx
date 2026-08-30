@@ -7,8 +7,8 @@ const STEPS = [
     body: "A printed mark at the venue. No app install.",
   },
   {
-    title: "Head. Hands. Nerves.",
-    body: "Three questions, a pour, then the tray. Same set for everyone here today. Answers, hands, and speed set your rank.",
+    title: "Who’s still got it?",
+    body: "Three bar questions, pour three beers to the line, then keep a leaning tray up. Same set for everyone here today.",
   },
   {
     title: "See how you rank.",

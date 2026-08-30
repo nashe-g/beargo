@@ -10,8 +10,8 @@ const BEATS = [
   },
   {
     n: "02",
-    title: "Head. Hands. Nerves.",
-    body: "Three tests. Brain, a pour, then the tray. Same set for everyone here today.",
+    title: "Who’s still got it?",
+    body: "Three bar questions, a pour to the line, then a tray that leans. Same set for everyone here today.",
   },
   {
     n: "03",
@@ -29,11 +29,11 @@ export default function Home() {
             A DAILY CHALLENGE AT REAL PLACES
           </p>
           <h1 className="mt-4 max-w-xl font-display text-[2.4rem] leading-[1.06] tracking-tight sm:text-6xl">
-            Scan the paw. Head. Hands. Nerves. How do you rank here today?
+            Scan the paw. Who’s still got it at this bar today?
           </h1>
           <p className="mt-6 max-w-md text-lg leading-relaxed text-ink-soft sm:text-xl">
-            BearGo lives on a printed mark in the room. No account to play.
-            About two minutes.
+            Three bar questions, a pour to the line, then a leaning tray.
+            No account. About two minutes. Dare the person next to you.
           </p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <Link

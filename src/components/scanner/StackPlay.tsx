@@ -9,7 +9,7 @@ import "@/components/lab/stack/stack.css";
 import { attemptNeedsStack, loadAttempt, saveAttempt } from "@/lib/attempt";
 import { POUR_ENABLED } from "@/lib/config";
 import type { PawRecord } from "@/lib/paws";
-import { afterPourLine, nextPlayPath } from "@/lib/play-rounds";
+import { nextPlayPath } from "@/lib/play-rounds";
 import type { StackCarryResult } from "@/components/lab/stack/StackRound";
 import { scoreStackRound, type StackRoundSeed } from "@/lib/stack";
 
@@ -121,7 +121,6 @@ export function StackPlay({
       <ScannerShell>
         <RoundIntro
           round="stack"
-          kicker={afterPourLine()}
           onGo={() => setIntro(false)}
         />
       </ScannerShell>

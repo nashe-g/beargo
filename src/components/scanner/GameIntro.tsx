@@ -7,26 +7,24 @@ import { PLAY_HOOK, playRoundList } from "@/lib/play-rounds";
 
 export function GameIntro({ paw }: { paw: PawRecord }) {
   const rounds = playRoundList();
+  const demo = paw.token === "demo";
 
   return (
     <ScannerShell>
       <StampSession pawToken={paw.token} event="scanned" />
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-between overflow-y-auto py-4 sm:py-6">
-        <div className="flex flex-col items-center gap-3 text-center sm:gap-4">
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-0 flex-1 flex-col items-center overflow-y-auto py-4 text-center">
           <BearGuide state="arrive" size="md" />
-          <p className="text-sm tracking-[0.22em] text-honey uppercase">
-            Today at {paw.hostDisplayName}
+          <p className="mt-3 text-sm tracking-[0.22em] text-honey uppercase">
+            {demo ? "Demo" : "Today"} at {paw.hostDisplayName}
           </p>
-          <p className="font-condensed text-sm tracking-[0.22em] text-honey/80">
-            {PLAY_HOOK.kicker}
-          </p>
-          <h1 className="font-display text-3xl leading-tight sm:text-4xl">
+          <h1 className="mt-3 font-display text-3xl leading-tight sm:text-4xl">
             {PLAY_HOOK.title}
           </h1>
-          <p className="max-w-[20rem] text-base text-paper/80 sm:text-lg">
+          <p className="mt-3 max-w-[20rem] text-base text-paper/80 sm:text-lg">
             {PLAY_HOOK.body}
           </p>
-          <ol className="mt-1 w-full max-w-[20rem] space-y-2 text-left">
+          <ol className="mt-4 w-full max-w-[20rem] space-y-2 text-left">
             {rounds.map((round) => (
               <li
                 key={round.id}
@@ -48,14 +46,14 @@ export function GameIntro({ paw }: { paw: PawRecord }) {
           </ol>
         </div>
 
-        <div className="flex w-full flex-col items-center gap-3">
+        <div className="flex w-full shrink-0 flex-col items-center gap-3 pt-4">
           <Link
             href={`/p/${paw.token}/play`}
             className="btn-honey flex h-14 w-full items-center justify-center rounded-full bg-honey text-lg font-semibold tracking-[0.14em] text-ink"
           >
             {PLAY_HOOK.cta}
           </Link>
-          <p className="text-sm text-paper/50">No account. About two minutes.</p>
+          <p className="text-sm text-paper/50">{PLAY_HOOK.dare}</p>
         </div>
       </div>
     </ScannerShell>

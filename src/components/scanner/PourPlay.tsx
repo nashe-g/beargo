@@ -9,7 +9,7 @@ import "@/components/lab/pour/pour.css";
 import { attemptNeedsPour, loadAttempt, saveAttempt } from "@/lib/attempt";
 import { STACK_ENABLED } from "@/lib/config";
 import type { PawRecord } from "@/lib/paws";
-import { afterTriviaLine, nextPlayPath } from "@/lib/play-rounds";
+import { afterTriviaRoast, nextPlayPath } from "@/lib/play-rounds";
 import { scorePourRound, type PourRoundSeed } from "@/lib/pour";
 
 export function PourPlay({
@@ -112,7 +112,7 @@ export function PourPlay({
       <ScannerShell>
         <RoundIntro
           round="pour"
-          kicker={afterTriviaLine()}
+          kicker={afterTriviaRoast(loadAttempt(paw.token)?.correctCount ?? 0)}
           onGo={() => setIntro(false)}
         />
       </ScannerShell>

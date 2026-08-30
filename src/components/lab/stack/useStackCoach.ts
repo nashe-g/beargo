@@ -29,7 +29,9 @@ export function useStackCoach(kind: StackCoachKind) {
   const [hintSide, setHintSide] = useState<-1 | 0 | 1>(0);
   const [tapSide, setTapSide] = useState<-1 | 0 | 1>(0);
   const [count, setCount] = useState(3);
-  const [line, setLine] = useState(kind === "full" ? "Watch." : "Get ready.");
+  const [line, setLine] = useState(
+    kind === "full" ? "Don’t tap yet." : "Get ready.",
+  );
 
   useEffect(() => {
     if (phase !== "demo") return;
