@@ -142,11 +142,11 @@ export function pourHeadline(fill: number, target: number) {
 export function pourReactionLine(fill: number, target: number) {
   const band = pourBand(fill, target);
   const delta = fill - target;
-  if (band === "nail") return "That’s the one they wanted.";
-  if (band === "close" && delta < 0) return "They saw it coming. One more beat.";
-  if (band === "close") return "They flinched. You had it, then you didn’t.";
-  if (band === "short") return "They’re still waiting.";
-  if (band === "flood") return "They’re wearing it.";
+  if (band === "nail") return "That’s a pour.";
+  if (band === "close" && delta < 0) return "Close. A beat more.";
+  if (band === "close") return "Close. You kept going.";
+  if (band === "short") return "Shy.";
+  if (band === "flood") return "Generous.";
   return "";
 }
 

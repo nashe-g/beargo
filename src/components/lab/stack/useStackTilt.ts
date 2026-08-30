@@ -39,7 +39,7 @@ export function useStackTilt(
   const maxRef = useRef(0);
   const integralRef = useRef(0);
   const accRef = useRef(0);
-  const nudgeAtRef = useRef(nextNudgeAt(800));
+  const nudgeAtRef = useRef(nextNudgeAt(800, Math.random, glasses));
   const firedRef = useRef(new Set<number>());
   const glassesRef = useRef(glasses);
   const joltsRef = useRef(jolts);
@@ -105,7 +105,11 @@ export function useStackTilt(
             ...bodyRef.current,
             v: bodyRef.current.v + side * STACK.nudge,
           };
-          nudgeAtRef.current = nextNudgeAt(elapsedRef.current);
+          nudgeAtRef.current = nextNudgeAt(
+            elapsedRef.current,
+            Math.random,
+            glassesRef.current,
+          );
         }
         assistRef.current *= Math.exp(-STACK.tapDecay * STACK.dt);
         if (Math.abs(assistRef.current) < 0.04) assistRef.current = 0;
@@ -158,7 +162,7 @@ export function useStackTilt(
 
   const press = useCallback((side: -1 | 1) => {
     if (lockedRef.current) return;
-    bodyRef.current = tapCatch(bodyRef.current, side);
+    bodyRef.current = tapCatch(bodyRef.current, side, glassesRef.current);
     assistRef.current = side * STACK.tapForce;
     forceRef.current = side * STACK.holdForce;
     setHolding(true);
@@ -181,7 +185,7 @@ export function useStackTilt(
     maxRef.current = Math.abs(next.theta);
     integralRef.current = 0;
     accRef.current = 0;
-    nudgeAtRef.current = nextNudgeAt(700);
+    nudgeAtRef.current = nextNudgeAt(700, Math.random, glassesRef.current);
     firedRef.current = new Set();
     setElapsed(0);
     setMaxLean(Math.abs(next.theta));

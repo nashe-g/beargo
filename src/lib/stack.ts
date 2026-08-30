@@ -26,22 +26,22 @@ export type StackRoundSeed = {
 
 export const STACK = {
   dt: 1 / 60,
-  /** Weaker than earth: a thumb needs ~400–550ms to pick a side. */
-  g: 2.55,
+  /** Weaker than earth: a thumb needs ~350–500ms to pick a side. */
+  g: 2.72,
   trayMass: 1.05,
   length: 0.98,
-  taller: 0.06,
-  dampOmega: 1.85,
+  taller: 0.07,
+  dampOmega: 1.7,
   dampTray: 2.4,
-  tapImpulse: 0.26,
-  holdForce: 2.8,
-  tapForce: 2.2,
+  tapImpulse: 0.24,
+  holdForce: 2.6,
+  tapForce: 2.0,
   tapDecay: 2.6,
-  joltV: 0.13,
-  wander: 0.012,
-  nudge: 0.04,
-  nudgeMinMs: 2800,
-  nudgeMaxMs: 4200,
+  joltV: 0.15,
+  wander: 0.015,
+  nudge: 0.048,
+  nudgeMinMs: 2400,
+  nudgeMaxMs: 3800,
   maxX: 0.22,
   maxV: 1.35,
   still: 0.12,
@@ -56,7 +56,13 @@ export type StackBody = {
 };
 
 export function stackLength(glasses: number) {
+  // Shorter pole falls faster. Do not feed this into tap force — that made
+  // 4- and 5-high easier because each tap shoved harder.
   return STACK.length - STACK.taller * Math.max(0, glasses - 3);
+}
+
+export function stackControlLength() {
+  return STACK.length;
 }
 
 export function stackTopple(glasses: number) {
@@ -79,15 +85,16 @@ export function stackSlide(x: number) {
 }
 
 /** Bleed a fall. Do not reverse it past upright. */
-export function tapCatch(body: StackBody, side: -1 | 1): StackBody {
+export function tapCatch(body: StackBody, side: -1 | 1, glasses = 3): StackBody {
+  const extra = Math.max(0, glasses - 3);
   const lean = body.theta > 0.025 ? 1 : body.theta < -0.025 ? -1 : 0;
   const next = {
     ...body,
     v: body.v + side * STACK.tapImpulse,
   };
   if (lean === 0 || lean === side) {
-    next.theta = body.theta * 0.45;
-    next.omega = body.omega * 0.28;
+    next.theta = body.theta * (0.45 + extra * 0.08);
+    next.omega = body.omega * (0.28 + extra * 0.1);
     return next;
   }
   next.omega = body.omega - side * 0.12;
@@ -165,8 +172,8 @@ export function seedStackRound(date: string, hostId = "lab"): StackRoundSeed {
   return {
     date,
     carries: STACK_GLASS_COUNTS.map((glasses, index) => {
-      const durationMs = 12000 + index * 1000;
-      const joltCount = index === 0 ? 1 : 2;
+      const durationMs = 12000;
+      const joltCount = index + 1;
       const jolts: StackJolt[] = [];
       for (let n = 0; n < joltCount; n += 1) {
         const window = durationMs - 2800;
@@ -200,10 +207,11 @@ export const STACK_REST: StackBody = {
   v: 0,
 };
 
-export function nextNudgeAt(fromMs: number, rng = Math.random) {
+export function nextNudgeAt(fromMs: number, rng = Math.random, glasses = 3) {
+  const tighten = Math.max(0, glasses - 3) * 320;
   return (
     fromMs +
-    STACK.nudgeMinMs +
+    Math.max(1400, STACK.nudgeMinMs - tighten) +
     rng() * (STACK.nudgeMaxMs - STACK.nudgeMinMs)
   );
 }
@@ -232,10 +240,11 @@ function derivatives(
   disturb: number,
 ): StackDeriv {
   const length = stackLength(glasses);
+  const control = stackControlLength();
   const accel = (force - STACK.dampTray * body.v) / STACK.trayMass;
   const alpha =
     (STACK.g / length) * Math.sin(body.theta) -
-    (accel / length) * Math.cos(body.theta) -
+    (accel / control) * Math.cos(body.theta) -
     STACK.dampOmega * body.omega +
     disturb;
   return {

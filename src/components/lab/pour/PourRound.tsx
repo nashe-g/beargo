@@ -142,11 +142,7 @@ export function PourRound({
           </div>
         ) : (
           <>
-            <p className="mt-3 text-center font-display text-xl">Head on it</p>
-            <p className="mt-1 text-center text-sm text-paper/60">
-              Aim the beer. The head thins, the drink keeps rising.
-            </p>
-            <div className="mt-3 flex justify-center">
+            <div className="mt-4 flex justify-center">
               <Patron
                 id={pour?.patronId ?? "a"}
                 reaction={band}
