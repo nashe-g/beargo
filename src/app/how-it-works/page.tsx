@@ -1,4 +1,5 @@
-import { PublicShell } from "@/components/public/PublicShell";
+import Link from "next/link";
+import { PublicHeading, PublicShell } from "@/components/public/PublicShell";
 
 const STEPS = [
   {
@@ -22,24 +23,32 @@ const STEPS = [
 export default function HowItWorksPage() {
   return (
     <PublicShell>
-      <h1 className="font-display text-4xl sm:text-5xl">How it works</h1>
-      <ol className="mt-8 space-y-4">
+      <PublicHeading kicker="THE GAME" title="How it works" />
+      <p className="mt-5 max-w-xl text-lg leading-relaxed text-ink-soft">
+        No account to play. About 30 seconds.
+      </p>
+      <ol className="mt-10 grid gap-4 sm:grid-cols-2">
         {STEPS.map((step, index) => (
           <li
             key={step.title}
-            className="rounded-3xl border border-ink/10 bg-pad/70 px-5 py-5 shadow-[0_12px_32px_rgba(26,18,11,0.06)]"
+            className="rounded-[1.6rem] border border-ink/10 bg-pad/70 px-5 py-6 shadow-[0_16px_36px_rgba(26,18,11,0.05)]"
           >
-            <p className="font-condensed text-sm tracking-[0.22em] text-honey-deep">
+            <p className="font-condensed text-sm tracking-[0.22em] text-honey-ink">
               {String(index + 1).padStart(2, "0")}
             </p>
-            <p className="mt-2 font-display text-2xl">{step.title}</p>
-            <p className="mt-2 text-lg text-ink-soft">{step.body}</p>
+            <p className="mt-3 font-display text-2xl leading-tight">
+              {step.title}
+            </p>
+            <p className="mt-3 leading-relaxed text-ink-soft">{step.body}</p>
           </li>
         ))}
       </ol>
-      <div className="mt-8 max-w-xl space-y-3 text-lg text-ink-soft">
-        <p>No account to play. About 30 seconds.</p>
-      </div>
+      <Link
+        href="/p/demo"
+        className="btn-honey mt-10 inline-flex h-14 items-center justify-center rounded-full bg-honey px-8 text-lg font-semibold text-ink"
+      >
+        Play the demo
+      </Link>
     </PublicShell>
   );
 }

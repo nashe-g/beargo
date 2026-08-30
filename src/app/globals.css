@@ -11,6 +11,7 @@
   --color-ink-soft: #5a4634;
   --color-honey: #e8a31a;
   --color-honey-deep: #c4840a;
+  --color-honey-ink: #7c4f08;
   --color-pad: #fffaf1;
   --color-moss: #2c6a4a;
   --color-clay: #b33a2b;
@@ -28,8 +29,29 @@ body {
 .paper-surface {
   background-color: var(--color-paper);
   background-image:
-    radial-gradient(ellipse 90% 50% at 50% -10%, rgba(232, 163, 26, 0.18), transparent 55%),
-    radial-gradient(ellipse 70% 40% at 100% 100%, rgba(28, 20, 12, 0.06), transparent 50%);
+    radial-gradient(ellipse 80% 42% at 12% -8%, rgba(232, 163, 26, 0.22), transparent 58%),
+    radial-gradient(ellipse 70% 40% at 100% 100%, rgba(28, 20, 12, 0.07), transparent 52%),
+    radial-gradient(ellipse 50% 30% at 80% 8%, rgba(255, 250, 241, 0.45), transparent 60%);
+}
+
+.paper-grain {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  opacity: 0.045;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.public-prose {
+  font-size: 1.125rem;
+  line-height: 1.7;
+  color: var(--color-ink-soft);
+}
+
+.public-prose p + p {
+  margin-top: 1.15rem;
 }
 
 .scanner-stage {

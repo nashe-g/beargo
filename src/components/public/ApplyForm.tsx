@@ -29,50 +29,61 @@ export function ApplyForm({ kind }: { kind: "host" | "merchant" }) {
 
   if (done) {
     return (
-      <p className="mt-8 rounded-3xl bg-paper-deep px-5 py-5">
+      <p className="mt-6 rounded-2xl bg-paper-deep/80 px-5 py-4 leading-relaxed">
         Got it. We’ll review and email you a sign-in link if we take you live.
       </p>
     );
   }
 
+  const field =
+    "mt-1.5 h-12 w-full rounded-2xl border border-ink/15 bg-paper/80 px-4 outline-none transition-colors focus:border-honey";
+
   return (
-    <form onSubmit={submit} className="mt-8 space-y-3">
-      <input
-        required
-        value={name}
-        onChange={(event) => setName(event.target.value)}
-        placeholder={kind === "host" ? "Venue name" : "Business name"}
-        className="h-14 w-full rounded-full border border-ink/15 bg-pad/80 px-5 outline-none focus:border-honey"
-      />
-      <input
-        required
-        type="email"
-        value={email}
-        onChange={(event) => setEmail(event.target.value)}
-        placeholder="Email"
-        className="h-14 w-full rounded-full border border-ink/15 bg-pad/80 px-5 outline-none focus:border-honey"
-      />
-      <input
-        value={city}
-        onChange={(event) => setCity(event.target.value)}
-        placeholder="City"
-        className="h-14 w-full rounded-full border border-ink/15 bg-pad/80 px-5 outline-none focus:border-honey"
-      />
-      {kind === "merchant" ? (
+    <form onSubmit={submit} className="mt-6 space-y-4">
+      <label className="block text-sm text-ink-soft">
+        {kind === "host" ? "Venue name" : "Business name"}
         <input
-          value={oneLiner}
-          onChange={(event) => setOneLiner(event.target.value)}
-          placeholder="What you sell, in one line"
-          className="h-14 w-full rounded-full border border-ink/15 bg-pad/80 px-5 outline-none focus:border-honey"
+          required
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          className={field}
         />
+      </label>
+      <label className="block text-sm text-ink-soft">
+        Email
+        <input
+          required
+          type="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          className={field}
+        />
+      </label>
+      <label className="block text-sm text-ink-soft">
+        City
+        <input
+          value={city}
+          onChange={(event) => setCity(event.target.value)}
+          className={field}
+        />
+      </label>
+      {kind === "merchant" ? (
+        <label className="block text-sm text-ink-soft">
+          What you sell, in one line
+          <input
+            value={oneLiner}
+            onChange={(event) => setOneLiner(event.target.value)}
+            className={field}
+          />
+        </label>
       ) : null}
       <button
         type="submit"
-        className="btn-honey flex h-14 w-full items-center justify-center rounded-full bg-honey text-lg font-semibold text-ink"
+        className="btn-honey flex h-12 w-full items-center justify-center rounded-full bg-honey text-base font-semibold text-ink"
       >
         Apply
       </button>
-      {error ? <p className="text-clay">{error}</p> : null}
+      {error ? <p className="text-sm text-clay">{error}</p> : null}
     </form>
   );
 }
