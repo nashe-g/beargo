@@ -8,6 +8,7 @@ import {
   stackHintSide,
   stackKick,
   stackLength,
+  tapCatch,
   stackSlide,
   stackTopple,
   stepStack,
@@ -157,10 +158,7 @@ export function useStackTilt(
 
   const press = useCallback((side: -1 | 1) => {
     if (lockedRef.current) return;
-    bodyRef.current = {
-      ...bodyRef.current,
-      v: bodyRef.current.v + side * STACK.tapImpulse,
-    };
+    bodyRef.current = tapCatch(bodyRef.current, side);
     assistRef.current = side * STACK.tapForce;
     forceRef.current = side * STACK.holdForce;
     setHolding(true);

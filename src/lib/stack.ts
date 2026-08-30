@@ -26,24 +26,25 @@ export type StackRoundSeed = {
 
 export const STACK = {
   dt: 1 / 60,
-  g: 9.81,
+  /** Weaker than earth: a thumb needs ~400–550ms to pick a side. */
+  g: 2.55,
   trayMass: 1.05,
-  length: 0.78,
-  taller: 0.04,
-  dampOmega: 1.35,
-  dampTray: 2.1,
-  tapImpulse: 0.58,
-  holdForce: 3.6,
-  tapForce: 4.2,
-  tapDecay: 3.4,
-  joltV: 0.2,
-  wander: 0.16,
-  nudge: 0.1,
-  nudgeMinMs: 2200,
-  nudgeMaxMs: 4000,
-  maxX: 0.2,
+  length: 0.98,
+  taller: 0.06,
+  dampOmega: 1.85,
+  dampTray: 2.4,
+  tapImpulse: 0.26,
+  holdForce: 2.8,
+  tapForce: 2.2,
+  tapDecay: 2.6,
+  joltV: 0.13,
+  wander: 0.012,
+  nudge: 0.04,
+  nudgeMinMs: 2800,
+  nudgeMaxMs: 4200,
+  maxX: 0.22,
   maxV: 1.35,
-  still: 0.1,
+  still: 0.12,
   telegraphMs: 920,
 } as const;
 
@@ -59,7 +60,7 @@ export function stackLength(glasses: number) {
 }
 
 export function stackTopple(glasses: number) {
-  return 0.5 - 0.045 * Math.max(0, glasses - 3);
+  return 0.52 - 0.04 * Math.max(0, glasses - 3);
 }
 
 export function stackSpill(glasses: number) {
@@ -75,6 +76,22 @@ export function stackHintSide(theta: number, previous: -1 | 0 | 1): -1 | 0 | 1 {
 
 export function stackSlide(x: number) {
   return Math.max(-1, Math.min(1, x / STACK.maxX));
+}
+
+/** Bleed a fall. Do not reverse it past upright. */
+export function tapCatch(body: StackBody, side: -1 | 1): StackBody {
+  const lean = body.theta > 0.025 ? 1 : body.theta < -0.025 ? -1 : 0;
+  const next = {
+    ...body,
+    v: body.v + side * STACK.tapImpulse,
+  };
+  if (lean === 0 || lean === side) {
+    next.theta = body.theta * 0.45;
+    next.omega = body.omega * 0.28;
+    return next;
+  }
+  next.omega = body.omega - side * 0.12;
+  return next;
 }
 
 export function chicagoStackDate(offsetDays = 0) {
@@ -169,10 +186,10 @@ export function seedStackRound(date: string, hostId = "lab"): StackRoundSeed {
 export function stackKick(rng = Math.random): StackBody {
   const side = rng() < 0.5 ? -1 : 1;
   return {
-    theta: side * (0.02 + rng() * 0.03),
-    omega: side * (0.02 + rng() * 0.04),
+    theta: side * (0.012 + rng() * 0.016),
+    omega: side * (0.01 + rng() * 0.018),
     x: 0,
-    v: -side * (0.01 + rng() * 0.02),
+    v: -side * (0.006 + rng() * 0.01),
   };
 }
 
@@ -255,7 +272,7 @@ export function stepStack(
   }
   if (Math.abs(next.x) > STACK.maxX) {
     next.x = Math.sign(next.x) * STACK.maxX;
-    next.v *= 0.35;
+    next.v *= 0.72;
   }
   return next;
 }
