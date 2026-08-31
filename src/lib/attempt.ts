@@ -14,7 +14,12 @@ export type AttemptSnapshot = {
   totalResponseMs: number;
   pourMg?: number;
   pourFills?: number[];
+  /** Total wobble in tenths, matching the DB column. */
   stackWobble?: number;
+  /** Per-carry wobble, one decimal. */
+  carryWobbles?: number[];
+  /** Best wobbles on tonight's board (tenths), for the mini leaderboard. */
+  topWobbles?: number[];
   rank?: number;
   playerCount?: number;
   playersBeaten?: number;

@@ -6,17 +6,17 @@ const BEATS = [
   {
     n: "01",
     title: "Scan the paw.",
-    body: "A printed mark at the venue. Camera only. No app to install.",
+    body: "A printed mark on the table. Camera only. No app to install.",
   },
   {
     n: "02",
-    title: "Who’s still got it?",
-    body: "Three bar questions, a pour to the line, then a tray that leans. Same set for everyone here today.",
+    title: "Don’t drop the drinks.",
+    body: "The stack leans on its own. Tap the side it’s falling toward. Three carries — 3, 4, then 5 glasses.",
   },
   {
     n: "03",
-    title: "See how you rank.",
-    body: "This room. This day. That’s the game.",
+    title: "See where you rank tonight.",
+    body: "One ranked run a night. Then make your table beat it.",
   },
 ];
 
@@ -26,14 +26,15 @@ export default function Home() {
       <section className="grid items-center gap-12 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-16">
         <div>
           <p className="font-condensed text-sm tracking-[0.22em] text-honey-ink">
-            A DAILY CHALLENGE AT REAL PLACES
+            A NIGHTLY CHALLENGE AT REAL PLACES
           </p>
           <h1 className="mt-4 max-w-xl font-display text-[2.4rem] leading-[1.06] tracking-tight sm:text-6xl">
-            Scan the paw. Who’s still got it at this bar today?
+            Scan the paw. Don’t drop the drinks.
           </h1>
           <p className="mt-6 max-w-md text-lg leading-relaxed text-ink-soft sm:text-xl">
-            Three bar questions, a pour to the line, then a leaning tray.
-            No account. About two minutes. Dare the person next to you.
+            You’re carrying a leaning stack of pints through a crowded bar.
+            Tap the side it’s falling toward. About a minute. No account.
+            Rank is this room, tonight.
           </p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <Link
@@ -58,7 +59,7 @@ export default function Home() {
           THE GAME
         </p>
         <h2 className="mt-3 max-w-lg font-display text-3xl tracking-tight sm:text-4xl">
-          Rank is for this place, today.
+          Rank is for this room, tonight.
         </h2>
         <ol className="mt-10 grid gap-4 sm:grid-cols-3">
           {BEATS.map((beat) => (
@@ -87,7 +88,7 @@ export default function Home() {
         </h2>
         <p className="mt-4 max-w-lg text-lg leading-relaxed text-paper/70">
           Hosts keep the physical mark. The game is the product. Players rank
-          at your venue for that day.
+          at your venue for that night.
         </p>
         <Link
           href="/for-hosts"

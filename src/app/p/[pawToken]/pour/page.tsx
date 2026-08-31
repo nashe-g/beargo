@@ -13,7 +13,8 @@ export default async function PourPage({
   params: Promise<{ pawToken: string }>;
 }) {
   const { pawToken } = await params;
-  if (!POUR_ENABLED) redirect(`/p/${pawToken}/play`);
+  // The pour is archived from the public flow.
+  if (!POUR_ENABLED) redirect(`/p/${pawToken}/stack`);
   const paw = await getPaw(pawToken);
   const seed = seedPourRound(localDateInZone(paw.timezone), paw.hostId);
   return <PourPlay paw={paw} seed={seed} />;

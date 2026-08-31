@@ -1,19 +1,26 @@
 import { cookies } from "next/headers";
-import { POUR_ENABLED, STACK_ENABLED } from "@/lib/config";
-import { challengeForPaw, scoreChallenge } from "@/lib/daily-challenge";
-import { localDateInZone } from "@/lib/dates";
+import { STACK_ENABLED } from "@/lib/config";
+import { serviceDayInZone } from "@/lib/dates";
 import { getPaw } from "@/lib/paws";
-import { scorePourRound } from "@/lib/pour";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
 import {
   DEVICE_COOKIE,
   SCAN_COOKIE,
   stampSession,
 } from "@/lib/scan-session";
-import { scoreStackRound } from "@/lib/stack";
-import { recordPlay } from "@/lib/store";
+import { scoreStackRound, stackChallengeId } from "@/lib/stack";
+import { rankedPlayForDevice, recordPlay, type RecordedPlay } from "@/lib/store";
 
-const MAX_MS = 10 * 60 * 1000;
+function playPayload(play: RecordedPlay, alreadyPlayed: boolean) {
+  return {
+    stackWobble: play.stackWobble,
+    rank: play.rank,
+    playerCount: play.playerCount,
+    playersBeaten: play.playersBeaten,
+    topWobbles: play.topWobbles,
+    alreadyPlayed,
+  };
+}
 
 export async function POST(
   request: Request,
@@ -21,6 +28,9 @@ export async function POST(
 ) {
   if (!rateLimit(clientKey(request, "complete"), 20, 60_000)) {
     return Response.json({ error: "Slow down" }, { status: 429 });
+  }
+  if (!STACK_ENABLED) {
+    return Response.json({ error: "Not tonight" }, { status: 400 });
   }
 
   const { pawToken } = await context.params;
@@ -36,59 +46,28 @@ export async function POST(
     return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const record = body as {
-    answers?: unknown;
-    pourFills?: unknown;
-    stackCarries?: unknown;
-  };
-  if (!Array.isArray(record.answers)) {
-    return Response.json({ error: "Invalid answers" }, { status: 400 });
-  }
-
-  const answers = record.answers.map((entry) => {
-    const row = entry as {
-      questionId?: unknown;
-      choiceId?: unknown;
-      responseMs?: unknown;
-    };
-    return {
-      questionId: String(row.questionId ?? ""),
-      choiceId: String(row.choiceId ?? ""),
-      responseMs: Number(row.responseMs),
-    };
-  });
-
-  const challenge = await challengeForPaw(paw);
-  const scored = scoreChallenge(challenge, answers);
-  if (!scored || scored.totalResponseMs > MAX_MS) {
-    return Response.json({ error: "Invalid score" }, { status: 400 });
-  }
-
-  let pourMg: number | null = null;
-  let stackWobble: number | null = null;
-  const date = localDateInZone(paw.timezone);
-  if (POUR_ENABLED) {
-    const poured = scorePourRound(date, paw.hostId, record.pourFills);
-    if (!poured) {
-      return Response.json({ error: "Invalid pour" }, { status: 400 });
+  // One ranked run per device per venue night. The demo paw stays open
+  // so people can try it anywhere.
+  if (deviceKey && paw.token !== "demo") {
+    const existing = await rankedPlayForDevice(paw, deviceKey);
+    if (existing) {
+      return Response.json(playPayload(existing, true));
     }
-    pourMg = poured.pourMg;
   }
-  if (STACK_ENABLED) {
-    const stacked = scoreStackRound(date, paw.hostId, record.stackCarries);
-    if (!stacked) {
-      return Response.json({ error: "Invalid stack" }, { status: 400 });
-    }
-    stackWobble = stacked.stackWobble;
+
+  const record = body as { stackCarries?: unknown };
+  const serviceDay = serviceDayInZone(paw.timezone);
+  const stacked = scoreStackRound(serviceDay, paw.hostId, record.stackCarries);
+  if (!stacked) {
+    return Response.json({ error: "Invalid stack" }, { status: 400 });
   }
 
   const play = await recordPlay({
     paw,
-    challengeId: scored.challengeId,
-    correctCount: scored.correctCount,
-    totalResponseMs: scored.totalResponseMs,
-    pourMg,
-    stackWobble,
+    challengeId: stackChallengeId(serviceDay),
+    correctCount: 0,
+    totalResponseMs: 0,
+    stackWobble: stacked.stackWobble,
     sessionId,
     deviceKey,
   });
@@ -97,13 +76,5 @@ export async function POST(
     await stampSession(sessionId, "game_completed");
   }
 
-  return Response.json({
-    correctCount: play.correctCount,
-    totalResponseMs: play.totalResponseMs,
-    pourMg: play.pourMg,
-    stackWobble: play.stackWobble,
-    rank: play.rank,
-    playerCount: play.playerCount,
-    playersBeaten: play.playersBeaten,
-  });
+  return Response.json(playPayload(play, false));
 }

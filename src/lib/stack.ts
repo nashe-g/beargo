@@ -1,5 +1,5 @@
 import { BEARGO_DAY_ZONE } from "@/lib/config";
-import { addCalendarDays, localDateInZone } from "@/lib/dates";
+import { addCalendarDays, serviceDayInZone } from "@/lib/dates";
 import type { PatronId, PourBand } from "@/lib/pour";
 import { hashSeed, mulberry32 } from "@/lib/rng";
 
@@ -21,16 +21,18 @@ export type StackCarry = {
 
 export type StackRoundSeed = {
   date: string;
+  /** Tonight's shift flavor. Changes the course, never the controls. */
+  modifier: string;
   carries: StackCarry[];
 };
 
 export const STACK = {
   dt: 1 / 60,
   /** Weaker than earth: a thumb needs ~350–500ms to pick a side. */
-  g: 2.72,
+  g: 2.6,
   trayMass: 1.05,
   length: 0.98,
-  taller: 0.07,
+  taller: 0.04,
   dampOmega: 1.7,
   dampTray: 2.4,
   tapImpulse: 0.38,
@@ -66,7 +68,7 @@ export function stackControlLength() {
 }
 
 export function stackTopple(glasses: number) {
-  return 0.52 - 0.04 * Math.max(0, glasses - 3);
+  return 0.56 - 0.02 * Math.max(0, glasses - 3);
 }
 
 export function stackSpill(glasses: number) {
@@ -87,7 +89,7 @@ export function stackSlide(x: number) {
 /** Catch a fall and send it back. A late or hard tap can overshoot. */
 export function tapCatch(body: StackBody, side: -1 | 1, glasses = 3): StackBody {
   const extra = Math.max(0, glasses - 3);
-  const returnKick = 0.48 + extra * 0.12;
+  const returnKick = 0.42 + extra * 0.05;
   return {
     ...body,
     v: body.v + side * STACK.tapImpulse,
@@ -97,7 +99,7 @@ export function tapCatch(body: StackBody, side: -1 | 1, glasses = 3): StackBody 
 }
 
 export function chicagoStackDate(offsetDays = 0) {
-  const today = localDateInZone(BEARGO_DAY_ZONE);
+  const today = serviceDayInZone(BEARGO_DAY_ZONE);
   return offsetDays === 0 ? today : addCalendarDays(today, offsetDays);
 }
 
@@ -108,21 +110,48 @@ export function stackBand(toppled: boolean, maxLean: number): StackBand {
 }
 
 export function stackResultCopy(band: StackBand) {
-  if (band === "still") return "Still.";
-  if (band === "wobbly") return "Wobbly.";
+  if (band === "still") return "Steady.";
+  if (band === "wobbly") return "Saved it.";
   if (band === "soaked") return "Down.";
   return "";
 }
 
-export function stackWobble(maxLean: number, integral: number) {
-  return Math.round(maxLean * 400 + integral * 80);
+/**
+ * One carry's wobble. Lower is better. Roughly: time spent leaning, worst
+ * lean, panic taps beyond a ~2-per-second budget, and a flat spill cost so
+ * one drop can't be erased by a calm finish — nor a calm run by one blip.
+ */
+export const CARRY_WOBBLE_CAP = 40;
+
+export function carryWobble(input: {
+  toppled: boolean;
+  maxLean: number;
+  integral: number;
+  taps?: number;
+  durationMs?: number;
+}) {
+  const seconds = (input.durationMs ?? 12000) / 1000;
+  const excessTaps = Math.max(0, (input.taps ?? 0) - Math.ceil(seconds * 2));
+  const raw =
+    input.integral * 6 +
+    input.maxLean * 8 +
+    excessTaps * 0.4 +
+    (input.toppled ? 12 : 0);
+  return Math.min(CARRY_WOBBLE_CAP, Math.max(0, Math.round(raw * 10) / 10));
 }
 
-export function stackScore(toppled: boolean, maxLean: number, integral: number) {
-  return stackWobble(maxLean, integral) + (toppled ? 240 : 0);
+/** Wobble is stored in tenths as an integer column. */
+export function wobbleTenths(total: number) {
+  return Math.round(total * 10);
 }
 
-const STACK_WOBBLE_CAP = 2000;
+export function formatWobble(tenths: number) {
+  return (tenths / 10).toFixed(1);
+}
+
+export function stackChallengeId(serviceDay: string) {
+  return `stack:${serviceDay}`;
+}
 
 export function scoreStackRound(
   date: string,
@@ -134,7 +163,7 @@ export function scoreStackRound(
     return null;
   }
   const wobbles: number[] = [];
-  let stackWobble = 0;
+  let total = 0;
   for (let i = 0; i < seed.carries.length; i += 1) {
     const row = carries[i] as { wobble?: unknown; glasses?: unknown };
     const wobble = Number(row?.wobble);
@@ -142,16 +171,16 @@ export function scoreStackRound(
     if (
       !Number.isFinite(wobble) ||
       wobble < 0 ||
-      wobble > STACK_WOBBLE_CAP ||
+      wobble > CARRY_WOBBLE_CAP ||
       glasses !== seed.carries[i]?.glasses
     ) {
       return null;
     }
-    const value = Math.round(wobble);
+    const value = Math.round(wobble * 10) / 10;
     wobbles.push(value);
-    stackWobble += value;
+    total += value;
   }
-  return { wobbles, stackWobble };
+  return { wobbles, stackWobble: wobbleTenths(total) };
 }
 
 export function stackPatronBand(band: StackBand): PourBand {
@@ -161,28 +190,71 @@ export function stackPatronBand(band: StackBand): PourBand {
   return "idle";
 }
 
+export const STACK_MODIFIERS = [
+  "REGULAR SHIFT",
+  "HAPPY HOUR",
+  "FRIDAY NIGHT",
+  "CLOSING TIME",
+] as const;
+
+/** Rare seeded night. Same for everyone at the venue — fairness holds. */
+export const STACK_RARE_MODIFIER = "WEDDING PARTY";
+
 export function seedStackRound(date: string, hostId = "lab"): StackRoundSeed {
   const rng = mulberry32(hashSeed(`stack:${hostId}:${date}`));
   const patrons: PatronId[] = ["a", "b", "c"];
-  return {
-    date,
-    carries: STACK_GLASS_COUNTS.map((glasses, index) => {
-      const durationMs = 12000;
-      const joltCount = index + 1;
-      const jolts: StackJolt[] = [];
-      for (let n = 0; n < joltCount; n += 1) {
-        const window = durationMs - 2800;
-        const atMs = 1400 + rng() * window;
+  const rare = rng() < 0.05;
+  const modifier = rare
+    ? STACK_RARE_MODIFIER
+    : (STACK_MODIFIERS[Math.floor(rng() * STACK_MODIFIERS.length)] ??
+      "REGULAR SHIFT");
+  // Carry 1 teaches, carry 2 threatens, carry 3 is the climax.
+  const baseDurations = [10000, 13000, 15000];
+  const joltCounts = [1, 2, 3];
+  if (modifier === "HAPPY HOUR") joltCounts[1] += 1;
+  if (modifier === "FRIDAY NIGHT") {
+    joltCounts[1] += 1;
+    joltCounts[2] += 1;
+  }
+  const carries = STACK_GLASS_COUNTS.map((glasses, index) => {
+    let durationMs = baseDurations[index] ?? 12000;
+    if (modifier === "HAPPY HOUR") durationMs = Math.round(durationMs * 0.85);
+    if (modifier === "CLOSING TIME" && index === 2) {
+      durationMs = Math.round(durationMs * 1.15);
+    }
+    const count = joltCounts[index] ?? 1;
+    const lead = 1800;
+    const tail = 1100;
+    const window = durationMs - lead - tail;
+    const jolts: StackJolt[] = [];
+    for (let n = 0; n < count; n += 1) {
+      // One jolt per segment so they never cluster unfairly; the final
+      // carry's last jolt lands late so the closing seconds stay tense.
+      const lastOfFinale = index === 2 && n === count - 1;
+      const lo = lastOfFinale ? 0.72 : n / count;
+      const hi = lastOfFinale ? 0.97 : (n + 0.72) / count;
+      jolts.push({
+        atMs: lead + (lo + rng() * (hi - lo)) * window,
+        side: rng() < 0.5 ? -1 : 1,
+        patronId: patrons[Math.floor(rng() * patrons.length)] ?? "a",
+      });
+    }
+    if (rare && index === 2) {
+      const lastJolt = jolts[jolts.length - 1];
+      if (lastJolt) {
+        // Wedding party: a second body crosses right behind the first,
+        // from the other side.
         jolts.push({
-          atMs,
-          side: rng() < 0.5 ? -1 : 1,
-          patronId: patrons[Math.floor(rng() * patrons.length)] ?? "a",
+          atMs: Math.min(durationMs - tail, lastJolt.atMs + 760),
+          side: lastJolt.side < 0 ? 1 : -1,
+          patronId: patrons[Math.floor(rng() * patrons.length)] ?? "b",
         });
       }
-      jolts.sort((a, b) => a.atMs - b.atMs);
-      return { glasses, durationMs, jolts };
-    }),
-  };
+    }
+    jolts.sort((a, b) => a.atMs - b.atMs);
+    return { glasses, durationMs, jolts };
+  });
+  return { date, modifier, carries };
 }
 
 export function stackKick(rng = Math.random): StackBody {
@@ -203,7 +275,7 @@ export const STACK_REST: StackBody = {
 };
 
 export function nextNudgeAt(fromMs: number, rng = Math.random, glasses = 3) {
-  const tighten = Math.max(0, glasses - 3) * 320;
+  const tighten = Math.max(0, glasses - 3) * 150;
   return (
     fromMs +
     Math.max(1400, STACK.nudgeMinMs - tighten) +

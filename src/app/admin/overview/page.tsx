@@ -5,7 +5,8 @@ import { formatMoney } from "@/lib/format";
 import { listMerchants, listPromotions } from "@/lib/promotions";
 import { listPlayers } from "@/lib/players";
 import { listPlays } from "@/lib/store";
-import { localDateInZone } from "@/lib/dates";
+import { serviceDayInZone } from "@/lib/dates";
+import { tableSpreadStats } from "@/lib/table-spread";
 import { dollarsFromCents } from "@/lib/money";
 import { db } from "@/db";
 import { ledgerEntries } from "@/db/schema";
@@ -18,7 +19,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminOverviewPage() {
   await requireAdmin();
-  const [plays, hosts, paws, merchants, promotions, fees, playerRows, days] =
+  const [plays, hosts, paws, merchants, promotions, fees, playerRows, days, spread] =
     await Promise.all([
     listPlays(),
     listHosts(),
@@ -31,8 +32,9 @@ export default async function AdminOverviewPage() {
       .where(eq(ledgerEntries.kind, "merchant_fee")),
     listPlayers(),
     listHorizonSlates(),
+    tableSpreadStats(),
   ]);
-  const today = localDateInZone(BEARGO_DAY_ZONE);
+  const today = serviceDayInZone(BEARGO_DAY_ZONE);
   const gamesToday = plays.filter((play) => play.localDate === today).length;
   const weekReady = horizonReadyCount(days);
 
@@ -46,8 +48,13 @@ export default async function AdminOverviewPage() {
       </p>
       <h2 className="mt-10 font-display text-2xl">Game</h2>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Games today" value={String(gamesToday)} />
+        <Stat label="Games tonight" value={String(gamesToday)} />
         <Stat label="Games all-time" value={String(plays.length)} />
+        <Stat
+          label="Table Spread (5 min)"
+          value={spread.spread5m == null ? "—" : spread.spread5m.toFixed(2)}
+          note={`${spread.followOn5m} follow-on of ${spread.starts} starts · ${spread.followOn2m} in 2m · ${spread.followOn10m} in 10m`}
+        />
         <Stat
           label="Next 7 days"
           value={`${weekReady}/7`}

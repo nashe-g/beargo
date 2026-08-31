@@ -2,12 +2,21 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { db } from "@/db";
 import { plays } from "@/db/schema";
-import { localDateInZone } from "@/lib/dates";
+import { serviceDayInZone } from "@/lib/dates";
 import { isoRequired } from "@/lib/money";
 import type { PawRecord } from "@/lib/paws";
-import { rankPlay, type Play, type RankResult } from "@/lib/rank";
+import { stackChallengeId } from "@/lib/stack";
+import { comparePlays, rankPlay, type Play, type RankResult } from "@/lib/rank";
 
-export type RecordedPlay = Play & RankResult;
+export type RecordedPlay = Play & RankResult & { topWobbles: number[] };
+
+function topWobblesFrom(board: Play[], count = 3) {
+  return [...board]
+    .sort(comparePlays)
+    .slice(0, count)
+    .map((entry) => entry.stackWobble)
+    .filter((value): value is number => value != null);
+}
 
 function mapPlay(row: typeof plays.$inferSelect): Play {
   return {
@@ -59,7 +68,7 @@ export async function recordPlay(input: {
 }): Promise<RecordedPlay> {
   await ensurePourMgColumn();
   await ensureStackWobbleColumn();
-  const localDate = localDateInZone(input.paw.timezone);
+  const localDate = serviceDayInZone(input.paw.timezone);
   let rankingEligible = true;
   if (input.deviceKey) {
     const prior = await db()
@@ -120,5 +129,42 @@ export async function recordPlay(input: {
     .map(mapPlay)
     .filter((entry) => entry.rankingEligible !== false || entry.id === play.id);
 
-  return { ...play, ...rankPlay(board, play) };
+  return { ...play, ...rankPlay(board, play), topWobbles: topWobblesFrom(board) };
+}
+
+/**
+ * The ranked run this device already made tonight, if any. Used to hold
+ * the one-attempt-per-night rule and to re-show a rank without relying
+ * on sessionStorage.
+ */
+export async function rankedPlayForDevice(
+  paw: PawRecord,
+  deviceKey: string,
+): Promise<RecordedPlay | null> {
+  await ensurePourMgColumn();
+  await ensureStackWobbleColumn();
+  const serviceDay = serviceDayInZone(paw.timezone);
+  const rows = await db()
+    .select()
+    .from(plays)
+    .where(
+      and(
+        eq(plays.hostId, paw.hostId),
+        eq(plays.localDate, serviceDay),
+        eq(plays.challengeId, stackChallengeId(serviceDay)),
+      ),
+    );
+  const mineRow = rows.find(
+    (row) => row.deviceKey === deviceKey && row.rankingEligible !== false,
+  );
+  if (!mineRow) return null;
+  const board = rows
+    .map(mapPlay)
+    .filter((entry) => entry.rankingEligible !== false);
+  const mine = mapPlay(mineRow);
+  return {
+    ...mine,
+    ...rankPlay(board, mine),
+    topWobbles: topWobblesFrom(board),
+  };
 }

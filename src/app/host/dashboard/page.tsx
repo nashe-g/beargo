@@ -1,7 +1,7 @@
 import { HostShell } from "@/components/host/HostShell";
-import { formatClock } from "@/lib/format";
 import { requireHost } from "@/lib/host-auth";
-import { localDateInZone } from "@/lib/dates";
+import { serviceDayInZone } from "@/lib/dates";
+import { formatWobble } from "@/lib/stack";
 import { listPlays } from "@/lib/store";
 import Link from "next/link";
 
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function HostDashboardPage() {
   const host = await requireHost();
   const plays = await listPlays();
-  const localDate = localDateInZone(host.timezone);
+  const localDate = serviceDayInZone(host.timezone);
   const todayPlays = plays.filter(
     (play) => play.hostId === host.id && play.localDate === localDate,
   );
@@ -18,11 +18,10 @@ export default async function HostDashboardPage() {
   const monthPlays = plays.filter(
     (play) => play.hostId === host.id && play.localDate.startsWith(month),
   );
-  const perfect = todayPlays.filter((play) => play.correctCount === 3);
-  const fastestPerfectMs =
-    perfect.length === 0
-      ? null
-      : Math.min(...perfect.map((play) => play.totalResponseMs));
+  const wobbles = todayPlays
+    .map((play) => play.stackWobble)
+    .filter((value): value is number => value != null);
+  const bestWobble = wobbles.length === 0 ? null : Math.min(...wobbles);
 
   return (
     <HostShell host={host} current="/host/dashboard">
@@ -42,12 +41,10 @@ export default async function HostDashboardPage() {
 
       <p className="mt-8 rounded-3xl bg-ink px-5 py-6 text-paper">
         <span className="text-sm tracking-[0.16em] uppercase text-paper/55">
-          Fastest 3 / 3 today
+          Best wobble tonight
         </span>
         <span className="mt-2 block font-display text-3xl">
-          {fastestPerfectMs == null
-            ? "Nobody yet"
-            : formatClock(fastestPerfectMs)}
+          {bestWobble == null ? "Nobody yet" : formatWobble(bestWobble)}
         </span>
       </p>
 

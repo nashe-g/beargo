@@ -15,6 +15,7 @@ import {
   type StackBody,
   type StackJolt,
 } from "@/lib/stack";
+import { clinkSound } from "@/lib/stack-sound";
 
 export function useStackTilt(
   glasses: number,
@@ -30,6 +31,7 @@ export function useStackTilt(
   const [incoming, setIncoming] = useState<StackJolt | null>(null);
   const [running, setRunning] = useState(false);
   const [holding, setHolding] = useState(false);
+  const [taps, setTaps] = useState(0);
   const [hintSide, setHintSide] = useState<-1 | 0 | 1>(0);
   const bodyRef = useRef<StackBody>(STACK_REST);
   const forceRef = useRef(0);
@@ -48,6 +50,8 @@ export function useStackTilt(
   const runningRef = useRef(false);
   const frameRef = useRef(0);
   const lastRef = useRef(0);
+  const tapsRef = useRef(0);
+  const lastPressAtRef = useRef(0);
 
   glassesRef.current = glasses;
   joltsRef.current = jolts;
@@ -129,6 +133,9 @@ export function useStackTilt(
           setMaxLean(maxRef.current);
           setIntegral(integralRef.current);
           setToppled(true);
+          if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+            navigator.vibrate(40);
+          }
           stopLoop();
           return;
         }
@@ -162,10 +169,28 @@ export function useStackTilt(
 
   const press = useCallback((side: -1 | 1) => {
     if (lockedRef.current) return;
+    const now = performance.now();
+    const sinceLast = now - lastPressAtRef.current;
+    lastPressAtRef.current = now;
+    tapsRef.current += 1;
+    setTaps(tapsRef.current);
     bodyRef.current = tapCatch(bodyRef.current, side, glassesRef.current);
+    // Panic-tapping is never optimal: taps inside 180ms of each other
+    // partially undo the catch and whip the tray harder.
+    if (sinceLast < 180) {
+      bodyRef.current = {
+        ...bodyRef.current,
+        omega: bodyRef.current.omega + side * 0.16,
+        v: bodyRef.current.v * 1.12,
+      };
+    }
     assistRef.current = side * STACK.tapForce;
     forceRef.current = side * STACK.holdForce;
     setHolding(true);
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      navigator.vibrate(8);
+    }
+    clinkSound();
     publish(bodyRef.current);
   }, [publish]);
 
@@ -187,6 +212,9 @@ export function useStackTilt(
     accRef.current = 0;
     nudgeAtRef.current = nextNudgeAt(700, Math.random, glassesRef.current);
     firedRef.current = new Set();
+    tapsRef.current = 0;
+    lastPressAtRef.current = 0;
+    setTaps(0);
     setElapsed(0);
     setMaxLean(Math.abs(next.theta));
     setIntegral(0);
@@ -213,6 +241,7 @@ export function useStackTilt(
     incoming,
     running,
     holding,
+    taps,
     hintSide,
     start,
     press,

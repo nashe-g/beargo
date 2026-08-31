@@ -1,4 +1,4 @@
-import { POUR_ENABLED, STACK_ENABLED } from "@/lib/config";
+import { POUR_ENABLED, STACK_ENABLED, TRIVIA_ENABLED } from "@/lib/config";
 import type { AttemptSnapshot } from "@/lib/attempt";
 import { QUESTIONS_PER_CHALLENGE } from "@/lib/questions";
 
@@ -52,7 +52,8 @@ export const PLAY_ROUNDS: Record<PlayRoundId, PlayRoundCopy> = {
 };
 
 export function playRoundList() {
-  const rows: PlayRoundCopy[] = [PLAY_ROUNDS.trivia];
+  const rows: PlayRoundCopy[] = [];
+  if (TRIVIA_ENABLED) rows.push(PLAY_ROUNDS.trivia);
   if (POUR_ENABLED) rows.push(PLAY_ROUNDS.pour);
   if (STACK_ENABLED) rows.push(PLAY_ROUNDS.stack);
   return rows.map((row, index) => ({
@@ -62,6 +63,7 @@ export function playRoundList() {
 }
 
 function answersReady(attempt: AttemptSnapshot | null) {
+  if (!TRIVIA_ENABLED) return true;
   return (attempt?.answers?.length ?? 0) >= QUESTIONS_PER_CHALLENGE;
 }
 
@@ -82,7 +84,7 @@ export function attemptNeedsHands(attempt: AttemptSnapshot | null) {
 
 export function nextPlayPath(token: string, attempt: AttemptSnapshot | null) {
   const base = `/p/${encodeURIComponent(token)}`;
-  if (!answersReady(attempt)) return `${base}/play`;
+  if (TRIVIA_ENABLED && !answersReady(attempt)) return `${base}/play`;
   if (attemptNeedsPour(attempt)) return `${base}/pour`;
   if (attemptNeedsStack(attempt)) return `${base}/stack`;
   return `${base}/result`;

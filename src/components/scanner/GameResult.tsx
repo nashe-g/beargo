@@ -2,75 +2,92 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { BearGuide } from "@/components/bear/BearGuide";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
 import { StampSession } from "@/components/scanner/StampSession";
-import {
-  attemptNeedsSkill,
-  beatCopy,
-  formatDuration,
-  loadAttempt,
-} from "@/lib/attempt";
-import { nextPlayPath } from "@/lib/play-rounds";
-import { QUESTIONS_PER_CHALLENGE } from "@/lib/questions";
+import { loadAttempt } from "@/lib/attempt";
 import type { PawRecord } from "@/lib/paws";
+import { formatWobble } from "@/lib/stack";
 
-function ScoreRow({
-  label,
-  value,
-  hint,
-}: {
-  label: string;
-  value: string;
-  hint: string;
-}) {
-  return (
-    <li className="rounded-2xl border border-paper/10 bg-paper/6 px-4 py-2.5 text-left">
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="text-sm tracking-[0.16em] text-paper/50 uppercase">
-          {label}
-        </span>
-        <span className="font-semibold text-paper">{value}</span>
-      </div>
-      <p className="mt-0.5 text-sm text-paper/50">{hint}</p>
-    </li>
-  );
+export type ServedResult = {
+  stackWobble: number;
+  rank: number;
+  playerCount: number;
+  playersBeaten: number;
+  topWobbles: number[];
+};
+
+type Result = ServedResult & { hasAttempt: boolean };
+
+function verdict(rank: number, playerCount: number) {
+  if (playerCount <= 1) return null;
+  if (rank === 1 && playerCount >= 4) return "You’re running the bar.";
+  if (rank / playerCount <= 1 / 3) return "Steady hands.";
+  if (rank / playerCount >= 0.75) return "Rough shift.";
+  return null;
 }
 
-export function GameResult({ paw }: { paw: PawRecord }) {
-  const router = useRouter();
-  const [score, setScore] = useState({
-    correctCount: 0,
-    totalResponseMs: 0,
-    pourMg: null as number | null,
-    stackWobble: null as number | null,
-    rank: 0,
-    playerCount: 0,
-    playersBeaten: 0,
-    hasAttempt: false,
-  });
+export function GameResult({
+  paw,
+  served,
+}: {
+  paw: PawRecord;
+  served: ServedResult | null;
+}) {
+  const [result, setResult] = useState<Result | null>(
+    served ? { ...served, hasAttempt: true } : null,
+  );
+  const [checked, setChecked] = useState(false);
   const host = paw.hostDisplayName;
 
   useEffect(() => {
+    // Prefer the fresh sessionStorage attempt (it has the just-posted
+    // rank); fall back to the server-side device lookup.
     const attempt = loadAttempt(paw.token);
-    if (attemptNeedsSkill(attempt)) {
-      router.replace(nextPlayPath(paw.token, attempt));
-      return;
-    }
-    if (attempt) {
-      setScore({
-        correctCount: attempt.correctCount,
-        totalResponseMs: attempt.totalResponseMs,
-        pourMg: attempt.pourMg ?? null,
-        stackWobble: attempt.stackWobble ?? null,
+    if (attempt?.stackWobble != null) {
+      setResult({
+        stackWobble: attempt.stackWobble,
         rank: attempt.rank ?? 0,
         playerCount: attempt.playerCount ?? 0,
         playersBeaten: attempt.playersBeaten ?? 0,
+        topWobbles: attempt.topWobbles ?? served?.topWobbles ?? [],
         hasAttempt: true,
       });
     }
-  }, [paw.token, router]);
+    setChecked(true);
+  }, [paw.token, served]);
+
+  if (!checked && !result) {
+    return (
+      <ScannerShell>
+        <div className="flex-1" />
+      </ScannerShell>
+    );
+  }
+
+  if (!result) {
+    return (
+      <ScannerShell>
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center text-center">
+          <BearGuide state="arrive" size="md" />
+          <h1 className="mt-6 font-display text-3xl leading-tight">
+            Play to see where you stand at {host} tonight.
+          </h1>
+          <Link
+            href={`/p/${paw.token}/stack`}
+            className="btn-honey mt-8 flex h-14 w-full max-w-[20rem] items-center justify-center rounded-full bg-honey text-lg font-semibold tracking-[0.18em] text-ink"
+          >
+            Play
+          </Link>
+        </div>
+      </ScannerShell>
+    );
+  }
+
+  const first = result.playerCount <= 1;
+  const ranked = result.rank > 0 && result.playerCount > 1;
+  const line = verdict(result.rank, result.playerCount);
+  const board = ranked && result.topWobbles.length > 0;
 
   return (
     <ScannerShell>
@@ -78,65 +95,92 @@ export function GameResult({ paw }: { paw: PawRecord }) {
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="flex min-h-0 flex-1 flex-col items-center overflow-y-auto pt-1 text-center">
           <BearGuide state="celebrate" size="sm" />
-          {score.hasAttempt ? (
+          {line ? (
+            <p className="mt-2 text-sm tracking-[0.22em] text-honey uppercase">
+              {line}
+            </p>
+          ) : null}
+          {first ? (
             <>
-              <h1 className="mt-2 font-display text-3xl leading-tight sm:text-4xl">
-                {score.rank > 0
-                  ? `#${score.rank} at ${host} today`
-                  : `On the board at ${host}`}
+              <h1 className="mt-2 font-display text-4xl leading-tight">
+                You set the score.
               </h1>
-              <p className="mt-1 text-base text-paper/70">
-                {score.rank > 0
-                  ? beatCopy(score.playersBeaten, score.playerCount)
-                  : "Rank will show on the next play."}
+              <p className="mt-2 text-base text-paper/70">
+                First run of the night at {host}.
               </p>
-              <ul className="mt-4 w-full max-w-xs space-y-2">
-                <ScoreRow
-                  label="Trivia"
-                  value={`${score.correctCount} of ${QUESTIONS_PER_CHALLENGE}`}
-                  hint={`${formatDuration(score.totalResponseMs)} on the questions`}
-                />
-                {score.pourMg != null ? (
-                  <ScoreRow
-                    label="Pour"
-                    value={`${score.pourMg.toLocaleString()} mg off`}
-                    hint="Closer to the line is better."
-                  />
-                ) : null}
-                {score.stackWobble != null ? (
-                  <ScoreRow
-                    label="Tray"
-                    value={score.stackWobble.toLocaleString()}
-                    hint="Lower is steadier."
-                  />
-                ) : null}
-              </ul>
+            </>
+          ) : ranked ? (
+            <>
+              <h1 className="mt-1 font-display text-6xl leading-none">
+                #{result.rank}
+                <span className="text-3xl text-paper/60"> of {result.playerCount}</span>
+              </h1>
+              <p className="mt-2 text-sm tracking-[0.2em] text-paper/60 uppercase">
+                At {host} tonight
+              </p>
             </>
           ) : (
             <>
-              <h1 className="mt-6 font-display text-3xl leading-tight">
-                Play to see where you stand at {host} today.
+              <h1 className="mt-2 font-display text-4xl leading-tight">
+                On the board.
               </h1>
-              <Link
-                href={`/p/${paw.token}/play`}
-                className="btn-honey mt-8 flex h-14 w-full items-center justify-center rounded-full bg-honey text-lg font-semibold tracking-[0.18em] text-ink"
-              >
-                PLAY
-              </Link>
+              <p className="mt-2 text-base text-paper/60">
+                Rank didn’t load. The run is saved.
+              </p>
             </>
           )}
+          <p className="mt-3 font-condensed text-lg tracking-[0.18em] text-paper/85">
+            WOBBLE {formatWobble(result.stackWobble)}
+          </p>
+
+          {board ? (
+            <ul className="mt-4 w-full max-w-[16rem] space-y-1.5 text-left">
+              {result.topWobbles.map((tenths, index) => {
+                const mine =
+                  result.rank === index + 1 && tenths === result.stackWobble;
+                return (
+                  <li
+                    key={`${index}-${tenths}`}
+                    className={`flex justify-between rounded-xl px-4 py-2 text-sm ${
+                      mine
+                        ? "bg-honey/15 text-honey"
+                        : "bg-paper/6 text-paper/70"
+                    }`}
+                  >
+                    <span>{mine ? `${index + 1} · You` : index + 1}</span>
+                    <span>{formatWobble(tenths)}</span>
+                  </li>
+                );
+              })}
+              {result.rank > result.topWobbles.length ? (
+                <li className="flex justify-between rounded-xl bg-honey/15 px-4 py-2 text-sm text-honey">
+                  <span>{result.rank} · You</span>
+                  <span>{formatWobble(result.stackWobble)}</span>
+                </li>
+              ) : null}
+            </ul>
+          ) : null}
+
+          <div className="mt-5">
+            <p className="font-display text-2xl leading-tight">
+              {first
+                ? "Now make somebody beat it."
+                : "Think your table can beat that?"}
+            </p>
+            <p className="mt-1.5 text-base text-paper/60">
+              Make them scan the paw.
+            </p>
+          </div>
         </div>
 
-        {score.hasAttempt ? (
-          <div className="shrink-0 pt-3">
-            <Link
-              href={`/p/${paw.token}/sponsor`}
-              className="btn-honey flex h-14 w-full items-center justify-center rounded-full bg-honey text-lg font-semibold tracking-[0.14em] text-ink"
-            >
-              See tonight’s sponsor
-            </Link>
-          </div>
-        ) : null}
+        <div className="shrink-0 pt-3 text-center">
+          <Link
+            href={`/p/${paw.token}/sponsor`}
+            className="text-sm text-paper/50 underline decoration-honey/60 underline-offset-4"
+          >
+            Tonight’s sponsor
+          </Link>
+        </div>
       </div>
     </ScannerShell>
   );

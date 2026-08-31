@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Patron } from "@/components/lab/pour/Patron";
 import { StackPlayfield } from "@/components/lab/stack/StackPlayfield";
 import { useStackCoach, type StackCoachKind } from "@/components/lab/stack/useStackCoach";
@@ -8,18 +8,22 @@ import { useStackTilt } from "@/components/lab/stack/useStackTilt";
 import "./stack.css";
 import { recordStackStreak } from "@/lib/stack-streak";
 import {
+  carryWobble,
   stackBand,
   stackPatronBand,
   stackResultCopy,
-  stackScore,
+  stackSpill,
   type StackCarry,
   type StackRoundSeed,
 } from "@/lib/stack";
+import { crashSound, stingSound } from "@/lib/stack-sound";
+import type { PourBand } from "@/lib/pour";
 
 export type StackCarryResult = {
   glasses: number;
   toppled: boolean;
   wobble: number;
+  taps: number;
   band: ReturnType<typeof stackBand>;
 };
 
@@ -29,19 +33,30 @@ export function StackCarryPlay({
   coach: coachKind = "full",
   label,
   doneLabel = "Next",
+  auto = false,
 }: {
   carry: StackCarry;
   onDone?: (result: StackCarryResult) => void;
   coach?: StackCoachKind;
   label?: string;
   doneLabel?: string;
+  /** Advance to the next carry on a short timer instead of a button. */
+  auto?: boolean;
 }) {
   const [locked, setLocked] = useState(false);
+  const [pausedByBlur, setPausedByBlur] = useState(false);
+  const [resumeCount, setResumeCount] = useState<number | null>(null);
   const coach = useStackCoach(coachKind);
   const tilt = useStackTilt(carry.glasses, carry.jolts, locked);
   const remaining = Math.max(0, carry.durationMs - tilt.elapsed);
   const band = locked ? stackBand(tilt.toppled, tilt.maxLean) : "idle";
-  const wobble = stackScore(tilt.toppled, tilt.maxLean, tilt.integral);
+  const wobble = carryWobble({
+    toppled: tilt.toppled,
+    maxLean: tilt.maxLean,
+    integral: tilt.integral,
+    taps: tilt.taps,
+    durationMs: carry.durationMs,
+  });
 
   useEffect(() => {
     if (!coach.playing) return;
@@ -55,31 +70,97 @@ export function StackCarryPlay({
   }, [tilt.toppled]);
 
   useEffect(() => {
+    if (!locked) return;
+    if (tilt.toppled) crashSound();
+    else if (tilt.elapsed > 0) stingSound();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locked]);
+
+  useEffect(() => {
     if (!tilt.running || locked) return;
     if (tilt.elapsed >= carry.durationMs) setLocked(true);
   }, [tilt.elapsed, tilt.running, locked, carry.durationMs]);
+
+  // A notification or app switch pauses the run. Nobody should lose to
+  // their own phone.
+  useEffect(() => {
+    function onVisibility() {
+      if (!document.hidden) return;
+      if (coach.playing && !locked && tilt.running) {
+        tilt.stop();
+        setPausedByBlur(true);
+      }
+    }
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [coach.playing, locked, tilt.running, tilt]);
+
+  useEffect(() => {
+    if (resumeCount == null) return;
+    if (resumeCount <= 0) {
+      setResumeCount(null);
+      setPausedByBlur(false);
+      tilt.start();
+      return;
+    }
+    const timer = setTimeout(
+      () => setResumeCount((value) => (value ?? 1) - 1),
+      650,
+    );
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resumeCount]);
 
   const result: StackCarryResult = {
     glasses: carry.glasses,
     toppled: tilt.toppled,
     wobble,
+    taps: tilt.taps,
     band: stackBand(tilt.toppled, tilt.maxLean),
   };
+  const resultRef = useRef(result);
+  resultRef.current = result;
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
+
+  // Keep the room moving: show the verdict for a beat, then continue.
+  useEffect(() => {
+    if (!locked || !auto) return;
+    const timer = setTimeout(
+      () => onDoneRef.current?.(resultRef.current),
+      resultRef.current.toppled ? 2000 : 1500,
+    );
+    return () => clearTimeout(timer);
+  }, [locked, auto]);
 
   const headline = locked
-    ? stackResultCopy(band)
+    ? tilt.toppled
+      ? "Down."
+      : stackResultCopy(band)
     : tilt.incoming
       ? "Someone’s coming."
       : coach.playing
         ? `${(remaining / 1000).toFixed(1)}s`
         : coach.headline;
 
+  // Two regulars at the rail. They stare, cringe, and duck as the stack
+  // threatens — comedy for whoever is watching over a shoulder.
+  const spillAt = stackSpill(carry.glasses);
+  const lean = Math.abs(coach.playing ? tilt.theta : coach.demoTheta);
+  const spectatorBand = (nerve: number): PourBand => {
+    if (locked) return tilt.toppled ? "flood" : "nail";
+    if (lean >= spillAt) return "flood";
+    if (lean >= spillAt * nerve) return "close";
+    return "idle";
+  };
+  const ducking = !locked && lean >= spillAt;
+
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex flex-1 flex-col select-none">
       <p className="font-condensed text-center text-sm tracking-[0.22em] text-honey">
         {coach.phase === "demo"
           ? "DEMO — WATCH"
-          : (label ?? `${carry.glasses} HIGH`)}
+          : (label ?? `${carry.glasses} GLASSES`)}
       </p>
       <p
         className={`mt-2 text-center font-display ${coach.counting ? "text-5xl" : "text-xl"}`}
@@ -93,7 +174,7 @@ export function StackCarryPlay({
       ) : null}
       {!locked && coach.playing ? (
         <p className="mt-1 text-center text-sm text-paper/55">
-          Tap the arrow on the side the glasses are falling.
+          Tap the side the glasses are falling.
         </p>
       ) : null}
       <div className="relative mt-2 flex flex-1 flex-col justify-end">
@@ -112,6 +193,26 @@ export function StackCarryPlay({
             />
           </div>
         ) : null}
+        <div
+          className="stack-spectator pointer-events-none absolute bottom-1 left-3"
+          data-duck={ducking}
+        >
+          <Patron
+            id="b"
+            reaction={spectatorBand(0.45)}
+            className="h-14 w-10 opacity-75"
+          />
+        </div>
+        <div
+          className="stack-spectator pointer-events-none absolute right-3 bottom-1"
+          data-duck={ducking}
+        >
+          <Patron
+            id="c"
+            reaction={spectatorBand(0.68)}
+            className="h-14 w-10 opacity-75"
+          />
+        </div>
         <StackPlayfield
           glasses={carry.glasses}
           theta={coach.playing ? tilt.theta : coach.demoTheta}
@@ -119,14 +220,32 @@ export function StackCarryPlay({
           toppled={coach.playing && tilt.toppled}
           hintSide={coach.playing ? tilt.hintSide : coach.hintSide}
           pressedSide={coach.playing ? 0 : coach.tapSide}
-          disabled={locked || !coach.playing}
+          disabled={locked || !coach.playing || pausedByBlur}
           onPress={(side) => {
-            if (coach.playing) tilt.press(side);
+            if (coach.playing && !pausedByBlur) tilt.press(side);
           }}
           onRelease={() => {
             if (coach.playing) tilt.release();
           }}
         />
+        {pausedByBlur ? (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-[1.2rem] bg-ink/85 text-center">
+            {resumeCount != null && resumeCount > 0 ? (
+              <p className="font-display text-6xl">{resumeCount}</p>
+            ) : (
+              <>
+                <p className="font-display text-3xl">Ready?</p>
+                <button
+                  type="button"
+                  onClick={() => setResumeCount(3)}
+                  className="btn-honey mt-4 h-12 rounded-full bg-honey px-8 font-semibold text-ink"
+                >
+                  Go
+                </button>
+              </>
+            )}
+          </div>
+        ) : null}
       </div>
       {locked ? (
         <div className="mt-1 text-center">
@@ -136,9 +255,11 @@ export function StackCarryPlay({
             className="mx-auto h-16 w-12"
           />
           <p className="mt-2 text-sm text-paper/70">
-            {tilt.toppled ? "The stack went." : `${wobble} wobble`}
+            {tilt.toppled
+              ? `Spilled ${carry.glasses}. Keep walking.`
+              : `Wobble ${wobble.toFixed(1)}`}
           </p>
-          {onDone ? (
+          {onDone && !auto ? (
             <button
               type="button"
               onClick={() => onDone(result)}
@@ -199,7 +320,7 @@ export function StackRound({
         {finished ? (
           <div className="mt-6 flex flex-1 flex-col items-center text-center">
             <p className="font-condensed text-sm tracking-[0.22em] text-honey">
-              ROUND
+              {seed.modifier}
             </p>
             <p className="mt-3 font-display text-3xl">Three carries.</p>
             {streak > 1 ? (
@@ -215,10 +336,10 @@ export function StackRound({
                     key={`${row.glasses}-${i}`}
                     className="flex justify-between rounded-2xl bg-paper/8 px-4 py-3"
                   >
-                    <span>{row.glasses} high</span>
+                    <span>{row.glasses} glasses</span>
                     <span className="text-honey">
                       {result
-                        ? `${stackResultCopy(result.band)} ${result.wobble}`
+                        ? `${stackResultCopy(result.band)} ${result.wobble.toFixed(1)}`
                         : "—"}
                     </span>
                   </li>
@@ -243,8 +364,9 @@ export function StackRound({
             key={`${seed.date}-${index}-${carry.glasses}`}
             carry={carry}
             coach={index === 0 ? "full" : "countdown"}
-            label={`CARRY ${String(index + 1).padStart(2, "0")} / 03`}
+            label={`CARRY ${index + 1} OF 3 · ${carry.glasses} GLASSES`}
             doneLabel={last ? (live ? "See rank" : "See round") : "Next"}
+            auto={live}
             onDone={finishCarry}
           />
         ) : null}

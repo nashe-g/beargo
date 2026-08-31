@@ -8,6 +8,17 @@ const CX = 80;
 const BASE_Y = 386;
 const FOOT = 220 * SCALE;
 
+/** Beer flying out of the wreck. Fixed table keeps the chaos deterministic. */
+const SPLASH_DROPS = [
+  { sx: -36, sy: -34, r: 3, delay: 0 },
+  { sx: 28, sy: -46, r: 2.4, delay: 40 },
+  { sx: -16, sy: -58, r: 2, delay: 80 },
+  { sx: 44, sy: -20, r: 2.8, delay: 20 },
+  { sx: -50, sy: -10, r: 2.2, delay: 60 },
+  { sx: 14, sy: -66, r: 1.8, delay: 100 },
+  { sx: 52, sy: -44, r: 1.6, delay: 120 },
+];
+
 function MiniPint({
   index,
   glasses,
@@ -21,8 +32,8 @@ function MiniPint({
 }) {
   const y = BASE_Y - FOOT - index * STEP;
   const lean = index % 2 === 0 ? 1 : -1;
-  const fallX = lean * (14 + (glasses - 1 - index) * 7);
-  const fallR = lean * (22 + (glasses - 1 - index) * 9);
+  const fallX = lean * (22 + (glasses - 1 - index) * 11);
+  const fallR = lean * (30 + (glasses - 1 - index) * 14);
   const shear = Math.sin(theta) * index * 4.2;
 
   return (
@@ -34,7 +45,7 @@ function MiniPint({
         style={{
           ["--fall-x" as string]: `${fallX}px`,
           ["--fall-r" as string]: `${fallR}deg`,
-          animationDelay: toppled ? `${index * 40}ms` : undefined,
+          animationDelay: toppled ? `${index * 55}ms` : undefined,
         }}
       >
         <path d={PINT.interior} fill="#e8a31a" opacity={0.92} />
@@ -136,7 +147,27 @@ export function StackGlasses({
             </g>
           ) : null}
         </g>
+        {toppled ? (
+          <g
+            transform={`translate(${CX} ${BASE_Y - FOOT - (glasses - 1) * STEP})`}
+          >
+            {SPLASH_DROPS.map((drop, index) => (
+              <circle
+                key={index}
+                className="stack-splash-drop"
+                r={drop.r}
+                fill="#e8a31a"
+                style={{
+                  ["--sx" as string]: `${drop.sx}px`,
+                  ["--sy" as string]: `${drop.sy}px`,
+                  animationDelay: `${drop.delay}ms`,
+                }}
+              />
+            ))}
+          </g>
+        ) : null}
         <g
+          className="stack-tray"
           style={{
             transformOrigin: `${CX}px ${BASE_Y}px`,
             transform: `rotate(${trayTilt}deg)`,

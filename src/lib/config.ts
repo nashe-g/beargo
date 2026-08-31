@@ -10,10 +10,15 @@ export const LEGACY_LOCAL_COUPON_PUBLIC_ENABLED = PLAYER_OFFERS_ENABLED;
 /** Post-game CJ affiliate card. Kill switch; still serves nothing without an eligible offer. */
 export const AFFILIATE_POSTGAME_ENABLED = true;
 
-/** Head-on-it pour. Live scan runs trivia → pour → stack when both are on. */
-export const POUR_ENABLED = true;
+/**
+ * Trivia and pour are archived from the public flow — kept in the lab for
+ * future experiments, sponsor activations, or bonus modes. The default
+ * product is: Scan → Wobble → Rank → Challenge somebody else.
+ */
+export const TRIVIA_ENABLED = false;
+export const POUR_ENABLED = false;
 
-/** Wobbly Stack finale. Live scan runs it after the pour. */
+/** The wobble game. This is BearGo now. */
 export const STACK_ENABLED = true;
 
 export function pawScanUrl(token: string, origin: string = CANONICAL_ORIGIN) {

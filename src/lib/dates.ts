@@ -7,6 +7,22 @@ export function localDateInZone(timeZone: string, at = new Date()) {
   }).format(at);
 }
 
+/**
+ * A bar night runs past midnight. Everything before the boundary hour
+ * (default 6 AM venue time) still counts as the previous service day, so
+ * Friday 8 PM and Saturday 1:30 AM share one leaderboard and one seed.
+ */
+export function serviceDayInZone(
+  timeZone: string,
+  at = new Date(),
+  boundaryHour = 6,
+) {
+  return localDateInZone(
+    timeZone,
+    new Date(at.getTime() - boundaryHour * 60 * 60 * 1000),
+  );
+}
+
 export function addCalendarDays(dateStr: string, days: number) {
   const [year, month, day] = dateStr.split("-").map(Number);
   const next = new Date(Date.UTC(year, month - 1, day + days));

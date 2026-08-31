@@ -7,12 +7,12 @@ const STEPS = [
     body: "A printed mark at the venue. No app install.",
   },
   {
-    title: "Who’s still got it?",
-    body: "Three bar questions, pour three beers to the line, then keep a leaning tray up. Same set for everyone here today.",
+    title: "Don’t drop the drinks.",
+    body: "The stack leans on its own. Tap the side it’s falling toward. Three carries — 3, 4, then 5 glasses. Everyone at the venue faces the same shift tonight.",
   },
   {
-    title: "See how you rank.",
-    body: "That’s the game. Rank is for this place, today.",
+    title: "See where you rank tonight.",
+    body: "One ranked run a night per phone. The board resets with the next shift — then make your table beat you.",
   },
   {
     title: "Optional offers after the game.",
@@ -25,7 +25,7 @@ export default function HowItWorksPage() {
     <PublicShell>
       <PublicHeading kicker="THE GAME" title="How it works" />
       <p className="mt-5 max-w-xl text-lg leading-relaxed text-ink-soft">
-        No account to play. About two minutes.
+        No account to play. About a minute.
       </p>
       <ol className="mt-10 grid gap-4 sm:grid-cols-2">
         {STEPS.map((step, index) => (
