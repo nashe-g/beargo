@@ -10,14 +10,13 @@ import { recordStackStreak } from "@/lib/stack-streak";
 import {
   carryWobble,
   stackBand,
+  stackHazardLine,
   stackPatronBand,
   stackResultCopy,
-  stackSpill,
   type StackCarry,
   type StackRoundSeed,
 } from "@/lib/stack";
 import { crashSound, stingSound } from "@/lib/stack-sound";
-import type { PourBand } from "@/lib/pour";
 
 export type StackCarryResult = {
   glasses: number;
@@ -34,20 +33,21 @@ export function StackCarryPlay({
   label,
   doneLabel = "Next",
   auto = false,
+  modifier = "REGULAR SHIFT",
 }: {
   carry: StackCarry;
   onDone?: (result: StackCarryResult) => void;
   coach?: StackCoachKind;
   label?: string;
   doneLabel?: string;
-  /** Advance to the next carry on a short timer instead of a button. */
   auto?: boolean;
+  modifier?: string;
 }) {
   const [locked, setLocked] = useState(false);
   const [pausedByBlur, setPausedByBlur] = useState(false);
   const [resumeCount, setResumeCount] = useState<number | null>(null);
   const coach = useStackCoach(coachKind);
-  const tilt = useStackTilt(carry.glasses, carry.jolts, locked);
+  const tilt = useStackTilt(carry.glasses, carry.jolts, locked, modifier);
   const remaining = Math.max(0, carry.durationMs - tilt.elapsed);
   const band = locked ? stackBand(tilt.toppled, tilt.maxLean) : "idle";
   const wobble = carryWobble({
@@ -138,22 +138,10 @@ export function StackCarryPlay({
       ? "Down."
       : stackResultCopy(band)
     : tilt.incoming
-      ? "Someone’s coming."
+      ? stackHazardLine(tilt.incoming.kind, tilt.incoming.formation)
       : coach.playing
         ? `${(remaining / 1000).toFixed(1)}s`
         : coach.headline;
-
-  // Two regulars at the rail. They stare, cringe, and duck as the stack
-  // threatens — comedy for whoever is watching over a shoulder.
-  const spillAt = stackSpill(carry.glasses);
-  const lean = Math.abs(coach.playing ? tilt.theta : coach.demoTheta);
-  const spectatorBand = (nerve: number): PourBand => {
-    if (locked) return tilt.toppled ? "flood" : "nail";
-    if (lean >= spillAt) return "flood";
-    if (lean >= spillAt * nerve) return "close";
-    return "idle";
-  };
-  const ducking = !locked && lean >= spillAt;
 
   return (
     <div className="flex flex-1 flex-col select-none">
@@ -161,6 +149,11 @@ export function StackCarryPlay({
         {coach.phase === "demo"
           ? "DEMO — WATCH"
           : (label ?? `${carry.glasses} GLASSES`)}
+        {coach.phase !== "demo" ? (
+          <span className="mt-1 block tracking-[0.16em] text-paper/50">
+            {modifier}
+          </span>
+        ) : null}
       </p>
       <p
         className={`mt-2 text-center font-display ${coach.counting ? "text-5xl" : "text-xl"}`}
@@ -178,41 +171,6 @@ export function StackCarryPlay({
         </p>
       ) : null}
       <div className="relative mt-2 flex flex-1 flex-col justify-end">
-        {tilt.incoming ? (
-          <div
-            className={`pointer-events-none absolute bottom-24 z-10 ${
-              tilt.incoming.side < 0
-                ? "left-1 stack-walk-left"
-                : "right-1 stack-walk-right"
-            }`}
-          >
-            <Patron
-              id={tilt.incoming.patronId}
-              reaction="close"
-              className="h-20 w-14"
-            />
-          </div>
-        ) : null}
-        <div
-          className="stack-spectator pointer-events-none absolute bottom-1 left-3"
-          data-duck={ducking}
-        >
-          <Patron
-            id="b"
-            reaction={spectatorBand(0.45)}
-            className="h-14 w-10 opacity-75"
-          />
-        </div>
-        <div
-          className="stack-spectator pointer-events-none absolute right-3 bottom-1"
-          data-duck={ducking}
-        >
-          <Patron
-            id="c"
-            reaction={spectatorBand(0.68)}
-            className="h-14 w-10 opacity-75"
-          />
-        </div>
         <StackPlayfield
           glasses={carry.glasses}
           theta={coach.playing ? tilt.theta : coach.demoTheta}
@@ -221,6 +179,10 @@ export function StackCarryPlay({
           hintSide={coach.playing ? tilt.hintSide : coach.hintSide}
           pressedSide={coach.playing ? 0 : coach.tapSide}
           disabled={locked || !coach.playing || pausedByBlur}
+          elapsed={coach.playing ? tilt.elapsed : 0}
+          jolts={carry.jolts}
+          walking={coach.playing && !locked && !pausedByBlur}
+          modifier={modifier}
           onPress={(side) => {
             if (coach.playing && !pausedByBlur) tilt.press(side);
           }}
@@ -367,6 +329,7 @@ export function StackRound({
             label={`CARRY ${index + 1} OF 3 · ${carry.glasses} GLASSES`}
             doneLabel={last ? (live ? "See rank" : "See round") : "Next"}
             auto={live}
+            modifier={seed.modifier}
             onDone={finishCarry}
           />
         ) : null}

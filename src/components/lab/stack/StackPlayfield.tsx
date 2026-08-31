@@ -1,4 +1,6 @@
-import { StackGlasses } from "@/components/lab/stack/StackGlasses";
+import { StackAisle } from "@/components/lab/stack/StackAisle";
+import { StackTray } from "@/components/lab/stack/StackTray";
+import type { StackJolt } from "@/lib/stack";
 
 function TapZone({
   side,
@@ -49,7 +51,7 @@ function TapZone({
           />
         </svg>
         <span
-          className={`text-[0.65rem] font-condensed tracking-[0.18em] ${hint ? "text-honey" : "text-paper/35"}`}
+          className={`text-[0.65rem] font-condensed tracking-[0.18em] ${hint ? "text-honey" : "opacity-80"}`}
         >
           TAP
         </span>
@@ -58,11 +60,6 @@ function TapZone({
   );
 }
 
-/**
- * The whole left/right half of the playfield is a touch target — a
- * bar-friendly control that works one-handed after a drink. The arrows
- * are indicators, not buttons.
- */
 export function StackPlayfield({
   glasses,
   theta,
@@ -71,6 +68,10 @@ export function StackPlayfield({
   hintSide = 0,
   pressedSide = 0,
   disabled,
+  elapsed = 0,
+  jolts = [],
+  walking = false,
+  modifier = "REGULAR SHIFT",
   onPress,
   onRelease,
 }: {
@@ -81,17 +82,36 @@ export function StackPlayfield({
   hintSide?: -1 | 0 | 1;
   pressedSide?: -1 | 0 | 1;
   disabled?: boolean;
+  elapsed?: number;
+  jolts?: StackJolt[];
+  walking?: boolean;
+  modifier?: string;
   onPress: (side: -1 | 1) => void;
   onRelease: () => void;
 }) {
+  void slide;
+  const hitting = jolts.find((jolt) => {
+    const dt = elapsed - jolt.atMs;
+    return dt >= 0 && dt <= 280;
+  });
+  const hit = hitting ? hitting.side : 0;
   return (
-    <div className="stack-field relative flex min-h-[22rem] flex-1 items-end justify-center">
-      <StackGlasses
+    <div
+      className="stack-field relative flex min-h-[26rem] flex-1"
+      data-shift={modifier}
+    >
+      <StackAisle
+        elapsed={elapsed}
+        jolts={jolts}
+        walking={walking}
+        modifier={modifier}
+      />
+      <StackTray
         glasses={glasses}
         theta={theta}
-        slide={slide}
         toppled={toppled}
-        className="h-[20rem] w-44"
+        hit={hit}
+        modifier={modifier}
       />
       <TapZone
         side={-1}

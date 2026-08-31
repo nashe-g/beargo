@@ -1,63 +1,703 @@
-.stack-walk-left {
-  animation: stack-walk-left 920ms ease-out 1;
-}
-
-.stack-walk-right {
-  animation: stack-walk-right 920ms ease-out 1;
-}
-
-.stack-drip {
-  animation: stack-drip 0.55s ease-in infinite;
-}
-
-.stack-glass {
-  transform-box: fill-box;
-  transform-origin: 50% 50%;
-}
-
-.stack-crash .stack-glass {
-  animation: stack-fall 700ms cubic-bezier(0.3, 0.6, 0.6, 1) 1 forwards;
-}
-
-.stack-crash .stack-tray {
-  animation: stack-tray-recoil 480ms ease-out 1 forwards;
-}
-
-.stack-splash-drop {
-  animation: stack-splash 620ms ease-out 1 forwards;
-  opacity: 0;
-}
-
-.stack-spectator {
-  transition: transform 220ms ease-out;
-}
-
-.stack-spectator[data-duck="true"] {
-  transform: translateY(7px) scale(0.94);
-}
-
 .stack-field {
+  position: relative;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
   overscroll-behavior: contain;
+  min-height: 28rem;
+  overflow: hidden;
+  background: #1a120c;
+}
+
+.stack-field[data-shift="HAPPY HOUR"] {
+  background: #2a1608;
+}
+
+.stack-field[data-shift="FRIDAY NIGHT"] {
+  background: #050208;
+}
+
+.stack-field[data-shift="CLOSING TIME"] {
+  background: #0b1016;
+}
+
+.stack-field[data-shift="WEDDING PARTY"] {
+  background: #3a2a28;
+}
+
+.stack-room {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.stack-room-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at 50% 18%,
+    rgba(232, 163, 26, 0.22),
+    transparent 48%
+  );
+}
+
+.stack-room-floor {
+  position: absolute;
+  left: 50%;
+  top: 8%;
+  width: 170%;
+  height: 130%;
+  transform: translateX(-50%) perspective(240px) rotateX(58deg);
+  transform-origin: 50% 0;
+  background-image: repeating-linear-gradient(
+    180deg,
+    #3a2a1c 0 20px,
+    #24180f 20px 22px
+  );
+  background-size: 100% 44px;
+  animation: aisle-scroll 3.4s linear infinite;
+  clip-path: polygon(18% 0, 82% 0, 100% 100%, 0 100%);
+}
+
+.stack-lamp {
+  position: absolute;
+  left: 50%;
+  top: 2%;
+  z-index: 2;
+  width: 2.2rem;
+  height: 3.2rem;
+  transform: translateX(-50%);
+  background:
+    radial-gradient(circle at 50% 80%, #ffe28a 0 28%, transparent 32%),
+    linear-gradient(#5a4634, #5a4634) 50% 0 / 3px 42% no-repeat;
+  filter: drop-shadow(0 12px 28px rgba(232, 163, 26, 0.45));
+}
+
+.stack-shelf {
+  position: absolute;
+  left: 50%;
+  top: 9%;
+  z-index: 1;
+  width: 22%;
+  height: 8%;
+  transform: translateX(-50%);
+  background:
+    linear-gradient(90deg, #c4a574 8%, #8a6a3a 8% 14%, transparent 14% 22%, #e8a31a 22% 28%, transparent 28% 38%, #7c4f08 38% 46%, transparent 46% 58%, #c4a574 58% 64%, transparent 64% 74%, #2c6a4a 74% 82%, transparent 82%),
+    linear-gradient(#5a4634, #5a4634) 0 100% / 100% 3px no-repeat;
+  opacity: 0.7;
+}
+
+.stack-field[data-shift="HAPPY HOUR"] .stack-room-glow {
+  background:
+    radial-gradient(ellipse at 20% 30%, rgba(255, 196, 60, 0.45), transparent 36%),
+    radial-gradient(ellipse at 80% 20%, rgba(255, 160, 40, 0.35), transparent 32%);
+}
+
+.stack-field[data-shift="HAPPY HOUR"] .stack-room-floor {
+  background-image: linear-gradient(
+    90deg,
+    #3a2208 0%,
+    #8a5a10 40%,
+    #e8a31a 50%,
+    #8a5a10 60%,
+    #3a2208 100%
+  );
+  animation: rush-floor 0.55s linear infinite;
+  filter: blur(0.4px);
+}
+
+.stack-streaks {
+  position: absolute;
+  inset: 8% 0 40%;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 18px,
+    rgba(255, 210, 80, 0.12) 18px 22px
+  );
+  animation: rush-floor 0.4s linear infinite;
+}
+
+.stack-rush {
+  position: absolute;
+  left: -30%;
+  width: 6.2rem;
+  height: 4.4rem;
+  opacity: 0.9;
+  animation: rush-by 0.9s linear infinite;
+}
+
+.stack-rush.is-flip svg {
+  transform: scaleX(-1);
+}
+
+.stack-rush.is-flip {
+  animation-name: rush-by-back;
+}
+
+.stack-far-sign {
+  position: absolute;
+  top: 7%;
+  left: 50%;
+  z-index: 2;
+  margin: 0;
+  transform: translateX(-50%);
+  font-size: 0.55rem;
+  letter-spacing: 0.28em;
+  white-space: nowrap;
+  opacity: 0.85;
+}
+
+.stack-far-gold {
+  padding: 0.18rem 0.45rem;
+  color: #1a120b;
+  background: #e8a31a;
+}
+
+.stack-field[data-shift="FRIDAY NIGHT"] .stack-room-glow {
+  background: radial-gradient(
+    ellipse at 50% 78%,
+    rgba(255, 210, 140, 0.28),
+    transparent 42%
+  );
+}
+
+.stack-field[data-shift="FRIDAY NIGHT"] .stack-room-floor {
+  animation: none;
+  background-image: none;
+  background: #050208;
+  clip-path: none;
+  width: 40%;
+  height: 36%;
+  top: 52%;
+  filter: none;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  box-shadow: 0 0 80px 30px rgba(255, 180, 80, 0.08);
+}
+
+.stack-strobe {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    radial-gradient(ellipse at 12% 24%, rgba(255, 60, 160, 0.4), transparent 32%),
+    radial-gradient(ellipse at 88% 18%, rgba(40, 220, 255, 0.32), transparent 30%);
+  animation: friday-strobe 1.5s steps(2, end) infinite;
+  pointer-events: none;
+}
+
+.stack-pit-blob {
+  position: absolute;
+  z-index: 2;
+  animation: pit-breathe 2.6s ease-in-out infinite;
+  filter: brightness(0.9);
+}
+
+.stack-far-neon {
+  color: #ff4d9a;
+  font-size: 0.7rem;
+  letter-spacing: 0.4em;
+  text-shadow: 0 0 12px #ff4d9a;
+}
+
+.stack-field[data-shift="CLOSING TIME"] .stack-room-glow {
+  background: radial-gradient(
+    ellipse at 50% 6%,
+    rgba(200, 214, 230, 0.2),
+    transparent 34%
+  );
+}
+
+.stack-field[data-shift="CLOSING TIME"] .stack-room-floor {
+  animation-duration: 18s;
+  background-image: repeating-linear-gradient(
+    180deg,
+    #1a222c 0 22px,
+    #121820 22px 24px
+  );
+  filter: grayscale(0.4) brightness(0.72);
+}
+
+.stack-window {
+  position: absolute;
+  top: 3%;
+  right: 7%;
+  z-index: 1;
+  width: 4.6rem;
+  height: 5.8rem;
+  border: 4px solid #2a3440;
+  background:
+    linear-gradient(#2a3440, #2a3440) 50% 0 / 4px 100% no-repeat,
+    linear-gradient(#2a3440, #2a3440) 0 50% / 100% 4px no-repeat,
+    linear-gradient(200deg, rgba(190, 210, 235, 0.5), rgba(110, 130, 160, 0.14));
+}
+
+.stack-moonbeam {
+  position: absolute;
+  top: 6%;
+  right: 2%;
+  z-index: 1;
+  width: 32%;
+  height: 66%;
+  transform: skewX(-16deg);
+  transform-origin: 100% 0;
+  background: linear-gradient(
+    195deg,
+    rgba(190, 210, 235, 0.2),
+    transparent 68%
+  );
+  pointer-events: none;
+}
+
+.stack-cord {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  z-index: 2;
+  width: 2px;
+  height: 3.6rem;
+  margin-left: -1px;
+  background: rgba(200, 214, 230, 0.35);
+  transform-origin: 50% 0;
+  animation: cord-swing 3.8s ease-in-out infinite;
+}
+
+.stack-bare-bulb {
+  position: absolute;
+  left: 50%;
+  bottom: -0.4rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: #e8eef6;
+  box-shadow: 0 0 30px 12px rgba(200, 214, 230, 0.5);
+}
+
+.stack-mop {
+  position: absolute;
+  left: 13%;
+  top: 26%;
+  z-index: 2;
+  width: 3.2rem;
+  height: 4.8rem;
+  opacity: 0.9;
+}
+
+.stack-chair-stack {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  width: 4.2rem;
+  gap: 0.1rem;
+  opacity: 0.95;
+}
+
+.stack-chair-stack > * {
+  height: 4.4rem;
+}
+
+.stack-chair-stack-left {
+  top: 18%;
+  left: 1%;
+}
+
+.stack-chair-stack-right {
+  top: 16%;
+  right: 1%;
+}
+
+.stack-far-dim {
+  color: rgba(200, 214, 230, 0.72);
+  font-size: 0.62rem;
+  letter-spacing: 0.4em;
+  animation: sign-flicker 4.2s step-end infinite;
+}
+
+.stack-field[data-shift="WEDDING PARTY"] .stack-room-glow {
+  background: radial-gradient(
+    ellipse at 50% 12%,
+    rgba(255, 244, 240, 0.55),
+    transparent 46%
+  );
+}
+
+.stack-field[data-shift="WEDDING PARTY"] .stack-room-floor {
+  animation-duration: 5s;
+  background-image: linear-gradient(
+    90deg,
+    #6a4a44 0 32%,
+    #fff8f2 32% 68%,
+    #6a4a44 68% 100%
+  );
+}
+
+.stack-arch {
+  position: absolute;
+  left: 50%;
+  top: 5.5%;
+  z-index: 2;
+  width: 15%;
+  height: 11%;
+  transform: translateX(-50%);
+  border: 4px solid #fff8f2;
+  border-bottom: none;
+  border-radius: 50% 50% 0 0;
+  box-shadow: 0 0 0 3px #c96a88;
+  opacity: 0.95;
+}
+
+.stack-runner {
+  position: absolute;
+  left: 50%;
+  top: 16%;
+  z-index: 1;
+  width: 18%;
+  height: 48%;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, #fff8f2, #e8d4c8);
+  clip-path: polygon(32% 0, 68% 0, 100% 100%, 0 100%);
+  box-shadow: 0 0 0 3px #c96a88;
+}
+
+.stack-guest {
+  position: absolute;
+  z-index: 2;
+  filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.25));
+}
+
+.stack-petal {
+  position: absolute;
+  top: -8%;
+  z-index: 5;
+  width: 0.65rem;
+  height: 0.95rem;
+  border-radius: 50% 50% 50% 0;
+  background: #fff8f2;
+  box-shadow: 0 0 0 1.5px #c96a88;
+  animation: petal-fall 3s linear infinite;
+}
+
+.stack-oncoming {
+  position: absolute;
+  width: 5.2rem;
+  height: 7.4rem;
+  transform-origin: 50% 100%;
+  filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.45));
+}
+
+.stack-oncoming-pit {
+  width: 7.4rem;
+  height: 9.2rem;
+}
+
+.stack-oncoming-guest {
+  width: 4.8rem;
+  height: 8rem;
+}
+
+.stack-oncoming-rush {
+  filter: blur(0.6px) drop-shadow(0 8px 8px rgba(0, 0, 0, 0.35));
+}
+
+.stack-cast {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.stack-cast.is-rush {
+  transform: scaleX(1.25) scaleY(0.92);
+}
+
+.stack-pint-hand {
+  position: absolute;
+  right: 4%;
+  bottom: 28%;
+  width: 0.85rem;
+  height: 1.35rem;
+  border-radius: 40% 40% 30% 30%;
+  background: #e8a31a;
+  box-shadow: 0 0 0 2px #f6efe4;
+}
+
+.stack-oncoming.is-hit .stack-cast,
+.stack-oncoming.is-hit svg {
+  animation: stack-duck 280ms ease-out 1;
+}
+
+.stack-plate.is-hit {
+  filter: brightness(1.14);
+}
+
+.stack-hands {
+  position: absolute;
+  right: 4%;
+  bottom: 1.4rem;
+  left: 4%;
+  z-index: 4;
+  height: 50%;
+}
+
+.stack-grip {
+  position: absolute;
+  bottom: 2%;
+  z-index: 1;
+  width: 36%;
+  height: 30%;
+  background: linear-gradient(180deg, #d4a07a 0%, #8a5a40 70%, #6a4030);
+  pointer-events: none;
+}
+
+.stack-grip-left {
+  left: 0;
+  border-radius: 40% 50% 20% 60%;
+  transform: rotate(12deg);
+}
+
+.stack-grip-right {
+  right: 0;
+  border-radius: 50% 40% 60% 20%;
+  transform: rotate(-12deg);
+}
+
+.stack-thumb {
+  position: absolute;
+  top: 0;
+  width: 32%;
+  height: 48%;
+  border-radius: 50%;
+  background: #e0b090;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+.stack-grip-left .stack-thumb {
+  right: 6%;
+}
+
+.stack-grip-right .stack-thumb {
+  left: 6%;
+}
+
+.stack-plate {
+  position: absolute;
+  inset: 18% 2% 8%;
+  z-index: 2;
+  border-radius: 50%;
+  transform-origin: 50% 55%;
+  background: radial-gradient(ellipse at 50% 40%, #d7b07a, #8a6a3a 70%, #5a4634);
+  box-shadow:
+    0 18px 24px rgba(0, 0, 0, 0.4),
+    inset 0 2px 0 rgba(255, 247, 223, 0.25);
+}
+
+.stack-field[data-shift="HAPPY HOUR"] .stack-plate {
+  background: radial-gradient(ellipse at 50% 40%, #ffe28a, #e8a31a 70%, #8a5a08);
+}
+
+.stack-field[data-shift="FRIDAY NIGHT"] .stack-plate {
+  background: radial-gradient(ellipse at 50% 40%, #5a5468, #1a1220 70%, #08040c);
+}
+
+.stack-field[data-shift="CLOSING TIME"] .stack-plate {
+  background: radial-gradient(ellipse at 50% 40%, #6a7480, #2a323c 70%, #12161c);
+  filter: brightness(0.78);
+}
+
+.stack-field[data-shift="WEDDING PARTY"] .stack-plate {
+  background: radial-gradient(ellipse at 50% 40%, #fff8f2, #e8d4c8 70%, #c4a090);
+}
+
+.stack-field[data-shift="WEDDING PARTY"] .stack-plate-lip {
+  border-color: #fff8f2;
+}
+
+.stack-plate-lip {
+  position: absolute;
+  inset: 6%;
+  border-radius: 50%;
+  border: 5px solid #c4a574;
+  opacity: 0.85;
+}
+
+.stack-plate-well {
+  position: absolute;
+  inset: 16%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 30%, #6e5330, #3a2a1c);
+}
+
+.stack-field[data-shift="HAPPY HOUR"] .stack-plate-well {
+  background: radial-gradient(ellipse at 50% 30%, #c48918, #6a3a08);
+}
+
+.stack-field[data-shift="FRIDAY NIGHT"] .stack-plate-well {
+  background: radial-gradient(ellipse at 50% 30%, #2a2230, #08040c);
+}
+
+.stack-field[data-shift="CLOSING TIME"] .stack-plate-well {
+  background: radial-gradient(ellipse at 50% 30%, #3a424c, #12161c);
+}
+
+.stack-field[data-shift="WEDDING PARTY"] .stack-plate-well {
+  background: radial-gradient(ellipse at 50% 30%, #f4e4dc, #c4a090);
+}
+
+.stack-plate-down {
+  animation: stack-plate-spill 480ms ease-out 1 forwards;
+}
+
+.stack-pints {
+  position: absolute;
+  inset: 10% 8% 4%;
+  z-index: 3;
+  transform-origin: 50% 60%;
+}
+
+.tray-pint {
+  position: absolute;
+  width: 22%;
+  aspect-ratio: 0.62;
+  transform-origin: 50% 100%;
+}
+
+.tray-pint.is-flute {
+  width: 13%;
+  aspect-ratio: 0.24;
+}
+
+.tray-pint-body {
+  position: absolute;
+  right: 12%;
+  bottom: 4%;
+  left: 12%;
+  top: 18%;
+  overflow: hidden;
+  border-radius: 8% 8% 18% 18%;
+  background: rgba(246, 239, 228, 0.18);
+  box-shadow: inset 0 0 0 1.5px rgba(246, 239, 228, 0.55);
+}
+
+.tray-pint.is-flute .tray-pint-body {
+  top: 6%;
+  right: 22%;
+  bottom: 30%;
+  left: 22%;
+  border-radius: 50% 50% 14% 14%;
+}
+
+.tray-flute-stem {
+  position: absolute;
+  left: 50%;
+  bottom: 4%;
+  width: 2px;
+  height: 34%;
+  background: rgba(246, 239, 228, 0.75);
+  transform: translateX(-50%);
+}
+
+.tray-flute-foot {
+  position: absolute;
+  left: 50%;
+  bottom: 2%;
+  width: 55%;
+  height: 6%;
+  border-radius: 50%;
+  background: rgba(246, 239, 228, 0.45);
+  transform: translateX(-50%);
+}
+
+.tray-pint-beer {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 72%;
+  background: #e8a31a;
+  transform: translateX(var(--slosh, 0px));
+}
+
+.tray-pint.is-flute .tray-pint-beer {
+  height: 44%;
+  background: #f0e0c4;
+}
+
+.stack-field[data-shift="HAPPY HOUR"] .tray-pint-beer {
+  background: #ffc430;
+}
+
+.stack-field[data-shift="FRIDAY NIGHT"] .tray-pint-beer {
+  background: #c47818;
+}
+
+.stack-field[data-shift="CLOSING TIME"] .tray-pint-beer {
+  background: #8a6a18;
+  opacity: 0.8;
+}
+
+.tray-pint-foam {
+  position: absolute;
+  top: 22%;
+  right: 0;
+  left: 0;
+  height: 12%;
+  background: #fffdf8;
+  transform: translateX(var(--slosh, 0px));
+  opacity: 0.9;
+}
+
+.tray-pint.is-flute .tray-pint-foam {
+  top: 48%;
+  height: 8%;
+  background: #fff8f2;
+}
+
+.tray-pint-rim {
+  position: absolute;
+  top: 6%;
+  right: 6%;
+  left: 6%;
+  height: 22%;
+  border: 2px solid #f6efe4;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at 50% 40%,
+    rgba(232, 163, 26, 0.55),
+    transparent 55%
+  );
+}
+
+.tray-pint.is-flute .tray-pint-rim {
+  top: 2%;
+  right: 18%;
+  left: 18%;
+  height: 16%;
+}
+
+.tray-pint-down {
+  animation: tray-pint-off 700ms cubic-bezier(0.3, 0.55, 0.55, 1) 1 forwards;
 }
 
 .stack-zone {
   position: absolute;
   top: 0;
   bottom: 0;
+  z-index: 6;
   width: 45%;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  padding-bottom: 5.5rem;
-  color: rgba(246, 239, 228, 0.38);
+  padding-bottom: 0.8rem;
+  color: rgba(246, 239, 228, 0.4);
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
-  border-radius: 1.2rem;
+}
+
+.stack-field[data-shift="WEDDING PARTY"] .stack-zone {
+  color: rgba(246, 239, 228, 0.55);
 }
 
 .stack-zone-left {
@@ -91,8 +731,143 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .stack-arrow-hint {
+  .stack-arrow-hint,
+  .tray-pint-down,
+  .stack-plate-down,
+  .stack-oncoming.is-hit .stack-cast,
+  .stack-oncoming.is-hit svg,
+  .stack-room-floor,
+  .stack-petal,
+  .stack-cord,
+  .stack-far-dim,
+  .stack-rush,
+  .stack-streaks,
+  .stack-strobe,
+  .stack-pit-blob {
     animation: none;
+  }
+}
+
+@keyframes aisle-scroll {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0 44px;
+  }
+}
+
+@keyframes rush-floor {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 80px 0;
+  }
+}
+
+@keyframes rush-by {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(160vw);
+  }
+}
+
+@keyframes rush-by-back {
+  from {
+    transform: translateX(160vw);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes cord-swing {
+  0%,
+  100% {
+    transform: rotate(-7deg);
+  }
+  50% {
+    transform: rotate(7deg);
+  }
+}
+
+@keyframes sign-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  7% {
+    opacity: 0.3;
+  }
+  9% {
+    opacity: 1;
+  }
+  54% {
+    opacity: 0.55;
+  }
+  56% {
+    opacity: 1;
+  }
+}
+
+@keyframes pit-breathe {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(6px);
+  }
+}
+
+.stack-pit-blob.is-right {
+  animation-name: pit-breathe-in;
+}
+
+@keyframes pit-breathe-in {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-6px);
+  }
+}
+
+@keyframes friday-strobe {
+  0%,
+  72% {
+    opacity: 1;
+  }
+  82% {
+    opacity: 0.28;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes petal-fall {
+  0% {
+    transform: translateY(0) rotate(18deg);
+    opacity: 0.95;
+  }
+  100% {
+    transform: translateY(110vh) rotate(220deg);
+    opacity: 0.05;
+  }
+}
+
+@keyframes bulb-twinkle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
   }
 }
 
@@ -108,95 +883,35 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .stack-walk-left,
-  .stack-walk-right,
-  .stack-drip,
-  .stack-crash .stack-glass,
-  .stack-crash .stack-tray,
-  .stack-splash-drop {
-    animation: none;
+@keyframes stack-plate-spill {
+  0% {
+    transform: rotateZ(0deg) rotateX(58deg);
   }
-
-  .stack-spectator {
-    transition: none;
+  100% {
+    transform: rotateZ(12deg) rotateX(64deg) translateY(10px);
   }
 }
 
-@keyframes stack-walk-left {
+@keyframes tray-pint-off {
   0% {
-    transform: translateX(-4.5rem);
-    opacity: 0;
-  }
-  35% {
+    transform: translate(-50%, -70%) rotate(0deg);
     opacity: 1;
   }
   100% {
-    transform: translateX(0);
-    opacity: 1;
+    transform: translate(calc(-50% + var(--fall-x, 24px)), calc(-70% + var(--fall-y, 70px)))
+      rotate(var(--fall-r, 40deg));
+    opacity: 0.15;
   }
 }
 
-@keyframes stack-walk-right {
-  0% {
-    transform: translateX(4.5rem);
-    opacity: 0;
-  }
-  35% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes stack-drip {
+@keyframes stack-duck {
   0% {
     transform: translateY(0);
-    opacity: 0.85;
-  }
-  100% {
-    transform: translateY(10px);
-    opacity: 0;
-  }
-}
-
-@keyframes stack-fall {
-  0% {
-    transform: translate(0, 0) rotate(0deg);
-    opacity: 1;
-  }
-  30% {
-    transform: translate(calc(var(--fall-x, 18px) * 0.35), -9px)
-      rotate(calc(var(--fall-r, 28deg) * 0.4));
-    opacity: 1;
-  }
-  100% {
-    transform: translate(var(--fall-x, 18px), 58px) rotate(var(--fall-r, 28deg));
-    opacity: 0.12;
-  }
-}
-
-@keyframes stack-tray-recoil {
-  0% {
-    transform: rotate(0deg) translateY(0);
   }
   40% {
-    transform: rotate(-7deg) translateY(3px);
+    transform: translateY(11px) rotate(-7deg);
   }
   100% {
-    transform: rotate(4deg) translateY(6px);
-  }
-}
-
-@keyframes stack-splash {
-  0% {
-    transform: translate(0, 0);
-    opacity: 0.95;
-  }
-  100% {
-    transform: translate(var(--sx, 20px), var(--sy, -30px));
-    opacity: 0;
+    transform: translateY(3px);
   }
 }

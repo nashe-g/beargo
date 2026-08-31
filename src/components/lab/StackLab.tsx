@@ -12,8 +12,10 @@ import { useStackTilt } from "@/components/lab/stack/useStackTilt";
 import "./stack/stack.css";
 import {
   STACK_GLASS_COUNTS,
+  STACK_LAB_SHIFTS,
   chicagoStackDate,
   seedStackRound,
+  type StackModifier,
 } from "@/lib/stack";
 
 function Stage({ children }: { children: React.ReactNode }) {
@@ -24,11 +26,12 @@ function Stage({ children }: { children: React.ReactNode }) {
   );
 }
 
-function IsolateStudio() {
+function IsolateStudio({ modifier }: { modifier: string }) {
   const [session, setSession] = useState(0);
   return (
     <IsolatePlay
-      key={session}
+      key={`${modifier}-${session}`}
+      modifier={modifier}
       coachKind={session === 0 ? "full" : "countdown"}
       onReset={() => setSession((value) => value + 1)}
     />
@@ -37,14 +40,16 @@ function IsolateStudio() {
 
 function IsolatePlay({
   coachKind,
+  modifier,
   onReset,
 }: {
   coachKind: StackCoachKind;
+  modifier: string;
   onReset: () => void;
 }) {
   const [glasses, setGlasses] = useState(3);
   const coach = useStackCoach(coachKind);
-  const tilt = useStackTilt(glasses, [], false);
+  const tilt = useStackTilt(glasses, [], false, modifier);
 
   useEffect(() => {
     if (!coach.playing) return;
@@ -75,6 +80,9 @@ function IsolatePlay({
             hintSide={coach.playing ? tilt.hintSide : coach.hintSide}
             pressedSide={coach.playing ? 0 : coach.tapSide}
             disabled={!coach.playing}
+            elapsed={coach.playing ? tilt.elapsed : 0}
+            walking={coach.playing && !tilt.toppled}
+            modifier={modifier}
             onPress={(side) => {
               if (coach.playing) tilt.press(side);
             }}
@@ -107,12 +115,34 @@ function IsolatePlay({
   );
 }
 
+function shiftBlurb(modifier: StackModifier) {
+  if (modifier === "HAPPY HOUR")
+    return "Bodies streak past. They clip the tray from the side.";
+  if (modifier === "FRIDAY NIGHT")
+    return "You’re in the pit. Shoulders, not an aisle.";
+  if (modifier === "CLOSING TIME")
+    return "Empty. One bulb. The last drunk weaves the whole floor.";
+  if (modifier === "WEDDING PARTY")
+    return "Champagne down the runner. The receiving line will not part.";
+  return "Quiet well. One person, then the tray.";
+}
+
 export function StackLab() {
-  const [dayOffset, setDayOffset] = useState(0);
+  const [shift, setShift] = useState<StackModifier>("REGULAR SHIFT");
   const [replay, setReplay] = useState(0);
   const [carryReplay, setCarryReplay] = useState(0);
-  const date = chicagoStackDate(dayOffset);
-  const seed = useMemo(() => seedStackRound(date), [date]);
+
+  useEffect(() => {
+    const value = new URLSearchParams(window.location.search).get("shift");
+    if (value && STACK_LAB_SHIFTS.includes(value as StackModifier)) {
+      setShift(value as StackModifier);
+    }
+  }, []);
+  const date = chicagoStackDate();
+  const seed = useMemo(
+    () => seedStackRound(date, "lab", shift),
+    [date, shift],
+  );
   const firstCarry = seed.carries[0];
 
   return (
@@ -124,7 +154,8 @@ export function StackLab() {
           </p>
           <h1 className="font-display text-4xl">Wobbly Stack</h1>
           <p className="text-ink-soft">
-            Tap the arrow on the side it’s falling. Live play is untouched.
+            Tap the side they’re falling. Pick a shift — the room changes
+            before you play. Live venues stay on tonight’s seed.
           </p>
           <p className="flex gap-4 text-sm">
             <Link
@@ -143,6 +174,26 @@ export function StackLab() {
           </p>
         </header>
 
+        <section className="space-y-3">
+          <div className="flex flex-wrap gap-2">
+            {STACK_LAB_SHIFTS.map((name) => (
+              <button
+                key={name}
+                type="button"
+                onClick={() => {
+                  setShift(name);
+                  setReplay((value) => value + 1);
+                  setCarryReplay((value) => value + 1);
+                }}
+                className={`rounded-full px-3 py-1 text-sm ${shift === name ? "bg-ink text-paper" : "border border-ink/15"}`}
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+          <p className="text-sm text-ink-soft">{shiftBlurb(shift)}</p>
+        </section>
+
         <section className="space-y-4">
           <h2 className="font-condensed tracking-[0.2em] uppercase">
             01 Lean
@@ -150,7 +201,7 @@ export function StackLab() {
           <p className="text-sm text-ink-soft">
             It plays itself three times. Then 3-2-1. Same tap when you play.
           </p>
-          <IsolateStudio />
+          <IsolateStudio modifier={shift} />
         </section>
 
         <section className="space-y-4">
@@ -164,11 +215,12 @@ export function StackLab() {
             <div className="scanner-stage overflow-hidden rounded-[1.8rem] text-paper">
               <div className="flex min-h-[34rem] flex-col px-5 py-6">
                 <StackCarryPlay
-                  key={`${date}-carry-${carryReplay}`}
+                  key={`${shift}-carry-${carryReplay}`}
                   carry={firstCarry}
                   coach={carryReplay === 0 ? "full" : "countdown"}
                   label="CARRY 01"
                   doneLabel="Again"
+                  modifier={shift}
                   onDone={() => setCarryReplay((value) => value + 1)}
                 />
               </div>
@@ -178,30 +230,21 @@ export function StackLab() {
 
         <section className="space-y-4">
           <h2 className="font-condensed tracking-[0.2em] uppercase">
-            03 Round
+            03 Tonight’s shift
           </h2>
           <p className="text-sm text-ink-soft">
-            Three silent tilts. Then three, four, five.
+            Same tap. This is tonight’s course.
           </p>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setDayOffset(0)}
-              className={`rounded-full px-3 py-1 text-sm ${dayOffset === 0 ? "bg-ink text-paper" : "border border-ink/15"}`}
-            >
-              Today
-            </button>
-            <button
-              type="button"
-              onClick={() => setDayOffset(1)}
-              className={`rounded-full px-3 py-1 text-sm ${dayOffset === 1 ? "bg-ink text-paper" : "border border-ink/15"}`}
-            >
-              Tomorrow
-            </button>
-          </div>
-          <p className="text-xs text-ink-soft">{date}</p>
+          <p className="text-xs text-ink-soft">
+            {seed.carries
+              .map(
+                (carry, index) =>
+                  `${index + 1}: ${(carry.durationMs / 1000).toFixed(1)}s · ${carry.jolts.length} bump${carry.jolts.length === 1 ? "" : "s"}`,
+              )
+              .join(" · ")}
+          </p>
           <StackRound
-            key={`${date}-${replay}`}
+            key={`${shift}-${replay}`}
             seed={seed}
             onReplay={() => setReplay((value) => value + 1)}
           />

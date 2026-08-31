@@ -5,7 +5,9 @@ import {
   STACK,
   STACK_REST,
   nextNudgeAt,
+  stackAmbient,
   stackHintSide,
+  stackJoltImpulse,
   stackKick,
   stackLength,
   tapCatch,
@@ -21,6 +23,7 @@ export function useStackTilt(
   glasses: number,
   jolts: StackJolt[],
   locked: boolean,
+  modifier = "REGULAR SHIFT",
 ) {
   const [theta, setTheta] = useState(0);
   const [slide, setSlide] = useState(0);
@@ -53,9 +56,12 @@ export function useStackTilt(
   const tapsRef = useRef(0);
   const lastPressAtRef = useRef(0);
 
+  const ambientRef = useRef(stackAmbient(modifier));
+
   glassesRef.current = glasses;
   joltsRef.current = jolts;
   lockedRef.current = locked;
+  ambientRef.current = stackAmbient(modifier);
 
   const publish = useCallback((body: StackBody) => {
     setTheta(body.theta);
@@ -88,9 +94,13 @@ export function useStackTilt(
         elapsedRef.current += STACK.dt * 1000;
         phaseRef.current += STACK.dt;
         const phase = phaseRef.current;
+        const ambient = ambientRef.current;
         const disturb =
           (STACK.wander / stackLength(glassesRef.current)) *
-          (Math.sin(phase * 2.05) + 0.35 * Math.sin(phase * 3.3 + 0.9));
+          ambient.amp *
+          (Math.sin(phase * 2.05 * ambient.freq) +
+            0.35 * Math.sin(phase * 3.3 * ambient.freq + 0.9) +
+            ambient.jitter * Math.sin(phase * 7.1));
         for (const jolt of joltsRef.current) {
           if (
             !firedRef.current.has(jolt.atMs) &&
@@ -99,8 +109,11 @@ export function useStackTilt(
             firedRef.current.add(jolt.atMs);
             bodyRef.current = {
               ...bodyRef.current,
-              v: bodyRef.current.v + jolt.side * STACK.joltV,
+              v: bodyRef.current.v + stackJoltImpulse(jolt),
             };
+            if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+              navigator.vibrate(18);
+            }
           }
         }
         if (elapsedRef.current >= nudgeAtRef.current) {
@@ -143,7 +156,7 @@ export function useStackTilt(
       let nextIncoming: StackJolt | null = null;
       for (const jolt of joltsRef.current) {
         const until = jolt.atMs - elapsedRef.current;
-        if (until > 0 && until <= STACK.telegraphMs) {
+        if (until > 0 && until <= STACK.approachMs * 0.7) {
           nextIncoming = jolt;
           break;
         }

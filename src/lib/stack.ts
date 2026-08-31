@@ -7,10 +7,17 @@ export const STACK_GLASS_COUNTS = [3, 4, 5] as const;
 
 export type StackBand = "idle" | "still" | "wobbly" | "soaked";
 
+export type StackHazard = "cut" | "backstep" | "chair" | "door";
+export type StackFormation = "solo" | "pair" | "weave" | "clump";
+export type StackDress = "plain" | "drink" | "white";
+
 export type StackJolt = {
   atMs: number;
   side: -1 | 1;
   patronId: PatronId;
+  kind: StackHazard;
+  formation: StackFormation;
+  dress: StackDress;
 };
 
 export type StackCarry = {
@@ -48,6 +55,8 @@ export const STACK = {
   maxV: 1.35,
   still: 0.12,
   telegraphMs: 920,
+  /** How long a hazard is visible walking toward the camera. */
+  approachMs: 2100,
 } as const;
 
 export type StackBody = {
@@ -190,6 +199,93 @@ export function stackPatronBand(band: StackBand): PourBand {
   return "idle";
 }
 
+export function stackHazardLine(kind?: StackHazard, formation?: StackFormation) {
+  if (formation === "clump") return "They won’t part.";
+  if (formation === "weave") return "He’s wandering.";
+  if (formation === "pair") return "They won’t yield.";
+  if (kind === "cut") return "Cutting in.";
+  if (kind === "backstep") return "Coming right at you.";
+  if (kind === "chair") return "Chair.";
+  if (kind === "door") return "Door.";
+  return "Watch it.";
+}
+
+export function stackRoom(modifier: string) {
+  if (modifier === "HAPPY HOUR") {
+    return { walk: 0.09, crowd: 6, chairs: 0, hit: "Busy." };
+  }
+  if (modifier === "FRIDAY NIGHT") {
+    return { walk: 0.07, crowd: 9, chairs: 0, hit: "Packed." };
+  }
+  if (modifier === "CLOSING TIME") {
+    return { walk: 0.028, crowd: 0, chairs: 4, hit: "Late." };
+  }
+  if (modifier === "WEDDING PARTY") {
+    return { walk: 0.045, crowd: 3, chairs: 0, hit: "Excuse you." };
+  }
+  return { walk: 0.048, crowd: 2, chairs: 1, hit: "Watch it." };
+}
+
+function pickHazard(
+  rng: () => number,
+  carryIndex: number,
+  modifier: StackModifier,
+): StackHazard {
+  if (modifier === "FRIDAY NIGHT") return rng() < 0.55 ? "cut" : "backstep";
+  if (modifier === "HAPPY HOUR") return rng() < 0.5 ? "cut" : "backstep";
+  if (modifier === "WEDDING PARTY") return rng() < 0.7 ? "backstep" : "cut";
+  if (modifier === "CLOSING TIME") {
+    if (carryIndex === 0) return "backstep";
+    return rng() < 0.55 ? "chair" : "backstep";
+  }
+  if (carryIndex === 0) return "backstep";
+  const roll = rng();
+  if (carryIndex === 1) return roll < 0.5 ? "backstep" : "cut";
+  if (roll < 0.35) return "backstep";
+  if (roll < 0.7) return "cut";
+  if (roll < 0.88) return "chair";
+  return "door";
+}
+
+/**
+ * Ambient sway character per shift. Same physics and controls — the room
+ * just breathes differently: Closing sways slow and heavy, Happy Hour
+ * jitters. Deterministic (phase-based), so fairness holds.
+ */
+export function stackAmbient(modifier: string) {
+  if (modifier === "HAPPY HOUR") return { amp: 0.85, freq: 1.8, jitter: 0.5 };
+  if (modifier === "FRIDAY NIGHT") return { amp: 1.15, freq: 1.2, jitter: 0.3 };
+  if (modifier === "CLOSING TIME") return { amp: 1.5, freq: 0.55, jitter: 0 };
+  if (modifier === "WEDDING PARTY") return { amp: 1.0, freq: 0.8, jitter: 0.15 };
+  return { amp: 1, freq: 1, jitter: 0 };
+}
+
+/** Heavier packs shove the tray harder. Same tap — different course. */
+export function stackJoltImpulse(jolt: StackJolt) {
+  let n = STACK.joltV;
+  if (jolt.formation === "pair") n *= 1.35;
+  if (jolt.formation === "clump") n *= 1.65;
+  if (jolt.formation === "weave") n *= 1.28;
+  if (jolt.kind === "cut") n *= 1.18;
+  if (jolt.kind === "chair") n *= 1.12;
+  return n * jolt.side;
+}
+
+function pickFormation(modifier: StackModifier): StackFormation {
+  if (modifier === "REGULAR SHIFT") return "solo";
+  if (modifier === "CLOSING TIME") return "weave";
+  if (modifier === "WEDDING PARTY") return "clump";
+  if (modifier === "HAPPY HOUR") return "pair";
+  return "pair";
+}
+
+function pickDress(modifier: StackModifier): StackDress {
+  if (modifier === "WEDDING PARTY") return "white";
+  if (modifier === "HAPPY HOUR") return "drink";
+  if (modifier === "FRIDAY NIGHT") return "drink";
+  return "plain";
+}
+
 export const STACK_MODIFIERS = [
   "REGULAR SHIFT",
   "HAPPY HOUR",
@@ -200,14 +296,30 @@ export const STACK_MODIFIERS = [
 /** Rare seeded night. Same for everyone at the venue — fairness holds. */
 export const STACK_RARE_MODIFIER = "WEDDING PARTY";
 
-export function seedStackRound(date: string, hostId = "lab"): StackRoundSeed {
+export type StackModifier =
+  | (typeof STACK_MODIFIERS)[number]
+  | typeof STACK_RARE_MODIFIER;
+
+export const STACK_LAB_SHIFTS: StackModifier[] = [
+  ...STACK_MODIFIERS,
+  STACK_RARE_MODIFIER,
+];
+
+export function seedStackRound(
+  date: string,
+  hostId = "lab",
+  forced?: StackModifier,
+): StackRoundSeed {
   const rng = mulberry32(hashSeed(`stack:${hostId}:${date}`));
   const patrons: PatronId[] = ["a", "b", "c"];
-  const rare = rng() < 0.05;
-  const modifier = rare
-    ? STACK_RARE_MODIFIER
-    : (STACK_MODIFIERS[Math.floor(rng() * STACK_MODIFIERS.length)] ??
-      "REGULAR SHIFT");
+  const rareRoll = rng() < 0.05;
+  const modifier: StackModifier =
+    forced ??
+    (rareRoll
+      ? STACK_RARE_MODIFIER
+      : (STACK_MODIFIERS[Math.floor(rng() * STACK_MODIFIERS.length)] ??
+        "REGULAR SHIFT"));
+  const rare = modifier === STACK_RARE_MODIFIER;
   // Carry 1 teaches, carry 2 threatens, carry 3 is the climax.
   const baseDurations = [10000, 13000, 15000];
   const joltCounts = [1, 2, 3];
@@ -233,10 +345,18 @@ export function seedStackRound(date: string, hostId = "lab"): StackRoundSeed {
       const lastOfFinale = index === 2 && n === count - 1;
       const lo = lastOfFinale ? 0.72 : n / count;
       const hi = lastOfFinale ? 0.97 : (n + 0.72) / count;
+      const kind = pickHazard(rng, index, modifier);
+      const formation =
+        kind === "chair" || kind === "door"
+          ? "solo"
+          : pickFormation(modifier);
       jolts.push({
         atMs: lead + (lo + rng() * (hi - lo)) * window,
         side: rng() < 0.5 ? -1 : 1,
         patronId: patrons[Math.floor(rng() * patrons.length)] ?? "a",
+        kind,
+        formation,
+        dress: pickDress(modifier),
       });
     }
     if (rare && index === 2) {
@@ -248,6 +368,9 @@ export function seedStackRound(date: string, hostId = "lab"): StackRoundSeed {
           atMs: Math.min(durationMs - tail, lastJolt.atMs + 760),
           side: lastJolt.side < 0 ? 1 : -1,
           patronId: patrons[Math.floor(rng() * patrons.length)] ?? "b",
+          kind: "cut",
+          formation: "clump",
+          dress: "white",
         });
       }
     }
