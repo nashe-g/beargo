@@ -3,17 +3,16 @@ import Link from "next/link";
 import { SharePawMark } from "@/components/share/ShareCardArt";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
 import { CANONICAL_ORIGIN } from "@/lib/config";
-import { QUESTIONS_PER_CHALLENGE } from "@/lib/questions";
 import { getPaw } from "@/lib/paws";
 import {
   parseShareCard,
   shareCardHeadline,
   shareCardImagePath,
   shareCardQuery,
+  shareCardScoreLines,
   shareCardText,
   shareCardTitle,
 } from "@/lib/share-card";
-import { formatWobble } from "@/lib/stack";
 
 export const dynamic = "force-dynamic";
 
@@ -96,17 +95,18 @@ export default async function SharePage({
             ) : null}
           </h1>
           {stats ? (
-            <p className="mt-4 font-condensed text-lg tracking-[0.12em] text-paper/85">
-              {stats.correctCount} / {QUESTIONS_PER_CHALLENGE} · WOBBLE{" "}
-              {formatWobble(stats.stackWobble)}
-            </p>
+            <div className="mt-5 space-y-1.5 font-condensed text-base tracking-[0.08em] text-paper/85">
+              {shareCardScoreLines(stats).map((line) => (
+                <p key={line}>{line}</p>
+              ))}
+            </div>
           ) : (
             <p className="mt-4 max-w-[19rem] text-lg text-paper/85">
               Don’t drop the drinks. Then beat the crowd in today’s trivia.
             </p>
           )}
-          <p className="mt-6 font-condensed text-sm tracking-[0.16em] text-honey">
-            THE PAW KNOWS HOW LONG YOU’D LAST
+          <p className="mt-6 max-w-[20rem] font-condensed text-sm tracking-[0.12em] text-honey">
+            THE PAW KNOWS HOW LONG YOU’D LAST AS A BARTENDER
           </p>
         </div>
         <div className="flex w-full shrink-0 flex-col items-center gap-3 pt-3">

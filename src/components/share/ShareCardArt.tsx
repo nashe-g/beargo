@@ -1,10 +1,9 @@
 import { PAD_PATH, TOE_PATHS } from "@/lib/paw-geometry";
-import { QUESTIONS_PER_CHALLENGE } from "@/lib/questions";
 import {
   shareCardHeadline,
+  shareCardScoreLines,
   type ShareCardStats,
 } from "@/lib/share-card";
-import { formatWobble } from "@/lib/stack";
 
 const INK = "#1a120b";
 const PAPER = "#f4e4c8";
@@ -40,9 +39,7 @@ export function ShareCardArt({
 }) {
   const ranked = Boolean(stats && stats.rank > 0 && stats.playerCount > 0);
   const name = stats?.boardName;
-  const score = stats
-    ? `${stats.correctCount} / ${QUESTIONS_PER_CHALLENGE}   ·   WOBBLE ${formatWobble(stats.stackWobble)}`
-    : "Don’t drop the drinks.";
+  const lines = stats ? shareCardScoreLines(stats) : ["Don’t drop the drinks."];
 
   return (
     <div
@@ -136,14 +133,22 @@ export function ShareCardArt({
         <div
           style={{
             display: "flex",
-            marginTop: 22,
+            flexDirection: "column",
+            marginTop: 18,
             fontFamily: "Arial, sans-serif",
-            fontSize: 28,
-            letterSpacing: "0.12em",
+            fontSize: 24,
+            letterSpacing: "0.06em",
             color: PAPER,
           }}
         >
-          {score}
+          {lines.map((line, index) => (
+            <div
+              key={line}
+              style={{ display: "flex", marginTop: index === 0 ? 0 : 8 }}
+            >
+              {line}
+            </div>
+          ))}
         </div>
       </div>
 
@@ -153,13 +158,13 @@ export function ShareCardArt({
           justifyContent: "space-between",
           alignItems: "flex-end",
           fontFamily: "Arial, sans-serif",
-          fontSize: 20,
-          letterSpacing: "0.16em",
+          fontSize: 18,
+          letterSpacing: "0.1em",
           color: HONEY,
         }}
       >
-        <div style={{ display: "flex" }}>
-          THE PAW KNOWS HOW LONG YOU’D LAST
+        <div style={{ display: "flex", maxWidth: 820 }}>
+          THE PAW KNOWS HOW LONG YOU’D LAST AS A BARTENDER
         </div>
         <div style={{ display: "flex", letterSpacing: "0.22em" }}>ASK IT.</div>
       </div>

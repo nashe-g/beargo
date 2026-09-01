@@ -8,6 +8,8 @@ export type ShareCardStats = {
   correctCount: number;
   stackWobble: number;
   boardName: string | null;
+  dropped: number | null;
+  packed: number | null;
 };
 
 function one(
@@ -40,12 +42,16 @@ export function parseShareCard(
   ) {
     return null;
   }
+  const dropped = intIn(one(query, "d"), 0, 99);
+  const packed = intIn(one(query, "g"), 1, 99);
   return {
     rank,
     playerCount,
     correctCount,
     stackWobble,
     boardName: sanitizeBoardName(one(query, "b") ?? ""),
+    dropped,
+    packed,
   };
 }
 
@@ -56,6 +62,8 @@ export function shareCardQuery(stats: ShareCardStats) {
   params.set("c", String(stats.correctCount));
   params.set("w", String(stats.stackWobble));
   if (stats.boardName) params.set("b", stats.boardName);
+  if (stats.dropped != null) params.set("d", String(stats.dropped));
+  if (stats.packed != null) params.set("g", String(stats.packed));
   return params.toString();
 }
 
@@ -75,14 +83,22 @@ export function shareCardTitle(host: string, stats: ShareCardStats | null) {
   return `Played at ${host}`;
 }
 
+export function shareCardScoreLines(stats: ShareCardStats) {
+  const lines = [`${stats.correctCount} of ${QUESTIONS_PER_CHALLENGE} trivia`];
+  if (stats.dropped != null && stats.packed != null && stats.packed > 0) {
+    lines.push(`${stats.dropped} of ${stats.packed} glasses dropped`);
+  }
+  lines.push(`Wobble ${formatWobble(stats.stackWobble)} · lower is better`);
+  return lines;
+}
+
 export function shareCardText(host: string, stats: ShareCardStats) {
   const who = stats.boardName || "I";
-  const wobble = formatWobble(stats.stackWobble);
-  const score = `${stats.correctCount}/${QUESTIONS_PER_CHALLENGE} · wobble ${wobble}`;
+  const detail = shareCardScoreLines(stats).join(". ");
   if (stats.rank > 0 && stats.playerCount > 0) {
-    return `${who} went #${stats.rank} of ${stats.playerCount} at ${host}. ${score}. Your turn.`;
+    return `${who} went #${stats.rank} of ${stats.playerCount} at ${host}. ${detail}. Your turn.`;
   }
-  return `${who} just played at ${host}. ${score}. Your turn.`;
+  return `${who} just played at ${host}. ${detail}. Your turn.`;
 }
 
 export function shareCardHeadline(stats: ShareCardStats | null) {

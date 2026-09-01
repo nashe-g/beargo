@@ -29,6 +29,8 @@ export function SponsorScreen({
       correctCount: attempt.correctCount,
       stackWobble: attempt.stackWobble,
       boardName: attempt.boardName ?? null,
+      dropped: attempt.stackLost ?? null,
+      packed: attempt.stackPacked ?? null,
     });
   }, [paw.token]);
 

@@ -21,8 +21,12 @@ export function ShareRank({
   async function share() {
     const origin = window.location.origin;
     const url = `${origin}${shareCardPath(paw.token, stats)}`;
-    const text = shareCardText(paw.hostDisplayName, stats);
     const title = `BearGo at ${paw.hostDisplayName}`;
+    const text = `${shareCardText(paw.hostDisplayName, stats)} ${url}`;
+
+    function aborted(error: unknown) {
+      return error instanceof DOMException && error.name === "AbortError";
+    }
 
     try {
       const image = await fetch(shareCardImagePath(paw.token, stats));
@@ -33,12 +37,18 @@ export function ShareRank({
           { type: "image/png" },
         );
         if (navigator.canShare({ files: [file] })) {
-          await navigator.share({ title, text, files: [file] });
-          return;
+          try {
+            await navigator.share({ title, text, url, files: [file] });
+            return;
+          } catch (error) {
+            if (aborted(error)) return;
+            await navigator.share({ title, text, files: [file] });
+            return;
+          }
         }
       }
-    } catch {
-      // Fall through to a link share.
+    } catch (error) {
+      if (aborted(error)) return;
     }
 
     try {
@@ -46,12 +56,12 @@ export function ShareRank({
         await navigator.share({ title, text, url });
         return;
       }
-    } catch {
-      // Fall through to copy.
+    } catch (error) {
+      if (aborted(error)) return;
     }
 
     try {
-      await navigator.clipboard.writeText(`${text} ${url}`);
+      await navigator.clipboard.writeText(text);
       setCopied(true);
     } catch {
       setCopied(false);

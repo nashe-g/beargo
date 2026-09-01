@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BearGuide } from "@/components/bear/BearGuide";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
-import { ShareRank } from "@/components/scanner/ShareRank";
 import { StampSession } from "@/components/scanner/StampSession";
 import { formatDuration, loadAttempt } from "@/lib/attempt";
 import { answersReady, attemptNeedsBoardName } from "@/lib/play-rounds";
@@ -179,16 +178,6 @@ export function GameResult({
           >
             Tonight’s sponsor
           </Link>
-          <ShareRank
-            paw={paw}
-            stats={{
-              rank: result.rank,
-              playerCount: result.playerCount,
-              correctCount: result.correctCount,
-              stackWobble: result.stackWobble,
-              boardName: result.boardName ?? null,
-            }}
-          />
           {TRIVIA_ENABLED && result.hasAnswers ? (
             <Link
               href={`/p/${paw.token}/play?review=1`}
