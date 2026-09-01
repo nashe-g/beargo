@@ -35,28 +35,31 @@ export type StackRoundSeed = {
 
 export const STACK = {
   dt: 1 / 60,
-  /** Weaker than earth: a thumb needs ~350–500ms to pick a side. */
-  g: 2.6,
+  /** Snappier than the lounge sway. A watching tap still catches. */
+  g: 2.78,
   trayMass: 1.05,
   length: 0.98,
   taller: 0.04,
-  dampOmega: 1.7,
-  dampTray: 2.4,
-  tapImpulse: 0.38,
-  holdForce: 2.7,
-  tapForce: 2.45,
-  tapDecay: 2.6,
-  joltV: 0.15,
-  wander: 0.015,
-  nudge: 0.048,
-  nudgeMinMs: 2400,
-  nudgeMaxMs: 3800,
+  dampOmega: 1.52,
+  dampTray: 2.3,
+  tapImpulse: 0.4,
+  holdForce: 2.9,
+  tapForce: 2.6,
+  tapDecay: 2.65,
+  joltV: 0.185,
+  /** How hard a bump whips the glasses, as a multiple of the tray shove. */
+  joltOmega: 1.35,
+  joltTheta: 0.16,
+  wander: 0.018,
+  nudge: 0.054,
+  nudgeMinMs: 2000,
+  nudgeMaxMs: 3200,
   maxX: 0.22,
-  maxV: 1.35,
+  maxV: 1.38,
   still: 0.12,
   telegraphMs: 920,
   /** How long a hazard is visible walking toward the camera. */
-  approachMs: 2100,
+  approachMs: 1850,
 } as const;
 
 export type StackBody = {
@@ -84,6 +87,28 @@ export function stackSpill(glasses: number) {
   return stackTopple(glasses) * 0.58;
 }
 
+/** Cluster x from the tray layout — used to drop the low-side glass first. */
+const GLASS_X: Record<number, number[]> = {
+  3: [-28, 28, 0],
+  4: [-26, 26, -24, 24],
+  5: [0, -30, 30, -20, 20],
+};
+
+export function nextFallingGlass(
+  packed: number,
+  fallen: number[],
+  theta: number,
+) {
+  const xs = GLASS_X[packed] ?? GLASS_X[3]!;
+  const standing = xs
+    .map((x, index) => ({ x, index }))
+    .filter((row) => !fallen.includes(row.index));
+  if (standing.length === 0) return null;
+  const dir = theta >= 0 ? 1 : -1;
+  standing.sort((a, b) => dir * (b.x - a.x));
+  return standing[0]!.index;
+}
+
 export function stackHintSide(theta: number, previous: -1 | 0 | 1): -1 | 0 | 1 {
   if (theta > 0.07) return 1;
   if (theta < -0.07) return -1;
@@ -98,11 +123,11 @@ export function stackSlide(x: number) {
 /** Catch a fall and send it back. A late or hard tap can overshoot. */
 export function tapCatch(body: StackBody, side: -1 | 1, glasses = 3): StackBody {
   const extra = Math.max(0, glasses - 3);
-  const returnKick = 0.42 + extra * 0.05;
+  const returnKick = 0.46 + extra * 0.05;
   return {
     ...body,
     v: body.v + side * STACK.tapImpulse,
-    theta: body.theta * (0.78 + extra * 0.05),
+    theta: body.theta * (0.78 + extra * 0.04),
     omega: body.omega - side * returnKick,
   };
 }
@@ -118,10 +143,12 @@ export function stackBand(toppled: boolean, maxLean: number): StackBand {
   return "wobbly";
 }
 
-export function stackResultCopy(band: StackBand) {
+export function stackResultCopy(band: StackBand, lost = 0) {
+  if (band === "soaked") return "Down.";
+  if (lost === 1) return "One off.";
+  if (lost >= 2) return `Lost ${lost}.`;
   if (band === "still") return "Steady.";
   if (band === "wobbly") return "Saved it.";
-  if (band === "soaked") return "Down.";
   return "";
 }
 
@@ -138,14 +165,16 @@ export function carryWobble(input: {
   integral: number;
   taps?: number;
   durationMs?: number;
+  lost?: number;
 }) {
   const seconds = (input.durationMs ?? 12000) / 1000;
   const excessTaps = Math.max(0, (input.taps ?? 0) - Math.ceil(seconds * 2));
+  const spillCost = input.toppled ? 12 : (input.lost ?? 0) * 3.2;
   const raw =
     input.integral * 6 +
     input.maxLean * 8 +
     excessTaps * 0.4 +
-    (input.toppled ? 12 : 0);
+    spillCost;
   return Math.min(CARRY_WOBBLE_CAP, Math.max(0, Math.round(raw * 10) / 10));
 }
 
@@ -271,6 +300,17 @@ export function stackJoltImpulse(jolt: StackJolt) {
   return n * jolt.side;
 }
 
+/** Tray shove plus the glasses lagging the other way. */
+export function stackJoltKick(body: StackBody, jolt: StackJolt): StackBody {
+  const shove = stackJoltImpulse(jolt);
+  return {
+    ...body,
+    v: body.v + shove,
+    omega: body.omega - shove * STACK.joltOmega,
+    theta: body.theta - shove * STACK.joltTheta,
+  };
+}
+
 function pickFormation(modifier: StackModifier): StackFormation {
   if (modifier === "REGULAR SHIFT") return "solo";
   if (modifier === "CLOSING TIME") return "weave";
@@ -383,10 +423,10 @@ export function seedStackRound(
 export function stackKick(rng = Math.random): StackBody {
   const side = rng() < 0.5 ? -1 : 1;
   return {
-    theta: side * (0.012 + rng() * 0.016),
-    omega: side * (0.01 + rng() * 0.018),
+    theta: side * (0.02 + rng() * 0.02),
+    omega: side * (0.018 + rng() * 0.024),
     x: 0,
-    v: -side * (0.006 + rng() * 0.01),
+    v: -side * (0.01 + rng() * 0.014),
   };
 }
 

@@ -65,6 +65,7 @@ export function StackPlayfield({
   theta,
   slide,
   toppled,
+  fallen = [],
   hintSide = 0,
   pressedSide = 0,
   disabled,
@@ -79,6 +80,7 @@ export function StackPlayfield({
   theta: number;
   slide?: number;
   toppled?: boolean;
+  fallen?: number[];
   hintSide?: -1 | 0 | 1;
   pressedSide?: -1 | 0 | 1;
   disabled?: boolean;
@@ -110,6 +112,7 @@ export function StackPlayfield({
         glasses={glasses}
         theta={theta}
         toppled={toppled}
+        fallen={fallen}
         hit={hit}
         modifier={modifier}
       />

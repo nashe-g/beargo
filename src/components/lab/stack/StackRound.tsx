@@ -23,6 +23,7 @@ export type StackCarryResult = {
   toppled: boolean;
   wobble: number;
   taps: number;
+  lost: number;
   band: ReturnType<typeof stackBand>;
 };
 
@@ -56,6 +57,7 @@ export function StackCarryPlay({
     integral: tilt.integral,
     taps: tilt.taps,
     durationMs: carry.durationMs,
+    lost: tilt.toppled ? carry.glasses : tilt.fallen.length,
   });
 
   useEffect(() => {
@@ -116,6 +118,7 @@ export function StackCarryPlay({
     toppled: tilt.toppled,
     wobble,
     taps: tilt.taps,
+    lost: tilt.toppled ? carry.glasses : tilt.fallen.length,
     band: stackBand(tilt.toppled, tilt.maxLean),
   };
   const resultRef = useRef(result);
@@ -136,7 +139,7 @@ export function StackCarryPlay({
   const headline = locked
     ? tilt.toppled
       ? "Down."
-      : stackResultCopy(band)
+      : stackResultCopy(band, tilt.fallen.length)
     : tilt.incoming
       ? stackHazardLine(tilt.incoming.kind, tilt.incoming.formation)
       : coach.playing
@@ -164,6 +167,7 @@ export function StackCarryPlay({
           theta={coach.playing ? tilt.theta : 0}
           slide={coach.playing ? tilt.slide : 0}
           toppled={coach.playing && tilt.toppled}
+          fallen={tilt.fallen}
           hintSide={coach.playing ? tilt.hintSide : 0}
           pressedSide={0}
           disabled={locked || !coach.playing || pausedByBlur}
@@ -207,7 +211,9 @@ export function StackCarryPlay({
           <p className="mt-2 text-sm text-paper/70">
             {tilt.toppled
               ? `Spilled ${carry.glasses}. Keep walking.`
-              : `Wobble ${wobble.toFixed(1)}`}
+              : tilt.fallen.length
+                ? `Lost ${tilt.fallen.length}. Wobble ${wobble.toFixed(1)}`
+                : `Wobble ${wobble.toFixed(1)}`}
           </p>
           {onDone && !auto ? (
             <button
@@ -289,7 +295,7 @@ export function StackRound({
                     <span>{row.glasses} glasses</span>
                     <span className="text-honey">
                       {result
-                        ? `${stackResultCopy(result.band)} ${result.wobble.toFixed(1)}`
+                        ? `${stackResultCopy(result.band, result.lost)} ${result.wobble.toFixed(1)}`
                         : "—"}
                     </span>
                   </li>

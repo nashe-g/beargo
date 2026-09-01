@@ -28,6 +28,7 @@
 .stack-room {
   position: absolute;
   inset: 0;
+  z-index: 1;
   overflow: hidden;
 }
 
@@ -370,7 +371,7 @@
 .stack-petal {
   position: absolute;
   top: -8%;
-  z-index: 5;
+  z-index: 2;
   width: 0.65rem;
   height: 0.95rem;
   border-radius: 50% 50% 50% 0;
@@ -443,10 +444,11 @@
 .stack-grip {
   position: absolute;
   bottom: 2%;
-  z-index: 1;
+  z-index: 3;
   width: 36%;
   height: 30%;
   background: linear-gradient(180deg, #d4a07a 0%, #8a5a40 70%, #6a4030);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
   pointer-events: none;
 }
 
@@ -460,24 +462,6 @@
   right: 0;
   border-radius: 50% 40% 60% 20%;
   transform: rotate(-12deg);
-}
-
-.stack-thumb {
-  position: absolute;
-  top: 0;
-  width: 32%;
-  height: 48%;
-  border-radius: 50%;
-  background: #e0b090;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
-}
-
-.stack-grip-left .stack-thumb {
-  right: 6%;
-}
-
-.stack-grip-right .stack-thumb {
-  left: 6%;
 }
 
 .stack-plate {
@@ -697,7 +681,7 @@
 }
 
 .stack-field[data-shift="WEDDING PARTY"] .stack-zone {
-  color: rgba(246, 239, 228, 0.55);
+  color: #e8a31a;
 }
 
 .stack-zone-left {

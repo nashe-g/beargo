@@ -41,6 +41,11 @@ export function StackPlay({
       wobble: row.wobble,
     }));
     const total = carries.reduce((sum, row) => sum + row.wobble, 0);
+    const stackLost = results.reduce(
+      (sum, row) => sum + (row.toppled ? row.glasses : row.lost),
+      0,
+    );
+    const stackPacked = results.reduce((sum, row) => sum + row.glasses, 0);
     // Save locally first so a flaky bar connection never forces a replay.
     const local: AttemptSnapshot = {
       correctCount: 0,
@@ -48,6 +53,8 @@ export function StackPlay({
       stackWobble: wobbleTenths(total),
       carryWobbles: carries.map((row) => row.wobble),
       stackCarries: carries,
+      stackLost,
+      stackPacked,
       finishedAt: Date.now(),
     };
     saveAttempt(paw.token, local);

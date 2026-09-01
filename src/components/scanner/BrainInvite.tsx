@@ -6,13 +6,14 @@ import { useRouter } from "next/navigation";
 import { BearGuide } from "@/components/bear/BearGuide";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
 import { loadAttempt } from "@/lib/attempt";
-import { HEAD_INVITE, answersReady, nextPlayPath } from "@/lib/play-rounds";
+import { HEAD_INVITE, answersReady, headInviteTitle, nextPlayPath } from "@/lib/play-rounds";
 import type { PawRecord } from "@/lib/paws";
 import { formatWobble } from "@/lib/stack";
 
 export function BrainInvite({ paw }: { paw: PawRecord }) {
   const router = useRouter();
   const [wobble, setWobble] = useState<number | null>(null);
+  const [title, setTitle] = useState(headInviteTitle(0, 12));
 
   useEffect(() => {
     const attempt = loadAttempt(paw.token);
@@ -25,6 +26,9 @@ export function BrainInvite({ paw }: { paw: PawRecord }) {
       return;
     }
     setWobble(attempt.stackWobble);
+    setTitle(
+      headInviteTitle(attempt.stackLost ?? 0, attempt.stackPacked ?? 12),
+    );
   }, [paw.token, router]);
 
   if (wobble == null) {
@@ -44,14 +48,14 @@ export function BrainInvite({ paw }: { paw: PawRecord }) {
             WOBBLE {formatWobble(wobble)}
           </p>
           <h1 className="mt-3 font-display text-4xl leading-tight sm:text-5xl">
-            {HEAD_INVITE.title}
+            {title}
           </h1>
           <div className="mt-6 max-w-[20rem] space-y-3 leading-snug">
             {HEAD_INVITE.lines.map((line, index) => (
               <p
                 key={line}
                 className={
-                  index < 2
+                  index === 0
                     ? "text-lg text-paper/85"
                     : "font-condensed text-base tracking-[0.14em] text-paper/65"
                 }

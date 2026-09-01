@@ -4,6 +4,9 @@ import {
   carryWobble,
   nextNudgeAt,
   seedStackRound,
+  stackAmbient,
+  stackHintSide,
+  stackJoltKick,
   stackKick,
   stackLength,
   stackTopple,
@@ -25,7 +28,7 @@ type Strategy = {
   none?: boolean;
 };
 
-function runCarry(carry: StackCarry, strat: Strategy, rng: () => number) {
+function runCarry(carry: StackCarry, strat: Strategy, rng: () => number, modifier = "REGULAR SHIFT") {
   let body: StackBody = stackKick(rng);
   let taps = 0;
   let integral = 0;
@@ -39,6 +42,7 @@ function runCarry(carry: StackCarry, strat: Strategy, rng: () => number) {
   let nudgeAt = nextNudgeAt(700, rng, carry.glasses);
   const fired = new Set<number>();
   const dtMs = STACK.dt * 1000;
+  const ambient = stackAmbient(modifier);
 
   const tap = (side: -1 | 1, now: number) => {
     const gap = now - lastTap;
@@ -57,7 +61,7 @@ function runCarry(carry: StackCarry, strat: Strategy, rng: () => number) {
     for (const j of carry.jolts) {
       if (!fired.has(j.atMs) && t >= j.atMs) {
         fired.add(j.atMs);
-        body = { ...body, v: body.v + j.side * STACK.joltV };
+        body = stackJoltKick(body, j);
       }
     }
     if (t >= nudgeAt) {
@@ -93,7 +97,10 @@ function runCarry(carry: StackCarry, strat: Strategy, rng: () => number) {
     const phase = t / 1000;
     const disturb =
       (STACK.wander / stackLength(carry.glasses)) *
-      (Math.sin(phase * 2.05) + 0.35 * Math.sin(phase * 3.3 + 0.9));
+      ambient.amp *
+      (Math.sin(phase * 2.05 * ambient.freq) +
+        0.35 * Math.sin(phase * 3.3 * ambient.freq + 0.9) +
+        ambient.jitter * Math.sin(phase * 7.1));
     body = stepStack(body, carry.glasses, force + assist, STACK.dt, disturb);
     maxLean = Math.max(maxLean, Math.abs(body.theta));
     integral += Math.abs(body.theta) * STACK.dt;
@@ -129,14 +136,47 @@ function runCarry(carry: StackCarry, strat: Strategy, rng: () => number) {
 const strategies: Strategy[] = [
   { name: "none        ", none: true },
   { name: "skilled     ", threshold: 0.05, omegaCoef: 0.34, delayMs: 170, minGapMs: 260 },
+  { name: "watching    ", threshold: 0.065, omegaCoef: 0.32, delayMs: 240, minGapMs: 280 },
   { name: "average     ", threshold: 0.075, omegaCoef: 0.28, delayMs: 300, minGapMs: 300 },
   { name: "sloppy      ", threshold: 0.1, omegaCoef: 0.18, delayMs: 420, minGapMs: 320 },
   { name: "spam-120ms  ", spamMs: 120 },
   { name: "spam-250ms  ", spamMs: 250 },
 ];
 
-const seed = seedStackRound("2026-08-30", "the-rustic");
-console.log(`modifier: ${seed.modifier}`);
+const DATE = process.argv[2] ?? "2026-08-30";
+const HOST = process.argv[3] ?? "the-rustic";
+const seed = seedStackRound(DATE, HOST);
+console.log(`seed ${DATE} ${HOST} · ${seed.modifier}`);
+for (const glasses of [3, 4, 5] as const) {
+  let body = stackKick(() => 0.35);
+  let prev: -1 | 0 | 1 = 0;
+  let hintAt: number | null = null;
+  const topple = stackTopple(glasses);
+  let dumpAt = -1;
+  for (let i = 0; i < 2400; i += 1) {
+    const t = i * STACK.dt;
+    const ms = t * 1000;
+    const hint = stackHintSide(body.theta, prev);
+    prev = hint;
+    if (hint !== 0 && hintAt == null) hintAt = ms;
+    body = stepStack(
+      body,
+      glasses,
+      0,
+      STACK.dt,
+      (STACK.wander / stackLength(glasses)) *
+        (Math.sin(t * 2.05) + 0.35 * Math.sin(t * 3.3 + 0.9)),
+    );
+    if (Math.abs(body.theta) >= topple) {
+      dumpAt = ms;
+      break;
+    }
+  }
+  const window = hintAt != null && dumpAt > 0 ? Math.round(dumpAt - hintAt) : -1;
+  console.log(
+    `idle dump ${glasses} glasses: hint ${hintAt == null ? "—" : Math.round(hintAt)}ms · dump ${dumpAt < 0 ? "none" : Math.round(dumpAt)}ms · window ${window}ms`,
+  );
+}
 for (const carry of seed.carries) {
   console.log(
     `carry ${carry.glasses} glasses · ${carry.durationMs}ms · jolts at ${carry.jolts
@@ -145,7 +185,7 @@ for (const carry of seed.carries) {
   );
 }
 
-const TRIALS = 300;
+const TRIALS = Number(process.argv[4] ?? 300);
 for (let index = 0; index < seed.carries.length; index += 1) {
   const carry = seed.carries[index]!;
   console.log(`\n=== Carry ${index + 1} (${carry.glasses} glasses) ===`);
@@ -155,7 +195,7 @@ for (let index = 0; index < seed.carries.length; index += 1) {
     let tapsSum = 0;
     for (let trial = 0; trial < TRIALS; trial += 1) {
       const rng = mulberry32(hashSeed(`sim:${strat.name}:${index}:${trial}`));
-      const result = runCarry(carry, strat, rng);
+      const result = runCarry(carry, strat, rng, seed.modifier);
       if (!result.toppled) survived += 1;
       wobbleSum += result.wobble;
       tapsSum += result.taps;
@@ -173,7 +213,7 @@ for (const strat of strategies) {
   for (let trial = 0; trial < TRIALS; trial += 1) {
     for (let index = 0; index < seed.carries.length; index += 1) {
       const rng = mulberry32(hashSeed(`tot:${strat.name}:${index}:${trial}`));
-      total += runCarry(seed.carries[index]!, strat, rng).wobble;
+      total += runCarry(seed.carries[index]!, strat, rng, seed.modifier).wobble;
     }
   }
   console.log(`${strat.name} mean total wobble ${(total / TRIALS).toFixed(1)}`);

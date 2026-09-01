@@ -22,10 +22,14 @@ export const PLAY_HOOK = {
 } as const;
 
 /** After the tray. One game, two halves — not a leftover quiz. */
+export function headInviteTitle(lost: number, packed: number) {
+  if (packed > 0 && lost >= packed) return "You dropped the drinks.";
+  if (lost > 0) return "You kept some of the drinks up.";
+  return "You kept the drinks up.";
+}
+
 export const HEAD_INVITE = {
-  title: "Beat the room.",
   lines: [
-    "You kept the drinks up.",
     "Now beat the crowd in today’s trivia.",
     "3 curious questions.",
     "1 leaderboard in this bar.",

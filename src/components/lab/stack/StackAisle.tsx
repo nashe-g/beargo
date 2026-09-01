@@ -157,16 +157,19 @@ function packOffsets(formation: StackFormation, modifier: string) {
 
 function pose(jolt: StackJolt, elapsed: number, modifier: string) {
   const t = (elapsed - (jolt.atMs - STACK.approachMs)) / STACK.approachMs;
-  if (t < -0.08 || t > 1.42) return null;
+  if (t < -0.08 || t > 1.38) return null;
   const near = clamp(t, 0, 1);
-  const fade = t > 1.1 ? clamp(1 - (t - 1.1) / 0.32, 0, 1) : 1;
-  const hit = t >= 0.86 && t <= 1.16;
+  // Stop short of the tray so they bump it, not walk through the glasses.
+  const a = Math.min(near, 0.76) / 0.76;
+  const fade = t > 1.04 ? clamp(1 - (t - 1.04) / 0.28, 0, 1) : 1;
+  const hit = t >= 0.9 && t <= 1.14;
+  const peel = Math.max(0, t - 1) * 22;
 
   if (modifier === "HAPPY HOUR") {
     return {
-      top: 26 + Math.sin(near * Math.PI) * 6,
-      x: jolt.side * (62 - near * 124),
-      scale: 0.9 + near * 0.35,
+      top: 22 + Math.sin(a * Math.PI) * 5,
+      x: jolt.side * (62 - a * 78) + jolt.side * peel,
+      scale: 0.85 + a * 0.22,
       fade,
       hit,
       near,
@@ -174,9 +177,9 @@ function pose(jolt: StackJolt, elapsed: number, modifier: string) {
   }
   if (modifier === "FRIDAY NIGHT") {
     return {
-      top: 18 + near * 14,
-      x: jolt.side * (46 - near * 28),
-      scale: 1.15 + near * 0.4,
+      top: 16 + a * 10,
+      x: jolt.side * (46 - a * 18) + jolt.side * peel,
+      scale: 1.05 + a * 0.22,
       fade,
       hit,
       near,
@@ -184,9 +187,9 @@ function pose(jolt: StackJolt, elapsed: number, modifier: string) {
   }
   if (modifier === "CLOSING TIME") {
     return {
-      top: 8 + near * 34,
-      x: Math.sin(near * Math.PI * 2.5) * 34 * jolt.side,
-      scale: 0.2 + near * 1.25,
+      top: 8 + a * 22,
+      x: Math.sin(a * Math.PI * 2.5) * 28 * jolt.side + jolt.side * peel,
+      scale: 0.22 + a * 0.72,
       fade,
       hit,
       near,
@@ -194,20 +197,27 @@ function pose(jolt: StackJolt, elapsed: number, modifier: string) {
   }
   if (modifier === "WEDDING PARTY") {
     return {
-      top: 10 + near * 30,
-      x: jolt.side * 4,
-      scale: 0.42 + near * 1.05,
+      top: 10 + a * 18,
+      x: jolt.side * (16 - a * 4) + jolt.side * peel,
+      scale: 0.4 + a * 0.55,
       fade,
       hit,
       near,
     };
   }
   let x = 0;
-  if (jolt.kind === "cut") x = jolt.side * (52 - near * 88);
-  else if (jolt.kind === "chair") x = jolt.side * (40 - near * 24);
-  else if (jolt.kind === "door") x = jolt.side * (50 - near * 20);
-  else x = jolt.side * (10 + (1 - near) * 8);
-  return { top: 8 + near * 34, x, scale: 0.34 + near * 1.2, fade, hit, near };
+  if (jolt.kind === "cut") x = jolt.side * (52 - a * 58);
+  else if (jolt.kind === "chair") x = jolt.side * (40 - a * 16);
+  else if (jolt.kind === "door") x = jolt.side * (50 - a * 14);
+  else x = jolt.side * (18 + (1 - a) * 8);
+  return {
+    top: 8 + a * 22,
+    x: x + jolt.side * peel,
+    scale: 0.34 + a * 0.7,
+    fade,
+    hit,
+    near,
+  };
 }
 
 function lookOf(modifier: string): "patron" | "rush" | "pit" | "guest" {
@@ -429,7 +439,7 @@ export function StackAisle({
                 left: `calc(50% + ${x}%)`,
                 opacity: next.fade,
                 transform: `translate(-50%, 0) scale(${next.scale * (index === 0 ? 1 : 0.86)})`,
-                zIndex: 3 + Math.round(next.scale * 8) - index,
+                zIndex: 2 + Math.round(next.near * 2) - index,
               }}
             >
               <Body

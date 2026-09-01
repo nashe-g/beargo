@@ -20,6 +20,9 @@ export type AttemptSnapshot = {
   carryWobbles?: number[];
   /** Carries as posted to complete — glasses + wobble. */
   stackCarries?: { glasses: number; wobble: number }[];
+  /** Glasses that left the tray across the night. */
+  stackLost?: number;
+  stackPacked?: number;
   /** Best wobbles on tonight's board (tenths), for the mini leaderboard. */
   topWobbles?: number[];
   topScores?: { correctCount: number; stackWobble: number }[];

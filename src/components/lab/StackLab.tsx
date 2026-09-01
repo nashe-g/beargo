@@ -61,6 +61,10 @@ function IsolatePlay({
         >
           {tilt.toppled
             ? "Down. Reset and try the same count."
+            : tilt.fallen.length
+              ? tilt.fallen.length === 1
+                ? "One off. Keep it up."
+                : `${tilt.fallen.length} off. Keep it up.`
             : coach.playing
               ? "Your turn."
               : coach.counting
@@ -73,6 +77,7 @@ function IsolatePlay({
             theta={coach.playing ? tilt.theta : 0}
             slide={coach.playing ? tilt.slide : 0}
             toppled={coach.playing && tilt.toppled}
+            fallen={tilt.fallen}
             hintSide={coach.playing ? tilt.hintSide : 0}
             pressedSide={0}
             disabled={!coach.playing}

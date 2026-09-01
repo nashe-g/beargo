@@ -7,13 +7,15 @@ import {
   nextNudgeAt,
   stackAmbient,
   stackHintSide,
-  stackJoltImpulse,
+  stackJoltKick,
   stackKick,
   stackLength,
   tapCatch,
   stackSlide,
+  stackSpill,
   stackTopple,
   stepStack,
+  nextFallingGlass,
   type StackBody,
   type StackJolt,
 } from "@/lib/stack";
@@ -31,6 +33,7 @@ export function useStackTilt(
   const [maxLean, setMaxLean] = useState(0);
   const [integral, setIntegral] = useState(0);
   const [toppled, setToppled] = useState(false);
+  const [fallen, setFallen] = useState<number[]>([]);
   const [incoming, setIncoming] = useState<StackJolt | null>(null);
   const [running, setRunning] = useState(false);
   const [holding, setHolding] = useState(false);
@@ -47,6 +50,9 @@ export function useStackTilt(
   const nudgeAtRef = useRef(nextNudgeAt(800, Math.random, glasses));
   const firedRef = useRef(new Set<number>());
   const glassesRef = useRef(glasses);
+  const packedRef = useRef(glasses);
+  const fallenRef = useRef<number[]>([]);
+  const lastDropRef = useRef(-1e9);
   const joltsRef = useRef(jolts);
   const lockedRef = useRef(locked);
   const hintRef = useRef<-1 | 0 | 1>(0);
@@ -58,7 +64,6 @@ export function useStackTilt(
 
   const ambientRef = useRef(stackAmbient(modifier));
 
-  glassesRef.current = glasses;
   joltsRef.current = jolts;
   lockedRef.current = locked;
   ambientRef.current = stackAmbient(modifier);
@@ -107,10 +112,7 @@ export function useStackTilt(
             elapsedRef.current >= jolt.atMs
           ) {
             firedRef.current.add(jolt.atMs);
-            bodyRef.current = {
-              ...bodyRef.current,
-              v: bodyRef.current.v + stackJoltImpulse(jolt),
-            };
+            bodyRef.current = stackJoltKick(bodyRef.current, jolt);
             if (typeof navigator !== "undefined" && "vibrate" in navigator) {
               navigator.vibrate(18);
             }
@@ -140,8 +142,45 @@ export function useStackTilt(
         bodyRef.current = next;
         maxRef.current = Math.max(maxRef.current, Math.abs(next.theta));
         integralRef.current += Math.abs(next.theta) * STACK.dt;
-        if (Math.abs(next.theta) >= stackTopple(glassesRef.current)) {
-          publish(next);
+        const remaining = glassesRef.current;
+        if (
+          remaining > 0 &&
+          Math.abs(next.theta) >= stackSpill(remaining) &&
+          elapsedRef.current - lastDropRef.current >= 480
+        ) {
+          const index = nextFallingGlass(
+            packedRef.current,
+            fallenRef.current,
+            next.theta,
+          );
+          if (index != null) {
+            const nextFallen = [...fallenRef.current, index];
+            fallenRef.current = nextFallen;
+            glassesRef.current = packedRef.current - nextFallen.length;
+            lastDropRef.current = elapsedRef.current;
+            setFallen(nextFallen);
+            bodyRef.current = {
+              ...next,
+              theta: next.theta * 0.82,
+              omega: next.omega * 0.72,
+            };
+            clinkSound();
+            if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+              navigator.vibrate(18);
+            }
+            if (glassesRef.current <= 0) {
+              publish(bodyRef.current);
+              setElapsed(elapsedRef.current);
+              setMaxLean(maxRef.current);
+              setIntegral(integralRef.current);
+              setToppled(true);
+              stopLoop();
+              return;
+            }
+          }
+        }
+        if (Math.abs(bodyRef.current.theta) >= stackTopple(glassesRef.current)) {
+          publish(bodyRef.current);
           setElapsed(elapsedRef.current);
           setMaxLean(maxRef.current);
           setIntegral(integralRef.current);
@@ -223,10 +262,14 @@ export function useStackTilt(
     maxRef.current = Math.abs(next.theta);
     integralRef.current = 0;
     accRef.current = 0;
+    glassesRef.current = packedRef.current;
+    fallenRef.current = [];
+    lastDropRef.current = -1e9;
     nudgeAtRef.current = nextNudgeAt(700, Math.random, glassesRef.current);
     firedRef.current = new Set();
     tapsRef.current = 0;
     lastPressAtRef.current = 0;
+    setFallen([]);
     setTaps(0);
     setElapsed(0);
     setMaxLean(Math.abs(next.theta));
@@ -237,6 +280,14 @@ export function useStackTilt(
     hintRef.current = stackHintSide(next.theta, 0);
     publish(next);
   }, [publish, stopLoop]);
+
+  useEffect(() => {
+    glassesRef.current = glasses;
+    packedRef.current = glasses;
+    fallenRef.current = [];
+    lastDropRef.current = -1e9;
+    setFallen([]);
+  }, [glasses]);
 
   useEffect(() => {
     if (locked) stopLoop();
@@ -251,6 +302,7 @@ export function useStackTilt(
     maxLean,
     integral,
     toppled,
+    fallen,
     incoming,
     running,
     holding,

@@ -41,9 +41,9 @@ function Glass({
   hit: number;
   flute?: boolean;
 }) {
-  const slide = theta * 42 + hit * 10;
-  const tip = theta * 28 + hit * 6;
-  const slosh = Math.max(-12, Math.min(12, theta * 18 + hit * 9));
+  const slide = theta * 56 + hit * 10;
+  const tip = theta * 40 + hit * 6;
+  const slosh = Math.max(-14, Math.min(14, theta * 26 + hit * 9));
   const fallX = (x + slide) * 2.4;
   const fallY = 70 + index * 8;
 
@@ -82,6 +82,7 @@ export function StackTray({
   glasses,
   theta,
   toppled,
+  fallen = [],
   hit = 0,
   modifier = "REGULAR SHIFT",
 }: {
@@ -89,22 +90,19 @@ export function StackTray({
   theta: number;
   slide?: number;
   toppled?: boolean;
+  fallen?: number[];
   hit?: number;
   modifier?: string;
 }) {
   const spots = CLUSTER[glasses] ?? CLUSTER[3];
   const deg = (theta * 180) / Math.PI;
-  const bank = Math.max(-22, Math.min(22, deg * 0.85 + hit * 4));
+  const bank = Math.max(-26, Math.min(26, deg * 1.75 + hit * 4));
   const flute = modifier === "WEDDING PARTY";
 
   return (
     <div className="stack-hands">
-      <div className="stack-grip stack-grip-left" aria-hidden>
-        <span className="stack-thumb" />
-      </div>
-      <div className="stack-grip stack-grip-right" aria-hidden>
-        <span className="stack-thumb" />
-      </div>
+      <div className="stack-grip stack-grip-left" aria-hidden />
+      <div className="stack-grip stack-grip-right" aria-hidden />
       <div
         className={`stack-plate ${toppled ? "stack-plate-down" : ""} ${hit ? "is-hit" : ""}`}
         style={{ transform: `rotateZ(${bank}deg) rotateX(58deg)` }}
@@ -122,7 +120,7 @@ export function StackTray({
             x={spot.x}
             y={spot.y}
             theta={theta}
-            toppled={toppled}
+            toppled={toppled || fallen.includes(index)}
             index={index}
             hit={hit}
             flute={flute}
