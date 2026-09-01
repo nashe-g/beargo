@@ -15,12 +15,11 @@ export async function GET(
   const origin =
     query.get("src") === "local" ? publicOrigin(request) : CANONICAL_ORIGIN;
   const svg = pawQrSvg(pawScanUrl(paw.token, origin), fill);
-  const suffix = fill === "cream" ? "-cream" : "";
 
   return new Response(svg, {
     headers: {
       "Content-Type": "image/svg+xml; charset=utf-8",
-      "Content-Disposition": `attachment; filename="beargo-${paw.token}${suffix}.svg"`,
+      "Content-Disposition": `attachment; filename="beargo-${paw.token}.svg"`,
       "Cache-Control": "no-store",
     },
   });

@@ -51,6 +51,7 @@ export default async function AdminPawsPage() {
                 <td className="space-x-3 text-right">
                   <Link href={`/p/${paw.token}`}>Scan</Link>
                   <Link href={`/p/${paw.token}/print`}>Print</Link>
+                  <a href={`/p/${paw.token}/paw.svg`}>Download SVG</a>
                   <span className="text-ink-soft">
                     {pawScanUrl(paw.token, CANONICAL_ORIGIN).replace(
                       "https://",

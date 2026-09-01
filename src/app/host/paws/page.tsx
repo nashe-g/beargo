@@ -46,18 +46,12 @@ export default async function HostPawsPage() {
                 href={`/p/${paw.token}/paw.svg`}
                 className="flex h-12 items-center justify-center rounded-full border border-ink/15 text-ink"
               >
-                Download paw (SVG)
-              </a>
-              <a
-                href={`/p/${paw.token}/paw.svg?fill=cream`}
-                className="flex h-12 items-center justify-center rounded-full border border-ink/15 text-ink"
-              >
-                Download cream paw (SVG)
+                Download SVG
               </a>
               <p className="text-sm text-ink-soft">
                 Table tent or bar-top. Keep the quiet zone around the QR clear.
-                No sponsor logos on the physical Paw. SVG has a transparent
-                background for your own layouts.
+                No sponsor logos on the physical Paw. SVG is cream on
+                transparent, black QR, for a dark coaster.
               </p>
             </div>
           </article>
