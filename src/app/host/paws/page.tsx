@@ -42,9 +42,22 @@ export default async function HostPawsPage() {
               >
                 Print-ready sign
               </Link>
+              <a
+                href={`/p/${paw.token}/paw.svg`}
+                className="flex h-12 items-center justify-center rounded-full border border-ink/15 text-ink"
+              >
+                Download paw (SVG)
+              </a>
+              <a
+                href={`/p/${paw.token}/paw.svg?fill=cream`}
+                className="flex h-12 items-center justify-center rounded-full border border-ink/15 text-ink"
+              >
+                Download cream paw (SVG)
+              </a>
               <p className="text-sm text-ink-soft">
                 Table tent or bar-top. Keep the quiet zone around the QR clear.
-                No sponsor logos on the physical Paw.
+                No sponsor logos on the physical Paw. SVG has a transparent
+                background for your own layouts.
               </p>
             </div>
           </article>

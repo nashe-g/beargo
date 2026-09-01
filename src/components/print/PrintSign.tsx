@@ -4,6 +4,15 @@ import { CANONICAL_HOST, pawScanUrl } from "@/lib/config";
 import type { PawRecord } from "@/lib/paws";
 import { PawPrint } from "@/components/paw/PawPrint";
 import Link from "next/link";
+import type { PawFill } from "@/lib/paw-svg";
+
+function pawSvgHref(token: string, usingLocal: boolean, fill: PawFill) {
+  const params = new URLSearchParams();
+  if (fill === "cream") params.set("fill", "cream");
+  if (usingLocal) params.set("src", "local");
+  const query = params.toString();
+  return `/p/${encodeURIComponent(token)}/paw.svg${query ? `?${query}` : ""}`;
+}
 
 type PrintSignProps = {
   paw: PawRecord;
@@ -72,13 +81,31 @@ export function PrintSign({
             </>
           )}
         </p>
-        <button
-          type="button"
-          className="rounded-full bg-ink px-5 py-2 text-paper"
-          onClick={() => window.print()}
-        >
-          Print
-        </button>
+        <div className="flex flex-col gap-2 pt-1">
+          <button
+            type="button"
+            className="rounded-full bg-ink px-5 py-2 text-paper"
+            onClick={() => window.print()}
+          >
+            Print
+          </button>
+          <a
+            href={pawSvgHref(paw.token, usingLocal, "ink")}
+            className="rounded-full border border-ink/15 px-5 py-2 text-ink"
+          >
+            Download paw (SVG)
+          </a>
+          <a
+            href={pawSvgHref(paw.token, usingLocal, "cream")}
+            className="rounded-full border border-ink/15 px-5 py-2 text-ink"
+          >
+            Download cream paw (SVG)
+          </a>
+        </div>
+        <p className="text-xs">
+          Transparent background. Ink for light stock, cream for a dark coaster.
+          Same QR as this page.
+        </p>
       </div>
     </div>
   );

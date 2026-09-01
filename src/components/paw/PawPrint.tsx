@@ -1,5 +1,6 @@
 import { CANONICAL_HOST } from "@/lib/config";
 import { PAW_VIEWBOX, QR_QUIET_INSET, QR_SLOT } from "@/lib/paw-geometry";
+import { PAW_INK, PAW_QUIET } from "@/lib/paw-svg";
 import { qrMatrix } from "@/lib/qr";
 import { PawPad, PawToes } from "@/components/paw/PawShapes";
 
@@ -34,11 +35,11 @@ export function PawPrint({
         width={QR_SLOT.size}
         height={QR_SLOT.size}
         rx={QR_SLOT.rx}
-        fill="#fffdf8"
+        fill={PAW_QUIET}
       />
       <g
         transform={`translate(${QR_SLOT.x + QR_QUIET_INSET} ${QR_SLOT.y + QR_QUIET_INSET}) scale(${scale})`}
-        fill="#1c140c"
+        fill={PAW_INK}
       >
         <path d={qr.path} />
       </g>
