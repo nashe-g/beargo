@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { HostShell } from "@/components/host/HostShell";
 import { PawPrint } from "@/components/paw/PawPrint";
+import { PawSvgDownloads } from "@/components/paw/PawSvgDownloads";
 import { CANONICAL_ORIGIN, pawScanUrl } from "@/lib/config";
 import { requireHost } from "@/lib/host-auth";
 import { pawsForHost } from "@/lib/paws";
@@ -42,16 +43,11 @@ export default async function HostPawsPage() {
               >
                 Print-ready sign
               </Link>
-              <a
-                href={`/p/${paw.token}/paw.svg`}
-                className="flex h-12 items-center justify-center rounded-full border border-ink/15 text-ink"
-              >
-                Download SVG
-              </a>
+              <PawSvgDownloads token={paw.token} />
               <p className="text-sm text-ink-soft">
                 Table tent or bar-top. Keep the quiet zone around the QR clear.
-                No sponsor logos on the physical Paw. SVG is cream on
-                transparent, black QR, for a dark coaster.
+                No sponsor logos on the physical Paw. Pick a paw color; the QR
+                stays black. Transparent background for your own layouts.
               </p>
             </div>
           </article>

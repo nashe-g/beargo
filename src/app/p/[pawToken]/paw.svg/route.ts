@@ -19,7 +19,7 @@ export async function GET(
   return new Response(svg, {
     headers: {
       "Content-Type": "image/svg+xml; charset=utf-8",
-      "Content-Disposition": `attachment; filename="beargo-${paw.token}.svg"`,
+      "Content-Disposition": `attachment; filename="beargo-${paw.token}-${fill}.svg"`,
       "Cache-Control": "no-store",
     },
   });

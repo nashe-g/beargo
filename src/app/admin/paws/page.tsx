@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AdminShell, StatusPill } from "@/components/admin/AdminShell";
 import { CreatePawForm } from "@/components/admin/CreatePawForm";
+import { PawSvgDownloads } from "@/components/paw/PawSvgDownloads";
 import { requireAdmin } from "@/lib/admin-auth";
 import { CANONICAL_ORIGIN, pawScanUrl } from "@/lib/config";
 import { getHost, listHosts } from "@/lib/hosts";
@@ -48,10 +49,14 @@ export default async function AdminPawsPage() {
                 <td>
                   <StatusPill status={paw.status} />
                 </td>
-                <td className="space-x-3 text-right">
-                  <Link href={`/p/${paw.token}`}>Scan</Link>
-                  <Link href={`/p/${paw.token}/print`}>Print</Link>
-                  <a href={`/p/${paw.token}/paw.svg`}>Download SVG</a>
+                <td className="py-3 text-right">
+                  <div className="space-x-3">
+                    <Link href={`/p/${paw.token}`}>Scan</Link>
+                    <Link href={`/p/${paw.token}/print`}>Print</Link>
+                  </div>
+                  <div className="mt-1">
+                    <PawSvgDownloads token={paw.token} compact />
+                  </div>
                   <span className="text-ink-soft">
                     {pawScanUrl(paw.token, CANONICAL_ORIGIN).replace(
                       "https://",

@@ -9,17 +9,35 @@ import { qrMatrix } from "@/lib/qr";
 
 export const PAW_INK = "#1c140c";
 export const PAW_CREAM = "#f4e4c8";
+export const PAW_OFFWHITE = "#fffaf1";
+export const PAW_WHITE = "#ffffff";
 export const PAW_QUIET = "#fffdf8";
 
-export type PawFill = "ink" | "cream";
+export const PAW_FILL_OPTIONS = [
+  { id: "cream", label: "Cream", hex: PAW_CREAM },
+  { id: "offwhite", label: "Off-white", hex: PAW_OFFWHITE },
+  { id: "white", label: "White", hex: PAW_WHITE },
+  { id: "black", label: "Black", hex: PAW_INK },
+] as const;
+
+export type PawFill = (typeof PAW_FILL_OPTIONS)[number]["id"];
+
+const FILL_IDS = new Set<string>(PAW_FILL_OPTIONS.map((option) => option.id));
 
 export function parsePawFill(raw: string | null): PawFill {
-  return raw === "ink" ? "ink" : "cream";
+  if (raw === "ink") return "black";
+  if (raw && FILL_IDS.has(raw)) return raw as PawFill;
+  return "cream";
+}
+
+export function pawFillHex(fill: PawFill) {
+  const option = PAW_FILL_OPTIONS.find((entry) => entry.id === fill);
+  return option?.hex ?? PAW_CREAM;
 }
 
 export function pawQrSvg(scanUrl: string, fill: PawFill = "cream") {
-  const paw = fill === "ink" ? PAW_INK : PAW_CREAM;
-  const quiet = fill === "ink" ? PAW_QUIET : PAW_CREAM;
+  const paw = pawFillHex(fill);
+  const quiet = fill === "black" ? PAW_WHITE : paw;
   const qr = qrMatrix(scanUrl);
   const inner = QR_SLOT.size - QR_QUIET_INSET * 2;
   const scale = inner / qr.size;

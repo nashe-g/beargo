@@ -3,12 +3,8 @@
 import { CANONICAL_HOST, pawScanUrl } from "@/lib/config";
 import type { PawRecord } from "@/lib/paws";
 import { PawPrint } from "@/components/paw/PawPrint";
+import { PawSvgDownloads } from "@/components/paw/PawSvgDownloads";
 import Link from "next/link";
-
-function pawSvgHref(token: string, usingLocal: boolean) {
-  const query = usingLocal ? "?src=local" : "";
-  return `/p/${encodeURIComponent(token)}/paw.svg${query}`;
-}
 
 type PrintSignProps = {
   paw: PawRecord;
@@ -85,15 +81,11 @@ export function PrintSign({
           >
             Print
           </button>
-          <a
-            href={pawSvgHref(paw.token, usingLocal)}
-            className="rounded-full border border-ink/15 px-5 py-2 text-ink"
-          >
-            Download SVG
-          </a>
+          <PawSvgDownloads token={paw.token} usingLocal={usingLocal} />
         </div>
         <p className="text-xs">
-          Cream paw, black QR, transparent background. For a black coaster.
+          Paw color on transparent. QR stays black. Black paw keeps a white
+          quiet zone so it still scans.
         </p>
       </div>
     </div>
