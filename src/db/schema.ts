@@ -189,6 +189,7 @@ export const plays = pgTable("plays", {
   boardName: text("board_name"),
   rankingEligible: boolean("ranking_eligible").notNull().default(true),
   deviceKey: text("device_key"),
+  playSource: text("play_source"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -201,6 +202,7 @@ export const scanSessions = pgTable("scan_sessions", {
   promotionId: text("promotion_id"),
   voucherId: text("voucher_id"),
   deviceKey: text("device_key"),
+  entrySource: text("entry_source"),
   scannedAt: timestamp("scanned_at", { withTimezone: true }).notNull().defaultNow(),
   gameStartedAt: timestamp("game_started_at", { withTimezone: true }),
   gameCompletedAt: timestamp("game_completed_at", { withTimezone: true }),

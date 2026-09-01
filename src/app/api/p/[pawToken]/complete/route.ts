@@ -7,8 +7,10 @@ import { clientKey, rateLimit } from "@/lib/rate-limit";
 import {
   DEVICE_COOKIE,
   SCAN_COOKIE,
+  playSourceFromSession,
   stampSession,
 } from "@/lib/scan-session";
+import { ENTRY_COOKIE } from "@/lib/play-source";
 import { sanitizeBoardName } from "@/lib/board-name";
 import {
   DEMO_STACK_MODIFIER,
@@ -49,6 +51,11 @@ export async function POST(
   const jar = await cookies();
   const deviceKey = jar.get(DEVICE_COOKIE)?.value ?? null;
   const sessionId = jar.get(SCAN_COOKIE)?.value ?? null;
+  const playSource = await playSourceFromSession(
+    sessionId,
+    paw.token,
+    jar.get(ENTRY_COOKIE)?.value,
+  );
 
   let body: unknown;
   try {
@@ -114,6 +121,7 @@ export async function POST(
     boardName,
     sessionId,
     deviceKey,
+    playSource,
   });
 
   if (sessionId) {

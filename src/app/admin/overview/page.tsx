@@ -49,6 +49,25 @@ export default async function AdminOverviewPage() {
       <h2 className="mt-10 font-display text-2xl">Game</h2>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Games tonight" value={String(gamesToday)} />
+        <Stat
+          label="At the bar tonight"
+          value={String(
+            plays.filter(
+              (play) =>
+                play.localDate === today && play.playSource === "in_bar",
+            ).length,
+          )}
+          note="Physical paw scans"
+        />
+        <Stat
+          label="From a share tonight"
+          value={String(
+            plays.filter(
+              (play) =>
+                play.localDate === today && play.playSource === "share_link",
+            ).length,
+          )}
+        />
         <Stat label="Games all-time" value={String(plays.length)} />
         <Stat
           label="Table Spread (5 min)"

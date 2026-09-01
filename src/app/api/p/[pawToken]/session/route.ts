@@ -10,6 +10,7 @@ import {
   stampSession,
   type SessionStamp,
 } from "@/lib/scan-session";
+import { inferPlaySource } from "@/lib/play-source";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
 
 export async function POST(
@@ -22,7 +23,12 @@ export async function POST(
   }
 
   const paw = await getPaw(pawToken);
-  let body: { event?: string; promotionId?: string; voucherId?: string } = {};
+  let body: {
+    event?: string;
+    promotionId?: string;
+    voucherId?: string;
+    from?: string;
+  } = {};
   try {
     body = (await request.json()) as typeof body;
   } catch {
@@ -35,7 +41,8 @@ export async function POST(
     : null;
   const promotionId =
     body.promotionId ?? selected?.promotion.id ?? null;
-  const session = await ensureScanSession(paw, { promotionId });
+  const entrySource = inferPlaySource(paw.token, body.from ?? null);
+  const session = await ensureScanSession(paw, { promotionId, entrySource });
   if (promotionId) await attachSessionPromotion(session.id, promotionId);
   const event = (body.event ?? "scanned") as SessionStamp;
   await stampSession(session.id, event, {

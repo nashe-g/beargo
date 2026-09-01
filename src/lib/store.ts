@@ -5,6 +5,7 @@ import { plays } from "@/db/schema";
 import { serviceDayInZone } from "@/lib/dates";
 import { isoRequired } from "@/lib/money";
 import type { PawRecord } from "@/lib/paws";
+import type { PlaySource } from "@/lib/play-source";
 import { stackChallengeId } from "@/lib/stack";
 import {
   comparePlays,
@@ -55,11 +56,13 @@ function mapPlay(row: typeof plays.$inferSelect): Play {
     stackWobble: row.stackWobble,
     boardName: row.boardName,
     rankingEligible: row.rankingEligible,
+    playSource: row.playSource,
     createdAt: isoRequired(row.createdAt),
   };
 }
 
 export async function listPlays() {
+  await ensurePlayColumns();
   const rows = await db().select().from(plays).orderBy(desc(plays.createdAt));
   return rows.map(mapPlay);
 }
@@ -67,6 +70,7 @@ export async function listPlays() {
 let pourColumnReady = false;
 let stackColumnReady = false;
 let boardNameColumnReady = false;
+let playSourceColumnReady = false;
 
 async function ensurePourMgColumn() {
   if (pourColumnReady) return;
@@ -90,10 +94,19 @@ async function ensureBoardNameColumn() {
   boardNameColumnReady = true;
 }
 
+async function ensurePlaySourceColumn() {
+  if (playSourceColumnReady) return;
+  await db().execute(
+    sql`ALTER TABLE plays ADD COLUMN IF NOT EXISTS play_source text`,
+  );
+  playSourceColumnReady = true;
+}
+
 async function ensurePlayColumns() {
   await ensurePourMgColumn();
   await ensureStackWobbleColumn();
   await ensureBoardNameColumn();
+  await ensurePlaySourceColumn();
 }
 
 export async function recordPlay(input: {
@@ -106,6 +119,7 @@ export async function recordPlay(input: {
   boardName?: string | null;
   sessionId?: string | null;
   deviceKey?: string | null;
+  playSource?: PlaySource | null;
 }): Promise<RecordedPlay> {
   await ensurePlayColumns();
   const localDate = serviceDayInZone(input.paw.timezone);
@@ -138,6 +152,7 @@ export async function recordPlay(input: {
     stackWobble: input.stackWobble ?? null,
     boardName: input.boardName ?? null,
     rankingEligible,
+    playSource: input.playSource ?? null,
     createdAt: new Date().toISOString(),
   };
 
@@ -155,6 +170,7 @@ export async function recordPlay(input: {
     boardName: play.boardName,
     rankingEligible,
     deviceKey: input.deviceKey ?? null,
+    playSource: input.playSource ?? null,
   });
 
   const boardRows = await db()

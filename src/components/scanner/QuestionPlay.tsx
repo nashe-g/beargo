@@ -15,20 +15,18 @@ import { BEAR_DURATIONS, type BearState } from "@/lib/bear";
 import { StampSession } from "@/components/scanner/StampSession";
 import type { DailyChallenge } from "@/lib/daily-challenge";
 import type { PawRecord } from "@/lib/paws";
-import {
-  PLAY_ROUNDS,
-  nextHandsCta,
-  nextPlayPath,
-} from "@/lib/play-rounds";
+import { PLAY_ROUNDS, nextPlayPath } from "@/lib/play-rounds";
 
 type Phase = "asking" | "feedback";
 
 export function QuestionPlay({
   paw,
   challenge,
+  reviewMode = false,
 }: {
   paw: PawRecord;
   challenge: DailyChallenge;
+  reviewMode?: boolean;
 }) {
   const router = useRouter();
   const [index, setIndex] = useState(0);
@@ -36,7 +34,7 @@ export function QuestionPlay({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [bearState, setBearState] = useState<BearState>("idle");
   const [answers, setAnswers] = useState<AttemptAnswer[]>([]);
-  const [review, setReview] = useState(false);
+  const [review, setReview] = useState(reviewMode);
   const [ready, setReady] = useState(false);
   const [reported, setReported] = useState(false);
   const questionStartedAt = useRef(0);
@@ -48,8 +46,6 @@ export function QuestionPlay({
     review
       ? answers.find((entry) => entry.questionId === question.id)?.choiceId
       : selectedId;
-  const attempt = ready ? loadAttempt(paw.token) : null;
-  const nextHref = nextPlayPath(paw.token, attempt);
 
   useEffect(() => {
     const snapshot = loadAttempt(paw.token);
@@ -57,12 +53,22 @@ export function QuestionPlay({
       router.replace(nextPlayPath(paw.token, snapshot));
       return;
     }
+    if (reviewMode) {
+      if (!answersReady(snapshot) || !snapshot?.answers?.length) {
+        router.replace(`/p/${paw.token}/result`);
+        return;
+      }
+      setAnswers(snapshot.answers);
+      setReview(true);
+      setReady(true);
+      return;
+    }
     if (answersReady(snapshot)) {
       router.replace(nextPlayPath(paw.token, snapshot));
       return;
     }
     setReady(true);
-  }, [challenge.questions.length, paw.token, router]);
+  }, [challenge.questions.length, paw.token, reviewMode, router]);
 
   useEffect(() => {
     if (review) return;
@@ -214,10 +220,10 @@ export function QuestionPlay({
               </button>
               {last ? (
                 <Link
-                  href={nextHref}
+                  href={`/p/${paw.token}/result`}
                   className="flex h-12 flex-1 items-center justify-center rounded-full bg-honey text-sm font-semibold tracking-[0.16em] text-ink"
                 >
-                  {nextHandsCta(attempt)}
+                  Back to your rank
                 </Link>
               ) : (
                 <button

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BearGuide } from "@/components/bear/BearGuide";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
+import { ShareRank } from "@/components/scanner/ShareRank";
 import { StampSession } from "@/components/scanner/StampSession";
 import { formatDuration, loadAttempt } from "@/lib/attempt";
 import { answersReady, attemptNeedsBoardName } from "@/lib/play-rounds";
@@ -26,7 +27,7 @@ export type ServedResult = {
   neighbors?: BoardNeighbor[];
 };
 
-type Result = ServedResult & { hasAttempt: boolean };
+type Result = ServedResult & { hasAttempt: boolean; hasAnswers: boolean };
 
 function scoreLine(correct: number, ms: number, wobble: number) {
   const trivia = TRIVIA_ENABLED
@@ -44,7 +45,7 @@ export function GameResult({
 }) {
   const router = useRouter();
   const [result, setResult] = useState<Result | null>(
-    served ? { ...served, hasAttempt: true } : null,
+    served ? { ...served, hasAttempt: true, hasAnswers: false } : null,
   );
   const [checked, setChecked] = useState(false);
   const host = paw.hostDisplayName;
@@ -61,13 +62,23 @@ export function GameResult({
         correctCount: attempt.correctCount,
         totalResponseMs: attempt.totalResponseMs,
         boardName: attempt.boardName,
-        rank: attempt.rank ?? 0,
-        playerCount: attempt.playerCount ?? 0,
-        playersBeaten: attempt.playersBeaten ?? 0,
+        rank: attempt.rank ?? served?.rank ?? 0,
+        playerCount: attempt.playerCount ?? served?.playerCount ?? 0,
+        playersBeaten: attempt.playersBeaten ?? served?.playersBeaten ?? 0,
         topWobbles: attempt.topWobbles ?? served?.topWobbles ?? [],
         neighbors: attempt.neighbors ?? served?.neighbors ?? [],
         hasAttempt: true,
+        hasAnswers: (attempt.answers?.length ?? 0) > 0,
       });
+    } else if (served) {
+      setResult((current) =>
+        current
+          ? {
+              ...current,
+              hasAnswers: (attempt?.answers?.length ?? 0) > 0,
+            }
+          : current,
+      );
     }
     setChecked(true);
   }, [paw.token, router, served]);
@@ -168,6 +179,24 @@ export function GameResult({
           >
             Tonight’s sponsor
           </Link>
+          <ShareRank
+            paw={paw}
+            stats={{
+              rank: result.rank,
+              playerCount: result.playerCount,
+              correctCount: result.correctCount,
+              stackWobble: result.stackWobble,
+              boardName: result.boardName ?? null,
+            }}
+          />
+          {TRIVIA_ENABLED && result.hasAnswers ? (
+            <Link
+              href={`/p/${paw.token}/play?review=1`}
+              className="flex h-12 w-full items-center justify-center text-sm text-paper/60 underline-offset-4 hover:text-paper hover:underline"
+            >
+              See tonight’s questions
+            </Link>
+          ) : null}
         </div>
       </div>
     </ScannerShell>

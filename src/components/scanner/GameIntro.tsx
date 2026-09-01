@@ -12,16 +12,18 @@ import { formatWobble } from "@/lib/stack";
 export function GameIntro({
   paw,
   played,
+  from,
 }: {
   paw: PawRecord;
   played: { rank: number; playerCount: number; stackWobble: number } | null;
+  from?: string | null;
 }) {
   const demo = paw.token === "demo";
 
   if (played) {
     return (
       <ScannerShell>
-        <StampSession pawToken={paw.token} event="scanned" />
+        <StampSession pawToken={paw.token} event="scanned" from={from} />
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center text-center">
           <BearGuide state="arrive" size="md" />
           <p className="mt-3 text-sm tracking-[0.22em] text-honey uppercase">
@@ -48,7 +50,7 @@ export function GameIntro({
 
   return (
     <ScannerShell>
-      <StampSession pawToken={paw.token} event="scanned" />
+      <StampSession pawToken={paw.token} event="scanned" from={from} />
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center py-4 text-center">
           <BearGuide state="arrive" size="md" />

@@ -1,11 +1,17 @@
 import { randomUUID } from "node:crypto";
 import { cookies } from "next/headers";
 import type { CookieWriter } from "@/lib/http-cookies";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { scanSessions } from "@/db/schema";
 import { localDateInZone } from "@/lib/dates";
 import type { PawRecord } from "@/lib/paws";
+import {
+  ENTRY_COOKIE,
+  inferPlaySource,
+  parsePlaySource,
+  type PlaySource,
+} from "@/lib/play-source";
 
 export const DEVICE_COOKIE = "beargo_device";
 export const SCAN_COOKIE = "beargo_scan";
@@ -18,6 +24,16 @@ export type SessionStamp =
   | "teaser_opened"
   | "offer_viewed"
   | "claimed";
+
+let entrySourceColumnReady = false;
+
+async function ensureEntrySourceColumn() {
+  if (entrySourceColumnReady) return;
+  await db().execute(
+    sql`ALTER TABLE scan_sessions ADD COLUMN IF NOT EXISTS entry_source text`,
+  );
+  entrySourceColumnReady = true;
+}
 
 function cookieOptions(maxAge: number) {
   return {
@@ -61,13 +77,26 @@ export async function ensureDeviceCookie(writer?: CookieWriter) {
 
 export async function ensureScanSession(
   paw: PawRecord,
-  extras: { promotionId?: string | null; challengeId?: string | null } = {},
+  extras: {
+    promotionId?: string | null;
+    challengeId?: string | null;
+    entrySource?: PlaySource | null;
+  } = {},
   writer?: CookieWriter,
 ) {
   const jar = writer ?? (await cookieWriterFromHeaders());
   const deviceKey = await ensureDeviceCookie(jar);
+  await ensureEntrySourceColumn();
   let sessionId = jar.get(SCAN_COOKIE);
   const localDate = localDateInZone(paw.timezone);
+  const entrySource =
+    extras.entrySource ??
+    parsePlaySource(jar.get(ENTRY_COOKIE)) ??
+    inferPlaySource(paw.token, null);
+
+  if (!jar.get(ENTRY_COOKIE)) {
+    jar.set(ENTRY_COOKIE, entrySource, cookieOptions(60 * 60 * 24));
+  }
 
   if (sessionId) {
     const [existing] = await db()
@@ -76,6 +105,18 @@ export async function ensureScanSession(
       .where(eq(scanSessions.id, sessionId))
       .limit(1);
     if (existing && existing.pawToken === paw.token) {
+      const upgradeToBar =
+        extras.entrySource === "in_bar" && existing.entrySource !== "in_bar";
+      if (upgradeToBar || (!existing.entrySource && entrySource)) {
+        const next = upgradeToBar ? "in_bar" : entrySource;
+        await db()
+          .update(scanSessions)
+          .set({ entrySource: next })
+          .where(eq(scanSessions.id, existing.id));
+        if (upgradeToBar) {
+          jar.set(ENTRY_COOKIE, "in_bar", cookieOptions(60 * 60 * 24));
+        }
+      }
       return existing;
     }
   }
@@ -89,6 +130,7 @@ export async function ensureScanSession(
     challengeId: extras.challengeId ?? null,
     promotionId: extras.promotionId ?? null,
     deviceKey,
+    entrySource,
   });
   jar.set(SCAN_COOKIE, sessionId, cookieOptions(60 * 60 * 24));
   return (
@@ -133,6 +175,24 @@ export async function sessionCountsForPromotion(promotionId: string) {
     offersViewed: rows.filter((row) => row.offerViewedAt).length,
     claimed: rows.filter((row) => row.claimedAt).length,
   };
+}
+
+export async function playSourceFromSession(
+  sessionId: string | null,
+  token: string,
+  cookieValue?: string | null,
+): Promise<PlaySource> {
+  await ensureEntrySourceColumn();
+  if (sessionId) {
+    const [row] = await db()
+      .select({ entrySource: scanSessions.entrySource })
+      .from(scanSessions)
+      .where(eq(scanSessions.id, sessionId))
+      .limit(1);
+    const fromSession = parsePlaySource(row?.entrySource);
+    if (fromSession) return fromSession;
+  }
+  return parsePlaySource(cookieValue) ?? inferPlaySource(token, null);
 }
 
 export async function attachSessionPromotion(

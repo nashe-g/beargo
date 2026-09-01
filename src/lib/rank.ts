@@ -10,6 +10,7 @@ export type Play = {
   stackWobble?: number | null;
   boardName?: string | null;
   rankingEligible?: boolean;
+  playSource?: string | null;
   createdAt: string;
 };
 

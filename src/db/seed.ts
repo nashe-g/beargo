@@ -204,6 +204,10 @@ async function migrateSchema() {
   await db.execute(sql`
     ALTER TABLE plays ADD COLUMN IF NOT EXISTS pour_mg integer;
     ALTER TABLE plays ADD COLUMN IF NOT EXISTS stack_wobble integer;
+    ALTER TABLE plays ADD COLUMN IF NOT EXISTS board_name text;
+    ALTER TABLE plays ADD COLUMN IF NOT EXISTS play_source text;
+
+    ALTER TABLE scan_sessions ADD COLUMN IF NOT EXISTS entry_source text;
 
     ALTER TABLE hosts ADD COLUMN IF NOT EXISTS lat double precision;
     ALTER TABLE hosts ADD COLUMN IF NOT EXISTS lng double precision;

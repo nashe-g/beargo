@@ -36,6 +36,18 @@ export default async function HostDashboardPage() {
 
       <div className="mt-8 grid grid-cols-2 gap-3">
         <Stat label="Games finished" value={String(todayPlays.length)} />
+        <Stat
+          label="At the bar"
+          value={String(
+            todayPlays.filter((play) => play.playSource === "in_bar").length,
+          )}
+        />
+        <Stat
+          label="From a share"
+          value={String(
+            todayPlays.filter((play) => play.playSource === "share_link").length,
+          )}
+        />
         <Stat label="This month" value={String(monthPlays.length)} />
       </div>
 

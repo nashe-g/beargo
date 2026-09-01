@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BearGuide } from "@/components/bear/BearGuide";
 import { AffiliateCard } from "@/components/scanner/AffiliateCard";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
+import { ShareRank } from "@/components/scanner/ShareRank";
 import type { AffiliateCardView } from "@/lib/affiliate";
-import { pawScanUrl } from "@/lib/config";
+import { loadAttempt } from "@/lib/attempt";
 import type { PawRecord } from "@/lib/paws";
+import type { ShareCardStats } from "@/lib/share-card";
 
 export function SponsorScreen({
   paw,
@@ -16,29 +18,19 @@ export function SponsorScreen({
   paw: PawRecord;
   affiliate: AffiliateCardView | null;
 }) {
-  const [copied, setCopied] = useState(false);
-  const shareUrl =
-    typeof window === "undefined"
-      ? pawScanUrl(paw.token)
-      : `${window.location.origin}/p/${encodeURIComponent(paw.token)}`;
+  const [stats, setStats] = useState<ShareCardStats | null>(null);
 
-  async function share() {
-    const text = `Who’s still got it at ${paw.hostDisplayName}?`;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: "BearGo", text, url: shareUrl });
-        return;
-      }
-    } catch {
-      // Fall through to copy.
-    }
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-    } catch {
-      setCopied(false);
-    }
-  }
+  useEffect(() => {
+    const attempt = loadAttempt(paw.token);
+    if (attempt?.stackWobble == null) return;
+    setStats({
+      rank: attempt.rank ?? 0,
+      playerCount: attempt.playerCount ?? 0,
+      correctCount: attempt.correctCount,
+      stackWobble: attempt.stackWobble,
+      boardName: attempt.boardName ?? null,
+    });
+  }, [paw.token]);
 
   return (
     <ScannerShell>
@@ -65,15 +57,7 @@ export function SponsorScreen({
           )}
         </div>
         <div className="flex w-full shrink-0 flex-col gap-3 pt-4">
-          {affiliate ? null : (
-            <button
-              type="button"
-              onClick={() => void share()}
-              className="flex h-14 w-full items-center justify-center rounded-full border border-paper/20 text-lg font-semibold"
-            >
-              {copied ? "Link copied" : "Share BearGo"}
-            </button>
-          )}
+          {stats ? <ShareRank paw={paw} stats={stats} /> : null}
           <Link
             href={`/p/${paw.token}/result`}
             className="flex h-14 w-full items-center justify-center rounded-full border border-paper/20 text-lg font-semibold text-paper"
