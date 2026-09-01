@@ -11,11 +11,9 @@ import { formatWobble } from "@/lib/stack";
  */
 export function GameIntro({
   paw,
-  modifier,
   played,
 }: {
   paw: PawRecord;
-  modifier: string;
   played: { rank: number; playerCount: number; stackWobble: number } | null;
 }) {
   const demo = paw.token === "demo";
@@ -55,7 +53,7 @@ export function GameIntro({
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center py-4 text-center">
           <BearGuide state="arrive" size="md" />
           <p className="mt-3 text-sm tracking-[0.22em] text-honey uppercase">
-            {demo ? "Demo" : "Tonight"} at {paw.hostDisplayName} · {modifier}
+            {demo ? "Demo" : "Tonight"} at {paw.hostDisplayName}
           </p>
           <h1 className="mt-4 font-display text-4xl leading-tight sm:text-5xl">
             Don’t drop the drinks.

@@ -8,7 +8,7 @@ const STEPS = [
   },
   {
     title: "Don’t drop the drinks.",
-    body: "The stack leans on its own. Tap the side it’s falling toward. Three carries — 3, 4, then 5 glasses. Everyone at the venue faces the same shift tonight.",
+    body: "The stack leans on its own. Tap the side it’s falling toward. Three carries — 3, 4, then 5 glasses. Everyone at the venue plays the same night.",
   },
   {
     title: "Beat the room.",

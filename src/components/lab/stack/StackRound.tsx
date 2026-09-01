@@ -32,6 +32,7 @@ export function StackCarryPlay({
   label,
   doneLabel = "Next",
   auto = false,
+  showShift = true,
   modifier = "REGULAR SHIFT",
 }: {
   carry: StackCarry;
@@ -39,6 +40,7 @@ export function StackCarryPlay({
   label?: string;
   doneLabel?: string;
   auto?: boolean;
+  showShift?: boolean;
   modifier?: string;
 }) {
   const [locked, setLocked] = useState(false);
@@ -145,9 +147,11 @@ export function StackCarryPlay({
     <div className="flex flex-1 flex-col select-none">
       <p className="font-condensed text-center text-sm tracking-[0.22em] text-honey">
         {label ?? `${carry.glasses} GLASSES`}
-        <span className="mt-1 block tracking-[0.16em] text-paper/50">
-          {modifier}
-        </span>
+        {showShift ? (
+          <span className="mt-1 block tracking-[0.16em] text-paper/50">
+            {modifier}
+          </span>
+        ) : null}
       </p>
       <p
         className={`mt-2 text-center font-display ${coach.counting ? "text-5xl" : "text-xl"}`}
@@ -312,6 +316,7 @@ export function StackRound({
             label={`CARRY ${index + 1} OF 3 · ${carry.glasses} GLASSES`}
             doneLabel={last ? (live ? "See rank" : "See round") : "Next"}
             auto={live}
+            showShift={!live}
             modifier={seed.modifier}
             onDone={finishCarry}
           />
