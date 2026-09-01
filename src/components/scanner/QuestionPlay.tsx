@@ -4,15 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BearGuide } from "@/components/bear/BearGuide";
-import { RoundIntro } from "@/components/scanner/RoundIntro";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
 import {
-  attemptNeedsSkill,
   loadAttempt,
   saveAttempt,
   type AttemptAnswer,
 } from "@/lib/attempt";
-import { POUR_ENABLED, STACK_ENABLED } from "@/lib/config";
+import { answersReady, attemptNeedsStack } from "@/lib/play-rounds";
 import { BEAR_DURATIONS, type BearState } from "@/lib/bear";
 import { StampSession } from "@/components/scanner/StampSession";
 import type { DailyChallenge } from "@/lib/daily-challenge";
@@ -40,7 +38,6 @@ export function QuestionPlay({
   const [answers, setAnswers] = useState<AttemptAnswer[]>([]);
   const [review, setReview] = useState(false);
   const [ready, setReady] = useState(false);
-  const [intro, setIntro] = useState(true);
   const [reported, setReported] = useState(false);
   const questionStartedAt = useRef(0);
   const advanceTimer = useRef<number>(0);
@@ -56,24 +53,21 @@ export function QuestionPlay({
 
   useEffect(() => {
     const snapshot = loadAttempt(paw.token);
-    if (attemptNeedsSkill(snapshot)) {
+    if (attemptNeedsStack(snapshot)) {
       router.replace(nextPlayPath(paw.token, snapshot));
       return;
     }
-    if (snapshot) {
-      setAnswers(snapshot.answers ?? []);
-      setReview(true);
-      setIntro(false);
-      setPhase("feedback");
-      setBearState("idle");
+    if (answersReady(snapshot)) {
+      router.replace(nextPlayPath(paw.token, snapshot));
+      return;
     }
     setReady(true);
   }, [challenge.questions.length, paw.token, router]);
 
   useEffect(() => {
-    if (review || intro) return;
+    if (review) return;
     questionStartedAt.current = performance.now();
-  }, [index, review, intro]);
+  }, [index, review]);
 
   useEffect(() => {
     return () => window.clearTimeout(advanceTimer.current);
@@ -102,56 +96,27 @@ export function QuestionPlay({
     advanceTimer.current = window.setTimeout(async () => {
       const isLast = index === challenge.questions.length - 1;
       if (isLast) {
+        const prior = loadAttempt(paw.token);
+        const correctCount = nextAnswers.filter((entry) => {
+          const question = challenge.questions.find(
+            (row) => row.id === entry.questionId,
+          );
+          return question?.correctId === entry.choiceId;
+        }).length;
         const snapshot = {
-          correctCount: nextAnswers.filter((entry, entryIndex) => {
-            return (
-              entry.choiceId === challenge.questions[entryIndex]?.correctId
-            );
-          }).length,
+          correctCount,
           totalResponseMs: nextAnswers.reduce(
             (sum, entry) => sum + entry.responseMs,
             0,
           ),
           finishedAt: Date.now(),
           answers: nextAnswers,
+          stackWobble: prior?.stackWobble,
+          carryWobbles: prior?.carryWobbles,
+          stackCarries: prior?.stackCarries,
         };
-
-        if (POUR_ENABLED || STACK_ENABLED) {
-          saveAttempt(paw.token, snapshot);
-          router.replace(nextPlayPath(paw.token, snapshot));
-          return;
-        }
-
-        try {
-          const response = await fetch(`/api/p/${paw.token}/complete`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ answers: nextAnswers }),
-          });
-          if (response.ok) {
-            const ranked = (await response.json()) as {
-              correctCount: number;
-              totalResponseMs: number;
-              rank: number;
-              playerCount: number;
-              playersBeaten: number;
-            };
-            saveAttempt(paw.token, {
-              ...snapshot,
-              correctCount: ranked.correctCount,
-              totalResponseMs: ranked.totalResponseMs,
-              rank: ranked.rank,
-              playerCount: ranked.playerCount,
-              playersBeaten: ranked.playersBeaten,
-            });
-          } else {
-            saveAttempt(paw.token, snapshot);
-          }
-        } catch {
-          saveAttempt(paw.token, snapshot);
-        }
-
-        router.push(`/p/${paw.token}/result`);
+        saveAttempt(paw.token, snapshot);
+        router.push(`/p/${paw.token}/name`);
         return;
       }
 
@@ -174,17 +139,6 @@ export function QuestionPlay({
 
   if (!ready) {
     return <ScannerShell><div className="flex-1" /></ScannerShell>;
-  }
-
-  if (intro && !review) {
-    return (
-      <ScannerShell>
-        <RoundIntro
-          round="trivia"
-          onGo={() => setIntro(false)}
-        />
-      </ScannerShell>
-    );
   }
 
   return (

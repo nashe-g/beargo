@@ -11,11 +11,10 @@ export const LEGACY_LOCAL_COUPON_PUBLIC_ENABLED = PLAYER_OFFERS_ENABLED;
 export const AFFILIATE_POSTGAME_ENABLED = true;
 
 /**
- * Trivia and pour are archived from the public flow — kept in the lab for
- * future experiments, sponsor activations, or bonus modes. The default
- * product is: Scan → Wobble → Rank → Challenge somebody else.
+ * Public night: Scan → Tray → Hands score → Head (trivia) → Combined
+ * rank → Sponsor. Pour stays archived.
  */
-export const TRIVIA_ENABLED = false;
+export const TRIVIA_ENABLED = true;
 export const POUR_ENABLED = false;
 
 /** The wobble game. This is BearGo now. */

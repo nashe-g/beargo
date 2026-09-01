@@ -4,10 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { StackPlayfield } from "@/components/lab/stack/StackPlayfield";
 import { StackCarryPlay, StackRound } from "@/components/lab/stack/StackRound";
-import {
-  useStackCoach,
-  type StackCoachKind,
-} from "@/components/lab/stack/useStackCoach";
+import { useStackCoach } from "@/components/lab/stack/useStackCoach";
 import { useStackTilt } from "@/components/lab/stack/useStackTilt";
 import "./stack/stack.css";
 import {
@@ -32,23 +29,20 @@ function IsolateStudio({ modifier }: { modifier: string }) {
     <IsolatePlay
       key={`${modifier}-${session}`}
       modifier={modifier}
-      coachKind={session === 0 ? "full" : "countdown"}
       onReset={() => setSession((value) => value + 1)}
     />
   );
 }
 
 function IsolatePlay({
-  coachKind,
   modifier,
   onReset,
 }: {
-  coachKind: StackCoachKind;
   modifier: string;
   onReset: () => void;
 }) {
   const [glasses, setGlasses] = useState(3);
-  const coach = useStackCoach(coachKind);
+  const coach = useStackCoach();
   const tilt = useStackTilt(glasses, [], false, modifier);
 
   useEffect(() => {
@@ -68,17 +62,19 @@ function IsolatePlay({
           {tilt.toppled
             ? "Down. Reset and try the same count."
             : coach.playing
-              ? "Tap the arrow on the side it’s falling."
-              : coach.headline}
+              ? "Your turn."
+              : coach.counting
+                ? coach.headline
+                : ""}
         </p>
         <div className="mt-4">
           <StackPlayfield
             glasses={glasses}
-            theta={coach.playing ? tilt.theta : coach.demoTheta}
-            slide={coach.playing ? tilt.slide : coach.demoSlide}
+            theta={coach.playing ? tilt.theta : 0}
+            slide={coach.playing ? tilt.slide : 0}
             toppled={coach.playing && tilt.toppled}
-            hintSide={coach.playing ? tilt.hintSide : coach.hintSide}
-            pressedSide={coach.playing ? 0 : coach.tapSide}
+            hintSide={coach.playing ? tilt.hintSide : 0}
+            pressedSide={0}
             disabled={!coach.playing}
             elapsed={coach.playing ? tilt.elapsed : 0}
             walking={coach.playing && !tilt.toppled}
@@ -199,7 +195,7 @@ export function StackLab() {
             01 Lean
           </h2>
           <p className="text-sm text-ink-soft">
-            It plays itself three times. Then 3-2-1. Same tap when you play.
+            3-2-1, then tap the side they’re falling.
           </p>
           <IsolateStudio modifier={shift} />
         </section>
@@ -209,7 +205,7 @@ export function StackLab() {
             02 One carry
           </h2>
           <p className="text-sm text-ink-soft">
-            Watch once, then carry. A bump you can see coming.
+            One carry. A bump you can see coming.
           </p>
           {firstCarry ? (
             <div className="scanner-stage overflow-hidden rounded-[1.8rem] text-paper">
@@ -217,7 +213,6 @@ export function StackLab() {
                 <StackCarryPlay
                   key={`${shift}-carry-${carryReplay}`}
                   carry={firstCarry}
-                  coach={carryReplay === 0 ? "full" : "countdown"}
                   label="CARRY 01"
                   doneLabel="Again"
                   modifier={shift}

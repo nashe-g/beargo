@@ -24,7 +24,7 @@ export function AffiliateCard({ card }: { card: AffiliateCardView }) {
   const href = `/api/affiliate/go/${encodeURIComponent(card.offerId)}?host=${encodeURIComponent(card.hostId)}`;
 
   return (
-    <aside className="mt-auto w-full rounded-t-[1.75rem] border-t border-paper/15 bg-paper px-5 py-5 text-left text-ink">
+    <aside className="w-full rounded-[1.5rem] bg-paper px-5 py-5 text-left text-ink">
       <p className="text-xs font-semibold tracking-[0.2em] text-ink-soft uppercase">
         Sponsored
       </p>

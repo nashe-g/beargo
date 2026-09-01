@@ -6,9 +6,23 @@ import { serviceDayInZone } from "@/lib/dates";
 import { isoRequired } from "@/lib/money";
 import type { PawRecord } from "@/lib/paws";
 import { stackChallengeId } from "@/lib/stack";
-import { comparePlays, rankPlay, type Play, type RankResult } from "@/lib/rank";
+import {
+  comparePlays,
+  neighborRows,
+  rankPlay,
+  type BoardNeighbor,
+  type Play,
+  type RankResult,
+} from "@/lib/rank";
 
-export type RecordedPlay = Play & RankResult & { topWobbles: number[] };
+export type TopScore = { correctCount: number; stackWobble: number };
+
+export type RecordedPlay = Play &
+  RankResult & {
+    topWobbles: number[];
+    topScores: TopScore[];
+    neighbors: BoardNeighbor[];
+  };
 
 function topWobblesFrom(board: Play[], count = 3) {
   return [...board]
@@ -16,6 +30,16 @@ function topWobblesFrom(board: Play[], count = 3) {
     .slice(0, count)
     .map((entry) => entry.stackWobble)
     .filter((value): value is number => value != null);
+}
+
+function topScoresFrom(board: Play[], count = 5): TopScore[] {
+  return [...board]
+    .sort(comparePlays)
+    .slice(0, count)
+    .map((entry) => ({
+      correctCount: entry.correctCount,
+      stackWobble: entry.stackWobble ?? 0,
+    }));
 }
 
 function mapPlay(row: typeof plays.$inferSelect): Play {
@@ -29,6 +53,7 @@ function mapPlay(row: typeof plays.$inferSelect): Play {
     totalResponseMs: row.totalResponseMs,
     pourMg: row.pourMg,
     stackWobble: row.stackWobble,
+    boardName: row.boardName,
     rankingEligible: row.rankingEligible,
     createdAt: isoRequired(row.createdAt),
   };
@@ -41,6 +66,7 @@ export async function listPlays() {
 
 let pourColumnReady = false;
 let stackColumnReady = false;
+let boardNameColumnReady = false;
 
 async function ensurePourMgColumn() {
   if (pourColumnReady) return;
@@ -56,6 +82,20 @@ async function ensureStackWobbleColumn() {
   stackColumnReady = true;
 }
 
+async function ensureBoardNameColumn() {
+  if (boardNameColumnReady) return;
+  await db().execute(
+    sql`ALTER TABLE plays ADD COLUMN IF NOT EXISTS board_name text`,
+  );
+  boardNameColumnReady = true;
+}
+
+async function ensurePlayColumns() {
+  await ensurePourMgColumn();
+  await ensureStackWobbleColumn();
+  await ensureBoardNameColumn();
+}
+
 export async function recordPlay(input: {
   paw: PawRecord;
   challengeId: string;
@@ -63,11 +103,11 @@ export async function recordPlay(input: {
   totalResponseMs: number;
   pourMg?: number | null;
   stackWobble?: number | null;
+  boardName?: string | null;
   sessionId?: string | null;
   deviceKey?: string | null;
 }): Promise<RecordedPlay> {
-  await ensurePourMgColumn();
-  await ensureStackWobbleColumn();
+  await ensurePlayColumns();
   const localDate = serviceDayInZone(input.paw.timezone);
   let rankingEligible = true;
   if (input.deviceKey) {
@@ -96,6 +136,7 @@ export async function recordPlay(input: {
     totalResponseMs: input.totalResponseMs,
     pourMg: input.pourMg ?? null,
     stackWobble: input.stackWobble ?? null,
+    boardName: input.boardName ?? null,
     rankingEligible,
     createdAt: new Date().toISOString(),
   };
@@ -111,6 +152,7 @@ export async function recordPlay(input: {
     totalResponseMs: play.totalResponseMs,
     pourMg: play.pourMg,
     stackWobble: play.stackWobble,
+    boardName: play.boardName,
     rankingEligible,
     deviceKey: input.deviceKey ?? null,
   });
@@ -129,7 +171,13 @@ export async function recordPlay(input: {
     .map(mapPlay)
     .filter((entry) => entry.rankingEligible !== false || entry.id === play.id);
 
-  return { ...play, ...rankPlay(board, play), topWobbles: topWobblesFrom(board) };
+  return {
+    ...play,
+    ...rankPlay(board, play),
+    topWobbles: topWobblesFrom(board),
+    topScores: topScoresFrom(board),
+    neighbors: neighborRows(board, play),
+  };
 }
 
 /**
@@ -141,8 +189,7 @@ export async function rankedPlayForDevice(
   paw: PawRecord,
   deviceKey: string,
 ): Promise<RecordedPlay | null> {
-  await ensurePourMgColumn();
-  await ensureStackWobbleColumn();
+  await ensurePlayColumns();
   const serviceDay = serviceDayInZone(paw.timezone);
   const rows = await db()
     .select()
@@ -166,5 +213,7 @@ export async function rankedPlayForDevice(
     ...mine,
     ...rankPlay(board, mine),
     topWobbles: topWobblesFrom(board),
+    topScores: topScoresFrom(board),
+    neighbors: neighborRows(board, mine),
   };
 }

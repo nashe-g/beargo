@@ -1,16 +1,17 @@
-import { QuestionPlay } from "@/components/scanner/QuestionPlay";
+import { BrainInvite } from "@/components/scanner/BrainInvite";
 import { TRIVIA_ENABLED } from "@/lib/config";
-import { challengeForPaw } from "@/lib/daily-challenge";
 import { getPaw } from "@/lib/paws";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-export default async function PlayPage({
+export default async function HeadPage({
   params,
-}: PageProps<"/p/[pawToken]/play">) {
+}: {
+  params: Promise<{ pawToken: string }>;
+}) {
   const { pawToken } = await params;
   if (!TRIVIA_ENABLED) redirect(`/p/${pawToken}/result`);
   const paw = await getPaw(pawToken);
-  return <QuestionPlay paw={paw} challenge={await challengeForPaw(paw)} />;
+  return <BrainInvite paw={paw} />;
 }

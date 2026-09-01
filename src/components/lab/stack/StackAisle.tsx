@@ -238,8 +238,8 @@ function HappyWorld() {
           className={`stack-rush${index % 2 === 1 ? " is-flip" : ""}`}
           style={{
             top: `${14 + index * 9}%`,
-            animationDelay: `${-index * 0.34}s`,
-            animationDuration: `${0.95 + (index % 3) * 0.25}s`,
+            animationDelay: `${-index * 0.85}s`,
+            animationDuration: `${2.4 + (index % 3) * 0.55}s`,
           }}
         >
           <RushBody />

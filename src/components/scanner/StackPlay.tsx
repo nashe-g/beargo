@@ -7,6 +7,7 @@ import { ScannerShell } from "@/components/scanner/ScannerShell";
 import { StampSession } from "@/components/scanner/StampSession";
 import "@/components/lab/stack/stack.css";
 import { loadAttempt, saveAttempt, type AttemptSnapshot } from "@/lib/attempt";
+import { nextPlayPath } from "@/lib/play-rounds";
 import type { PawRecord } from "@/lib/paws";
 import type { StackCarryResult } from "@/components/lab/stack/StackRound";
 import { wobbleTenths, type StackRoundSeed } from "@/lib/stack";
@@ -26,7 +27,7 @@ export function StackPlay({
     // Back button after a finished run: straight to the rank.
     const attempt = loadAttempt(paw.token);
     if (attempt?.stackWobble != null && paw.token !== "demo") {
-      router.replace(`/p/${paw.token}/result`);
+      router.replace(nextPlayPath(paw.token, attempt));
       return;
     }
     setReady(true);
@@ -46,37 +47,11 @@ export function StackPlay({
       totalResponseMs: 0,
       stackWobble: wobbleTenths(total),
       carryWobbles: carries.map((row) => row.wobble),
+      stackCarries: carries,
       finishedAt: Date.now(),
     };
     saveAttempt(paw.token, local);
-
-    try {
-      const response = await fetch(`/api/p/${paw.token}/complete`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ stackCarries: carries }),
-      });
-      if (response.ok) {
-        const ranked = (await response.json()) as {
-          stackWobble?: number;
-          rank: number;
-          playerCount: number;
-          playersBeaten: number;
-          topWobbles?: number[];
-        };
-        saveAttempt(paw.token, {
-          ...local,
-          stackWobble: ranked.stackWobble ?? local.stackWobble,
-          rank: ranked.rank,
-          playerCount: ranked.playerCount,
-          playersBeaten: ranked.playersBeaten,
-          topWobbles: ranked.topWobbles,
-        });
-      }
-    } catch {
-      saveAttempt(paw.token, local);
-    }
-    router.push(`/p/${paw.token}/result`);
+    router.push(nextPlayPath(paw.token, local));
   }
 
   if (!ready) {

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Patron } from "@/components/lab/pour/Patron";
 import { StackPlayfield } from "@/components/lab/stack/StackPlayfield";
-import { useStackCoach, type StackCoachKind } from "@/components/lab/stack/useStackCoach";
+import { useStackCoach } from "@/components/lab/stack/useStackCoach";
 import { useStackTilt } from "@/components/lab/stack/useStackTilt";
 import "./stack.css";
 import { recordStackStreak } from "@/lib/stack-streak";
@@ -29,7 +29,6 @@ export type StackCarryResult = {
 export function StackCarryPlay({
   carry,
   onDone,
-  coach: coachKind = "full",
   label,
   doneLabel = "Next",
   auto = false,
@@ -37,7 +36,6 @@ export function StackCarryPlay({
 }: {
   carry: StackCarry;
   onDone?: (result: StackCarryResult) => void;
-  coach?: StackCoachKind;
   label?: string;
   doneLabel?: string;
   auto?: boolean;
@@ -46,7 +44,7 @@ export function StackCarryPlay({
   const [locked, setLocked] = useState(false);
   const [pausedByBlur, setPausedByBlur] = useState(false);
   const [resumeCount, setResumeCount] = useState<number | null>(null);
-  const coach = useStackCoach(coachKind);
+  const coach = useStackCoach();
   const tilt = useStackTilt(carry.glasses, carry.jolts, locked, modifier);
   const remaining = Math.max(0, carry.durationMs - tilt.elapsed);
   const band = locked ? stackBand(tilt.toppled, tilt.maxLean) : "idle";
@@ -146,38 +144,24 @@ export function StackCarryPlay({
   return (
     <div className="flex flex-1 flex-col select-none">
       <p className="font-condensed text-center text-sm tracking-[0.22em] text-honey">
-        {coach.phase === "demo"
-          ? "DEMO — WATCH"
-          : (label ?? `${carry.glasses} GLASSES`)}
-        {coach.phase !== "demo" ? (
-          <span className="mt-1 block tracking-[0.16em] text-paper/50">
-            {modifier}
-          </span>
-        ) : null}
+        {label ?? `${carry.glasses} GLASSES`}
+        <span className="mt-1 block tracking-[0.16em] text-paper/50">
+          {modifier}
+        </span>
       </p>
       <p
         className={`mt-2 text-center font-display ${coach.counting ? "text-5xl" : "text-xl"}`}
       >
         {headline}
       </p>
-      {!locked && coach.phase === "demo" ? (
-        <p className="mt-1 text-center text-sm text-paper/55">
-          This is a demo. You play after the countdown.
-        </p>
-      ) : null}
-      {!locked && coach.playing ? (
-        <p className="mt-1 text-center text-sm text-paper/55">
-          Tap the side the glasses are falling.
-        </p>
-      ) : null}
       <div className="relative mt-2 flex flex-1 flex-col justify-end">
         <StackPlayfield
           glasses={carry.glasses}
-          theta={coach.playing ? tilt.theta : coach.demoTheta}
-          slide={coach.playing ? tilt.slide : coach.demoSlide}
+          theta={coach.playing ? tilt.theta : 0}
+          slide={coach.playing ? tilt.slide : 0}
           toppled={coach.playing && tilt.toppled}
-          hintSide={coach.playing ? tilt.hintSide : coach.hintSide}
-          pressedSide={coach.playing ? 0 : coach.tapSide}
+          hintSide={coach.playing ? tilt.hintSide : 0}
+          pressedSide={0}
           disabled={locked || !coach.playing || pausedByBlur}
           elapsed={coach.playing ? tilt.elapsed : 0}
           jolts={carry.jolts}
@@ -325,7 +309,6 @@ export function StackRound({
           <StackCarryPlay
             key={`${seed.date}-${index}-${carry.glasses}`}
             carry={carry}
-            coach={index === 0 ? "full" : "countdown"}
             label={`CARRY ${index + 1} OF 3 · ${carry.glasses} GLASSES`}
             doneLabel={last ? (live ? "See rank" : "See round") : "Next"}
             auto={live}

@@ -15,8 +15,13 @@ const BEATS = [
   },
   {
     n: "03",
-    title: "See where you rank tonight.",
-    body: "One ranked run a night. Then make your table beat it.",
+    title: "Beat the room.",
+    body: "3 curious questions. Same ones tonight. Then a name on the board.",
+  },
+  {
+    n: "04",
+    title: "Your rank.",
+    body: "You, the person above, the person below. One run a night.",
   },
 ];
 
@@ -33,8 +38,8 @@ export default function Home() {
           </h1>
           <p className="mt-6 max-w-md text-lg leading-relaxed text-ink-soft sm:text-xl">
             You’re carrying a leaning stack of pints through a crowded bar.
-            Tap the side it’s falling toward. About a minute. No account.
-            Rank is this room, tonight.
+            Tap the side it’s falling toward. Then beat the crowd in today’s
+            trivia. No account. Rank is this room, tonight.
           </p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <Link
@@ -61,7 +66,7 @@ export default function Home() {
         <h2 className="mt-3 max-w-lg font-display text-3xl tracking-tight sm:text-4xl">
           Rank is for this room, tonight.
         </h2>
-        <ol className="mt-10 grid gap-4 sm:grid-cols-3">
+        <ol className="mt-10 grid gap-4 sm:grid-cols-2">
           {BEATS.map((beat) => (
             <li
               key={beat.n}

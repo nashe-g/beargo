@@ -63,12 +63,9 @@ export function GameIntro({
           <p className="mt-4 max-w-[19rem] text-lg text-paper/85">
             Tap the side they’re falling toward.
           </p>
-          <p className="mt-2 font-condensed text-base tracking-[0.18em] text-paper/60">
-            3 → 4 → 5 GLASSES
-          </p>
         </div>
 
-        <div className="flex w-full shrink-0 flex-col items-center gap-3 pt-4">
+        <div className="flex w-full shrink-0 flex-col items-center gap-3 pt-3">
           <Link
             href={`/p/${paw.token}/stack`}
             className="btn-honey flex h-14 w-full items-center justify-center rounded-full bg-honey text-lg font-semibold tracking-[0.14em] text-ink"

@@ -8,8 +8,18 @@ export type Play = {
   totalResponseMs: number;
   pourMg?: number | null;
   stackWobble?: number | null;
+  boardName?: string | null;
   rankingEligible?: boolean;
   createdAt: string;
+};
+
+export type BoardNeighbor = {
+  rank: number;
+  name: string;
+  correctCount: number;
+  stackWobble: number;
+  totalResponseMs: number;
+  mine: boolean;
 };
 
 export type RankResult = {
@@ -55,4 +65,33 @@ export function rankPlay(plays: Play[], play: Play): RankResult {
     playerCount: board.length,
     playersBeaten: Math.max(0, board.length - rank),
   };
+}
+
+export function neighborRows(plays: Play[], play: Play): BoardNeighbor[] {
+  const board = plays
+    .filter(
+      (entry) =>
+        entry.hostId === play.hostId &&
+        entry.localDate === play.localDate &&
+        entry.challengeId === play.challengeId,
+    )
+    .sort(comparePlays);
+  const index = board.findIndex((entry) => entry.id === play.id);
+  if (index < 0) return [];
+
+  let start = Math.max(0, index - 1);
+  let end = Math.min(board.length - 1, index + 1);
+  if (end - start < 2 && board.length > 2) {
+    if (start === 0) end = Math.min(board.length - 1, start + 2);
+    else start = Math.max(0, end - 2);
+  }
+
+  return board.slice(start, end + 1).map((entry, offset) => ({
+    rank: start + offset + 1,
+    name: entry.boardName?.trim() || "Player",
+    correctCount: entry.correctCount,
+    stackWobble: entry.stackWobble ?? 0,
+    totalResponseMs: entry.totalResponseMs,
+    mine: entry.id === play.id,
+  }));
 }

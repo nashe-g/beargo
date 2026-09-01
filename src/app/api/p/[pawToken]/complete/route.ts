@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
-import { STACK_ENABLED } from "@/lib/config";
+import { STACK_ENABLED, TRIVIA_ENABLED } from "@/lib/config";
+import { challengeForPaw, scoreChallenge } from "@/lib/daily-challenge";
 import { serviceDayInZone } from "@/lib/dates";
 import { getPaw } from "@/lib/paws";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
@@ -8,16 +9,22 @@ import {
   SCAN_COOKIE,
   stampSession,
 } from "@/lib/scan-session";
+import { sanitizeBoardName } from "@/lib/board-name";
 import { scoreStackRound, stackChallengeId } from "@/lib/stack";
 import { rankedPlayForDevice, recordPlay, type RecordedPlay } from "@/lib/store";
 
 function playPayload(play: RecordedPlay, alreadyPlayed: boolean) {
   return {
     stackWobble: play.stackWobble,
+    correctCount: play.correctCount,
+    totalResponseMs: play.totalResponseMs,
+    boardName: play.boardName,
     rank: play.rank,
     playerCount: play.playerCount,
     playersBeaten: play.playersBeaten,
     topWobbles: play.topWobbles,
+    topScores: play.topScores,
+    neighbors: play.neighbors,
     alreadyPlayed,
   };
 }
@@ -46,8 +53,6 @@ export async function POST(
     return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  // One ranked run per device per venue night. The demo paw stays open
-  // so people can try it anywhere.
   if (deviceKey && paw.token !== "demo") {
     const existing = await rankedPlayForDevice(paw, deviceKey);
     if (existing) {
@@ -55,19 +60,49 @@ export async function POST(
     }
   }
 
-  const record = body as { stackCarries?: unknown };
+  const record = body as {
+    stackCarries?: unknown;
+    answers?: unknown;
+    boardName?: unknown;
+  };
+  const boardName = sanitizeBoardName(record.boardName);
+  if (TRIVIA_ENABLED && !boardName) {
+    return Response.json({ error: "Name the board" }, { status: 400 });
+  }
   const serviceDay = serviceDayInZone(paw.timezone);
   const stacked = scoreStackRound(serviceDay, paw.hostId, record.stackCarries);
   if (!stacked) {
     return Response.json({ error: "Invalid stack" }, { status: 400 });
   }
 
+  let correctCount = 0;
+  let totalResponseMs = 0;
+  if (TRIVIA_ENABLED) {
+    if (!Array.isArray(record.answers)) {
+      return Response.json({ error: "Invalid answers" }, { status: 400 });
+    }
+    const scored = scoreChallenge(
+      await challengeForPaw(paw),
+      record.answers as {
+        questionId: string;
+        choiceId: string;
+        responseMs: number;
+      }[],
+    );
+    if (!scored) {
+      return Response.json({ error: "Invalid answers" }, { status: 400 });
+    }
+    correctCount = scored.correctCount;
+    totalResponseMs = scored.totalResponseMs;
+  }
+
   const play = await recordPlay({
     paw,
     challengeId: stackChallengeId(serviceDay),
-    correctCount: 0,
-    totalResponseMs: 0,
+    correctCount,
+    totalResponseMs,
     stackWobble: stacked.stackWobble,
+    boardName,
     sessionId,
     deviceKey,
   });

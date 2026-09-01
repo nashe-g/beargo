@@ -19,10 +19,14 @@ export default async function ResultPage({
         played
           ? {
               stackWobble: played.stackWobble ?? 0,
+              correctCount: played.correctCount,
+              totalResponseMs: played.totalResponseMs,
+              boardName: played.boardName,
               rank: played.rank,
               playerCount: played.playerCount,
               playersBeaten: played.playersBeaten,
               topWobbles: played.topWobbles,
+              neighbors: played.neighbors,
             }
           : null
       }

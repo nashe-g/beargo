@@ -2,29 +2,37 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { BearGuide } from "@/components/bear/BearGuide";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
 import { StampSession } from "@/components/scanner/StampSession";
-import { loadAttempt } from "@/lib/attempt";
+import { formatDuration, loadAttempt } from "@/lib/attempt";
+import { answersReady, attemptNeedsBoardName } from "@/lib/play-rounds";
 import type { PawRecord } from "@/lib/paws";
+import { TRIVIA_ENABLED } from "@/lib/config";
+import { QUESTIONS_PER_CHALLENGE } from "@/lib/questions";
+import type { BoardNeighbor } from "@/lib/rank";
 import { formatWobble } from "@/lib/stack";
 
 export type ServedResult = {
   stackWobble: number;
+  correctCount: number;
+  totalResponseMs: number;
+  boardName?: string | null;
   rank: number;
   playerCount: number;
   playersBeaten: number;
   topWobbles: number[];
+  neighbors?: BoardNeighbor[];
 };
 
 type Result = ServedResult & { hasAttempt: boolean };
 
-function verdict(rank: number, playerCount: number) {
-  if (playerCount <= 1) return null;
-  if (rank === 1 && playerCount >= 4) return "You’re running the bar.";
-  if (rank / playerCount <= 1 / 3) return "Steady hands.";
-  if (rank / playerCount >= 0.75) return "Rough shift.";
-  return null;
+function scoreLine(correct: number, ms: number, wobble: number) {
+  const trivia = TRIVIA_ENABLED
+    ? `${correct} / ${QUESTIONS_PER_CHALLENGE} · ${formatDuration(ms)} · `
+    : "";
+  return `${trivia}WOBBLE ${formatWobble(wobble)}`;
 }
 
 export function GameResult({
@@ -34,6 +42,7 @@ export function GameResult({
   paw: PawRecord;
   served: ServedResult | null;
 }) {
+  const router = useRouter();
   const [result, setResult] = useState<Result | null>(
     served ? { ...served, hasAttempt: true } : null,
   );
@@ -41,21 +50,27 @@ export function GameResult({
   const host = paw.hostDisplayName;
 
   useEffect(() => {
-    // Prefer the fresh sessionStorage attempt (it has the just-posted
-    // rank); fall back to the server-side device lookup.
     const attempt = loadAttempt(paw.token);
-    if (attempt?.stackWobble != null) {
+    if (attemptNeedsBoardName(attempt) && !served) {
+      router.replace(`/p/${paw.token}/name`);
+      return;
+    }
+    if (attempt?.stackWobble != null && answersReady(attempt)) {
       setResult({
         stackWobble: attempt.stackWobble,
+        correctCount: attempt.correctCount,
+        totalResponseMs: attempt.totalResponseMs,
+        boardName: attempt.boardName,
         rank: attempt.rank ?? 0,
         playerCount: attempt.playerCount ?? 0,
         playersBeaten: attempt.playersBeaten ?? 0,
         topWobbles: attempt.topWobbles ?? served?.topWobbles ?? [],
+        neighbors: attempt.neighbors ?? served?.neighbors ?? [],
         hasAttempt: true,
       });
     }
     setChecked(true);
-  }, [paw.token, served]);
+  }, [paw.token, router, served]);
 
   if (!checked && !result) {
     return (
@@ -85,98 +100,71 @@ export function GameResult({
   }
 
   const first = result.playerCount <= 1;
-  const ranked = result.rank > 0 && result.playerCount > 1;
-  const line = verdict(result.rank, result.playerCount);
-  const board = ranked && result.topWobbles.length > 0;
+  const ranked = result.rank > 0 && result.playerCount > 0;
+  const neighbors = result.neighbors ?? [];
 
   return (
     <ScannerShell>
       <StampSession pawToken={paw.token} event="game_completed" />
       <div className="flex min-h-0 flex-1 flex-col">
-        <div className="flex min-h-0 flex-1 flex-col items-center overflow-y-auto pt-1 text-center">
+        <div className="flex min-h-0 flex-1 flex-col items-center overflow-y-auto text-center">
           <BearGuide state="celebrate" size="sm" />
-          {line ? (
-            <p className="mt-2 text-sm tracking-[0.22em] text-honey uppercase">
-              {line}
-            </p>
-          ) : null}
-          {first ? (
-            <>
-              <h1 className="mt-2 font-display text-4xl leading-tight">
-                You set the score.
-              </h1>
-              <p className="mt-2 text-base text-paper/70">
-                First run of the night at {host}.
-              </p>
-            </>
-          ) : ranked ? (
-            <>
-              <h1 className="mt-1 font-display text-6xl leading-none">
-                #{result.rank}
-                <span className="text-3xl text-paper/60"> of {result.playerCount}</span>
-              </h1>
-              <p className="mt-2 text-sm tracking-[0.2em] text-paper/60 uppercase">
-                At {host} tonight
-              </p>
-            </>
+          <p className="mt-2 text-sm tracking-[0.22em] text-honey uppercase">
+            Your Rank
+          </p>
+          {ranked ? (
+            <h1 className="mt-2 font-display text-6xl leading-none">
+              #{result.rank}
+              <span className="text-3xl text-paper/60">
+                {" "}
+                of {result.playerCount}
+              </span>
+            </h1>
           ) : (
-            <>
-              <h1 className="mt-2 font-display text-4xl leading-tight">
-                On the board.
-              </h1>
-              <p className="mt-2 text-base text-paper/60">
-                Rank didn’t load. The run is saved.
-              </p>
-            </>
+            <h1 className="mt-2 font-display text-4xl leading-tight">
+              On the board.
+            </h1>
           )}
-          <p className="mt-3 font-condensed text-lg tracking-[0.18em] text-paper/85">
-            WOBBLE {formatWobble(result.stackWobble)}
+          <p className="mt-2 text-sm tracking-[0.2em] text-paper/60 uppercase">
+            {first ? `First at ${host}` : `At ${host} tonight`}
+          </p>
+          <p className="mt-3 font-condensed text-lg tracking-[0.12em] text-paper/85">
+            {scoreLine(
+              result.correctCount,
+              result.totalResponseMs,
+              result.stackWobble,
+            )}
           </p>
 
-          {board ? (
-            <ul className="mt-4 w-full max-w-[16rem] space-y-1.5 text-left">
-              {result.topWobbles.map((tenths, index) => {
-                const mine =
-                  result.rank === index + 1 && tenths === result.stackWobble;
-                return (
-                  <li
-                    key={`${index}-${tenths}`}
-                    className={`flex justify-between rounded-xl px-4 py-2 text-sm ${
-                      mine
-                        ? "bg-honey/15 text-honey"
-                        : "bg-paper/6 text-paper/70"
-                    }`}
-                  >
-                    <span>{mine ? `${index + 1} · You` : index + 1}</span>
-                    <span>{formatWobble(tenths)}</span>
-                  </li>
-                );
-              })}
-              {result.rank > result.topWobbles.length ? (
-                <li className="flex justify-between rounded-xl bg-honey/15 px-4 py-2 text-sm text-honey">
-                  <span>{result.rank} · You</span>
-                  <span>{formatWobble(result.stackWobble)}</span>
+          {neighbors.length > 0 ? (
+            <ul className="mt-5 w-full max-w-[20rem] space-y-1.5 text-left">
+              {neighbors.map((row) => (
+                <li
+                  key={`${row.rank}-${row.name}`}
+                  className={`flex items-center justify-between rounded-xl px-4 py-2.5 text-sm ${
+                    row.mine
+                      ? "bg-honey/15 text-honey"
+                      : "bg-paper/6 text-paper/75"
+                  }`}
+                >
+                  <span className="min-w-0 truncate">
+                    {row.rank} · {row.mine ? row.name || "You" : row.name}
+                  </span>
+                  <span className="shrink-0 pl-3 font-condensed tracking-[0.08em]">
+                    {TRIVIA_ENABLED
+                      ? `${row.correctCount}/${QUESTIONS_PER_CHALLENGE} · ${formatWobble(row.stackWobble)}`
+                      : formatWobble(row.stackWobble)}
+                  </span>
                 </li>
-              ) : null}
+              ))}
             </ul>
           ) : null}
-
-          <div className="mt-5">
-            <p className="font-display text-2xl leading-tight">
-              {first
-                ? "Now make somebody beat it."
-                : "Think your table can beat that?"}
-            </p>
-            <p className="mt-1.5 text-base text-paper/60">
-              Make them scan the paw.
-            </p>
-          </div>
         </div>
 
-        <div className="shrink-0 pt-3 text-center">
+        <div className="shrink-0 space-y-3 pt-4 text-center">
           <Link
             href={`/p/${paw.token}/sponsor`}
-            className="text-sm text-paper/50 underline decoration-honey/60 underline-offset-4"
+            className="btn-honey flex h-14 w-full items-center justify-center rounded-full bg-honey text-lg font-semibold tracking-[0.14em] text-ink"
           >
             Tonight’s sponsor
           </Link>

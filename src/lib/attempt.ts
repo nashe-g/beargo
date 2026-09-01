@@ -18,11 +18,23 @@ export type AttemptSnapshot = {
   stackWobble?: number;
   /** Per-carry wobble, one decimal. */
   carryWobbles?: number[];
+  /** Carries as posted to complete — glasses + wobble. */
+  stackCarries?: { glasses: number; wobble: number }[];
   /** Best wobbles on tonight's board (tenths), for the mini leaderboard. */
   topWobbles?: number[];
+  topScores?: { correctCount: number; stackWobble: number }[];
   rank?: number;
   playerCount?: number;
   playersBeaten?: number;
+  boardName?: string;
+  neighbors?: {
+    rank: number;
+    name: string;
+    correctCount: number;
+    stackWobble: number;
+    totalResponseMs: number;
+    mine: boolean;
+  }[];
   finishedAt: number;
   answers?: AttemptAnswer[];
 };

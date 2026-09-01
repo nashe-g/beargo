@@ -61,22 +61,26 @@ export function SponsorScreen({
                 Thanks for playing. Dare the person next to you to beat your
                 rank.
               </p>
-              <button
-                type="button"
-                onClick={() => void share()}
-                className="mt-8 flex h-14 w-full items-center justify-center rounded-full border border-paper/20 text-lg font-semibold"
-              >
-                {copied ? "Link copied" : "Share BearGo"}
-              </button>
             </>
           )}
         </div>
-        <Link
-          href={`/p/${paw.token}/result`}
-          className="mt-4 flex h-12 w-full shrink-0 items-center justify-center text-sm text-paper/55"
-        >
-          Back to your rank
-        </Link>
+        <div className="flex w-full shrink-0 flex-col gap-3 pt-4">
+          {affiliate ? null : (
+            <button
+              type="button"
+              onClick={() => void share()}
+              className="flex h-14 w-full items-center justify-center rounded-full border border-paper/20 text-lg font-semibold"
+            >
+              {copied ? "Link copied" : "Share BearGo"}
+            </button>
+          )}
+          <Link
+            href={`/p/${paw.token}/result`}
+            className="flex h-14 w-full items-center justify-center rounded-full border border-paper/20 text-lg font-semibold text-paper"
+          >
+            Back to your rank
+          </Link>
+        </div>
       </div>
     </ScannerShell>
   );

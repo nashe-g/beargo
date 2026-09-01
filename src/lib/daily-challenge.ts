@@ -129,23 +129,28 @@ export function scoreChallenge(
     return null;
   }
 
+  const seen = new Set<string>();
   let correctCount = 0;
   let totalResponseMs = 0;
 
-  for (const [index, question] of challenge.questions.entries()) {
-    const answer = answers[index];
+  for (const answer of answers) {
+    const question = challenge.questions.find((row) => row.id === answer.questionId);
     if (
-      !answer ||
-      answer.questionId !== question.id ||
+      !question ||
+      seen.has(answer.questionId) ||
       question.choices.every((choice) => choice.id !== answer.choiceId) ||
       !Number.isFinite(answer.responseMs) ||
       answer.responseMs < 0
     ) {
       return null;
     }
-
+    seen.add(answer.questionId);
     if (answer.choiceId === question.correctId) correctCount += 1;
     totalResponseMs += answer.responseMs;
+  }
+
+  if (challenge.questions.some((question) => !seen.has(question.id))) {
+    return null;
   }
 
   return {

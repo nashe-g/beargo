@@ -11,8 +11,12 @@ const STEPS = [
     body: "The stack leans on its own. Tap the side it’s falling toward. Three carries — 3, 4, then 5 glasses. Everyone at the venue faces the same shift tonight.",
   },
   {
-    title: "See where you rank tonight.",
-    body: "One ranked run a night per phone. The board resets with the next shift — then make your table beat you.",
+    title: "Beat the room.",
+    body: "You kept the drinks up. Now beat the crowd in today’s trivia. 3 curious questions. Same ones as everyone here tonight.",
+  },
+  {
+    title: "Your rank.",
+    body: "Put a name on the board. One ranked run a night per phone. You, the person above, the person below. The board resets with the next shift.",
   },
   {
     title: "Optional offers after the game.",
@@ -25,7 +29,7 @@ export default function HowItWorksPage() {
     <PublicShell>
       <PublicHeading kicker="THE GAME" title="How it works" />
       <p className="mt-5 max-w-xl text-lg leading-relaxed text-ink-soft">
-        No account to play. About a minute.
+        No account to play. Tray, then trivia. Rank is this room, tonight.
       </p>
       <ol className="mt-10 grid gap-4 sm:grid-cols-2">
         {STEPS.map((step, index) => (
