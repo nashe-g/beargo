@@ -10,7 +10,11 @@ import {
   stampSession,
 } from "@/lib/scan-session";
 import { sanitizeBoardName } from "@/lib/board-name";
-import { scoreStackRound, stackChallengeId } from "@/lib/stack";
+import {
+  DEMO_STACK_MODIFIER,
+  scoreStackRound,
+  stackChallengeId,
+} from "@/lib/stack";
 import { rankedPlayForDevice, recordPlay, type RecordedPlay } from "@/lib/store";
 
 function playPayload(play: RecordedPlay, alreadyPlayed: boolean) {
@@ -70,7 +74,12 @@ export async function POST(
     return Response.json({ error: "Name the board" }, { status: 400 });
   }
   const serviceDay = serviceDayInZone(paw.timezone);
-  const stacked = scoreStackRound(serviceDay, paw.hostId, record.stackCarries);
+  const stacked = scoreStackRound(
+    serviceDay,
+    paw.hostId,
+    record.stackCarries,
+    paw.token === "demo" ? DEMO_STACK_MODIFIER : undefined,
+  );
   if (!stacked) {
     return Response.json({ error: "Invalid stack" }, { status: 400 });
   }

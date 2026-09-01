@@ -195,8 +195,9 @@ export function scoreStackRound(
   date: string,
   hostId: string,
   carries: unknown,
+  forced?: StackModifier,
 ): { wobbles: number[]; stackWobble: number } | null {
-  const seed = seedStackRound(date, hostId);
+  const seed = seedStackRound(date, hostId, forced);
   if (!Array.isArray(carries) || carries.length !== seed.carries.length) {
     return null;
   }
@@ -335,6 +336,9 @@ export const STACK_MODIFIERS = [
 
 /** Rare seeded night. Same for everyone at the venue — fairness holds. */
 export const STACK_RARE_MODIFIER = "WEDDING PARTY";
+
+/** Public demo always plays a crowded bar, never the rare wedding. */
+export const DEMO_STACK_MODIFIER: StackModifier = "FRIDAY NIGHT";
 
 export type StackModifier =
   | (typeof STACK_MODIFIERS)[number]

@@ -24,18 +24,20 @@ export function PrintSign({
 
   return (
     <div className="min-h-dvh bg-paper text-ink">
-      <div className="mx-auto flex min-h-dvh max-w-[5in] flex-col items-center justify-between px-8 py-8 print:max-w-none print:px-10 print:py-10">
-        <p className="max-w-[18rem] text-center font-condensed text-[1.65rem] font-semibold leading-[1.12] tracking-[0.08em] print:max-w-[22rem] print:text-3xl">
-          THE PAW KNOWS HOW LONG YOU’D LAST AS A BARTENDER.
+      <div className="mx-auto flex min-h-dvh max-w-[5in] flex-col items-center justify-center gap-5 px-5 py-8 print:max-w-none print:gap-6 print:px-8 print:py-10">
+        <p className="w-full text-center font-condensed text-[1.45rem] font-semibold leading-[1.15] tracking-[0.05em] print:text-2xl">
+          THE PAW KNOWS HOW LONG YOU’D LAST
+          <br />
+          AS A BARTENDER.
         </p>
 
         <PawPrint
           scanUrl={scanUrl}
-          className="w-[min(78%,20rem)] text-ink"
+          className="w-[min(68%,16rem)] text-ink"
           label={`Scan this BearGo at ${paw.hostDisplayName}`}
         />
 
-        <p className="font-condensed text-center text-5xl font-semibold tracking-[0.18em] print:text-6xl">
+        <p className="font-condensed text-center text-4xl font-semibold tracking-[0.16em] print:text-5xl">
           ASK IT.
         </p>
       </div>

@@ -3,7 +3,7 @@ import { STACK_ENABLED } from "@/lib/config";
 import { serviceDayInZone } from "@/lib/dates";
 import { getPaw } from "@/lib/paws";
 import { deviceKeyFromCookies } from "@/lib/scan-session";
-import { seedStackRound } from "@/lib/stack";
+import { DEMO_STACK_MODIFIER, seedStackRound } from "@/lib/stack";
 import { rankedPlayForDevice } from "@/lib/store";
 import { redirect } from "next/navigation";
 
@@ -24,6 +24,10 @@ export default async function StackPage({
       redirect(`/p/${pawToken}/result`);
     }
   }
-  const seed = seedStackRound(serviceDayInZone(paw.timezone), paw.hostId);
+  const seed = seedStackRound(
+    serviceDayInZone(paw.timezone),
+    paw.hostId,
+    paw.token === "demo" ? DEMO_STACK_MODIFIER : undefined,
+  );
   return <StackPlay paw={paw} seed={seed} />;
 }
