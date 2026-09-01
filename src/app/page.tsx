@@ -21,7 +21,7 @@ const BEATS = [
   {
     n: "04",
     title: "Your rank.",
-    body: "You, the person above, the person below. One run a night.",
+    body: "One run a night.",
   },
 ];
 

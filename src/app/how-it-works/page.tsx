@@ -16,11 +16,11 @@ const STEPS = [
   },
   {
     title: "Your rank.",
-    body: "Put a name on the board. One ranked run a night per phone. You, the person above, the person below. The board resets with the next shift.",
+    body: "Put a name on the board. One ranked run a night per phone.",
   },
   {
     title: "Optional offers after the game.",
-    body: "After you see your result, BearGo may show a sponsored or affiliate offer from a third party. Viewing or clicking it is optional and does not affect your score or rank.",
+    body: "After you see your result, BearGo may show a sponsored offer from a third party.",
   },
 ];
 
