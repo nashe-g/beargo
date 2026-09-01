@@ -77,6 +77,37 @@ export async function upsertUser(input: {
   return (await getUserByEmail(input.email))!;
 }
 
+export async function emailsForHost(hostId: string) {
+  const rows = await db()
+    .select({ email: users.email })
+    .from(users)
+    .where(eq(users.hostId, hostId));
+  return rows.map((row) => row.email);
+}
+
+export async function hostLoginConflict(hostId: string, email: string) {
+  const trimmed = email.trim();
+  if (!trimmed.includes("@")) return "Email required.";
+  const existing = await getUserByEmail(trimmed);
+  if (!existing) return null;
+  if (existing.role === "admin") return "That email is already an admin login.";
+  if (existing.role === "merchant" || existing.merchantId) {
+    return "That email is already a merchant login.";
+  }
+  if (existing.hostId && existing.hostId !== hostId) {
+    return "That email is already a login for another host.";
+  }
+  return null;
+}
+
+export async function attachHostLogin(hostId: string, email: string) {
+  const trimmed = email.trim();
+  const conflict = await hostLoginConflict(hostId, trimmed);
+  if (conflict) return { ok: false as const, error: conflict };
+  await upsertUser({ email: trimmed, role: "host", hostId });
+  return { ok: true as const };
+}
+
 export async function requestMagicLink(input: {
   email: string;
   origin: string;

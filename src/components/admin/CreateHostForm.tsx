@@ -34,8 +34,9 @@ export function CreateHostForm() {
         timezone: "America/Chicago",
       }),
     });
+    const payload = (await response.json()) as { error?: string };
     if (!response.ok) {
-      setError("Could not create host.");
+      setError(payload.error ?? "Could not create host.");
       return;
     }
     setDisplayName("");
@@ -55,8 +56,8 @@ export function CreateHostForm() {
     >
       <h2 className="font-display text-2xl">Add a host venue</h2>
       <p className="text-sm text-ink-soft">
-        Address is required. Nearby offers route from these coordinates, not
-        phone GPS.
+        Address is required. Login email can wait until you onboard them.
+        Nearby offers route from these coordinates, not phone GPS.
       </p>
       <input
         required
@@ -66,11 +67,10 @@ export function CreateHostForm() {
         className={fieldClass}
       />
       <input
-        required
         type="email"
         value={email}
         onChange={(event) => setEmail(event.target.value)}
-        placeholder="Host login email"
+        placeholder="Host login email (optional)"
         className={fieldClass}
       />
       <AddressFields

@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { ADMIN_COOKIE } from "@/lib/admin-auth";
 import { audit } from "@/lib/audit";
-import { upsertUser } from "@/lib/auth";
+import { attachHostLogin, hostLoginConflict } from "@/lib/auth";
 import { upsertHost } from "@/lib/catalog";
 
 export async function POST(request: Request) {
@@ -28,9 +28,9 @@ export async function POST(request: Request) {
   if (!displayName) {
     return NextResponse.json({ error: "Name required" }, { status: 400 });
   }
-  if (!email.includes("@")) {
+  if (email && !email.includes("@")) {
     return NextResponse.json(
-      { error: "Host login email required" },
+      { error: "Host login email looks invalid" },
       { status: 400 },
     );
   }
@@ -39,6 +39,12 @@ export async function POST(request: Request) {
       { error: "Address and coordinates required" },
       { status: 400 },
     );
+  }
+  if (email) {
+    const conflict = await hostLoginConflict("pending", email);
+    if (conflict) {
+      return NextResponse.json({ error: conflict }, { status: 409 });
+    }
   }
   const host = await upsertHost({
     displayName,
@@ -49,7 +55,12 @@ export async function POST(request: Request) {
     lat,
     lng,
   });
-  await upsertUser({ email, role: "host", hostId: host.id });
+  if (email) {
+    const login = await attachHostLogin(host.id, email);
+    if (!login.ok) {
+      return NextResponse.json({ error: login.error }, { status: 409 });
+    }
+  }
   await audit("admin", "hosts.create", { id: host.id });
   return NextResponse.json({ host });
 }

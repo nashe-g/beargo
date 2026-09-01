@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import { AdminShell, Stat, StatusPill } from "@/components/admin/AdminShell";
+import { HostLoginForm } from "@/components/admin/HostLoginForm";
 import { NearbyOfferCards } from "@/components/offers/NearbyOfferCards";
 import { requireAdmin } from "@/lib/admin-auth";
 import { adminHostRows } from "@/lib/admin-stats";
+import { emailsForHost } from "@/lib/auth";
 import { getHost } from "@/lib/hosts";
 import { listPlays } from "@/lib/store";
 
@@ -21,6 +23,7 @@ export default async function AdminHostPage({
     (entry) => entry.host.id === host.id,
   );
   if (!row) notFound();
+  const loginEmails = await emailsForHost(host.id);
 
   return (
     <AdminShell current="/admin/hosts">
@@ -30,6 +33,15 @@ export default async function AdminHostPage({
           "No street address yet."}{" "}
         {host.timezone}.
       </p>
+
+      <section className="mt-8 max-w-xl">
+        <h2 className="font-display text-2xl">Host login</h2>
+        <p className="mt-2 text-ink-soft">
+          They only get mail if they request a sign-in link. Add this when you
+          onboard them.
+        </p>
+        <HostLoginForm hostId={host.id} emails={loginEmails} />
+      </section>
 
       <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Stat label="Games today" value={String(row.today.gamesFinished)} />

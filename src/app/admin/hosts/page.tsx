@@ -3,6 +3,7 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { CreateHostForm } from "@/components/admin/CreateHostForm";
 import { requireAdmin } from "@/lib/admin-auth";
 import { adminHostRows } from "@/lib/admin-stats";
+import { emailsForHost } from "@/lib/auth";
 import { offerTitle } from "@/lib/offer";
 import { listPlays } from "@/lib/store";
 
@@ -12,6 +13,11 @@ export default async function AdminHostsPage() {
   await requireAdmin();
   const plays = await listPlays();
   const rows = await adminHostRows(plays);
+  const logins = Object.fromEntries(
+    await Promise.all(
+      rows.map(async (row) => [row.host.id, await emailsForHost(row.host.id)]),
+    ),
+  ) as Record<string, string[]>;
 
   return (
     <AdminShell current="/admin/hosts">
@@ -28,6 +34,7 @@ export default async function AdminHostsPage() {
           <thead className="text-ink-soft">
             <tr>
               <th className="pb-3 font-normal">Host</th>
+              <th className="pb-3 font-normal">Login</th>
               <th className="pb-3 font-normal">Games today</th>
               <th className="pb-3 font-normal">Nearby offer</th>
               <th className="pb-3 font-normal">Paws</th>
@@ -42,9 +49,12 @@ export default async function AdminHostsPage() {
                     className="underline-offset-2 hover:underline"
                   >
                     {row.host.displayName}
-                  </Link>
-                </td>
-                <td>{row.today.gamesFinished}</td>
+                    </Link>
+                  </td>
+                  <td className="py-3 text-ink-soft">
+                    {logins[row.host.id]?.join(", ") || "None yet"}
+                  </td>
+                  <td>{row.today.gamesFinished}</td>
                 <td className="py-3">
                   {(() => {
                     const shown = row.nearby.find(
