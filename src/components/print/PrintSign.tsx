@@ -2,7 +2,7 @@
 
 import { CANONICAL_HOST, pawScanUrl } from "@/lib/config";
 import type { PawRecord } from "@/lib/paws";
-import { PawDomain, PawPrint } from "@/components/paw/PawPrint";
+import { PawPrint } from "@/components/paw/PawPrint";
 import Link from "next/link";
 
 type PrintSignProps = {
@@ -25,8 +25,8 @@ export function PrintSign({
   return (
     <div className="min-h-dvh bg-paper text-ink">
       <div className="mx-auto flex min-h-dvh max-w-[5in] flex-col items-center justify-between px-8 py-8 print:max-w-none print:px-10 print:py-10">
-        <p className="font-condensed text-center text-5xl font-semibold tracking-[0.18em] print:text-6xl">
-          SCAN THE PAW
+        <p className="max-w-[18rem] text-center font-condensed text-[1.65rem] font-semibold leading-[1.12] tracking-[0.08em] print:max-w-[22rem] print:text-3xl">
+          THE PAW KNOWS HOW LONG YOU’D LAST AS A BARTENDER.
         </p>
 
         <PawPrint
@@ -35,23 +35,15 @@ export function PrintSign({
           label={`Scan this BearGo at ${paw.hostDisplayName}`}
         />
 
-        <div className="space-y-3 text-center">
-          <p className="font-condensed text-3xl font-semibold tracking-[0.22em] print:text-4xl">
-            DON’T DROP THE DRINKS
-          </p>
-          <p className="font-display text-2xl leading-tight print:text-3xl">
-            Who at this table would drop the drinks first?
-          </p>
-          <PawDomain className="font-condensed text-lg tracking-[0.28em] text-ink-soft uppercase" />
-          <p className="text-sm text-ink-soft">~1 minute</p>
-        </div>
-
-        <p className="text-xs tracking-wide text-ink-soft">
-          {paw.hostDisplayName} · {paw.token}
+        <p className="font-condensed text-center text-5xl font-semibold tracking-[0.18em] print:text-6xl">
+          ASK IT.
         </p>
       </div>
 
       <div className="print:hidden mx-auto max-w-md space-y-3 px-6 pb-10 text-center text-sm text-ink-soft">
+        <p>
+          {paw.hostDisplayName} · {paw.token}
+        </p>
         <p>
           QR points to <span className="break-all text-ink">{scanUrl}</span>
         </p>
