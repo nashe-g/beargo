@@ -5,7 +5,6 @@ import Link from "next/link";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
 import { StampSession } from "@/components/scanner/StampSession";
 import type { NightView } from "@/lib/feed-types";
-import { pulseLine } from "@/lib/feed-pulse";
 import type { PawRecord } from "@/lib/paws";
 import { playPath, resultPath, type PlayKind } from "@/lib/play-kind";
 import { keepFromParam } from "@/lib/play-source";
@@ -23,10 +22,14 @@ function roomHref(token: string, from?: string | null) {
   return `/p/${token}/room${keepFromParam(from)}`;
 }
 
-function peopleLine(count: number) {
-  if (count <= 0) return "Be the first voice tonight.";
-  if (count === 1) return "1 person here tonight";
-  return `${count} people here tonight`;
+function peopleHook(count: number) {
+  if (count <= 0) return "Nobody’s talking. Start it.";
+  if (count === 1) return "One other person already scanned.";
+  return `${count} people in this room right now.`;
+}
+
+function hotPulse(label: string) {
+  return label === "Moving" || label === "Busy" || label === "Packed";
 }
 
 export function NightHub({
@@ -58,6 +61,20 @@ export function NightHub({
       .catch(() => undefined);
   }, [paw.token]);
 
+  const trayHref = stack
+    ? resultPath(paw.token, "stack")
+    : playPath(paw.token, "stack");
+  const triviaHref = trivia
+    ? resultPath(paw.token, "trivia")
+    : playPath(paw.token, "trivia");
+  const talkHref = roomHref(paw.token, from);
+
+  const primary: "stack" | "trivia" | "room" = !stack
+    ? "stack"
+    : !trivia
+      ? "trivia"
+      : "room";
+
   return (
     <ScannerShell>
       <StampSession
@@ -67,84 +84,156 @@ export function NightHub({
         onStamped={refreshNight}
       />
       <div className="flex min-h-0 flex-1 flex-col">
-        <header className="shrink-0 pt-2 text-center">
-          <p className="font-condensed text-sm tracking-[0.22em] text-honey uppercase">
-            {paw.hostDisplayName}
-          </p>
-          <p className="mt-2 font-condensed text-sm tracking-[0.14em] text-paper/55">
-            {pulseLine(night)}
-          </p>
-          <h1 className="mt-3 font-display text-4xl leading-tight">
-            What are you here for?
+        <header className="shrink-0 pt-1">
+          <div className="flex items-center justify-between gap-3">
+            <p className="font-condensed text-sm tracking-[0.2em] text-honey uppercase">
+              {paw.hostDisplayName}
+            </p>
+            {hotPulse(night.label) ? (
+              <span className="inline-flex items-center gap-2 rounded-full border border-honey/35 bg-honey/10 px-2.5 py-1 font-condensed text-xs tracking-[0.16em] text-honey uppercase">
+                <span className="hub-live-dot" aria-hidden />
+                {night.label}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-2 font-condensed text-xs tracking-[0.16em] text-paper/45 uppercase">
+                <span className="hub-live-dot" aria-hidden />
+                Live
+              </span>
+            )}
+          </div>
+          <h1 className="mt-5 font-display text-[2.35rem] leading-[0.95] tracking-tight sm:text-5xl">
+            Don’t just sit there.
           </h1>
+          <p className="mt-3 max-w-[20rem] text-base leading-snug text-paper/70">
+            The table is watching. Pick a dare.
+          </p>
         </header>
 
-        <div className="mt-8 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pb-2">
-          <HubDoor
-            href={roomHref(paw.token, from)}
-            kicker="Talk to the room"
-            title={peopleLine(here)}
-            body={
-              night.nearbyCount
-                ? `${night.nearbyCount} note${night.nearbyCount === 1 ? "" : "s"} from nearby.`
-                : "Everyone here scanned the Paw."
-            }
-          />
-          <HubDoor
-            href={
-              stack
-                ? resultPath(paw.token, "stack")
-                : playPath(paw.token, "stack")
-            }
-            kicker="Test your table"
-            title={
-              stack
-                ? `#${stack.rank} of ${stack.playerCount} · wobble ${formatWobble(stack.stackWobble)}`
-                : "Give this to the least coordinated person at your table."
-            }
-            body={stack ? "See your wobble rank." : "Keep the glasses up."}
-          />
-          <HubDoor
-            href={
-              trivia
-                ? resultPath(paw.token, "trivia")
-                : playPath(paw.token, "trivia")
-            }
-            kicker="Beat the room"
-            title={
-              trivia
-                ? `#${trivia.rank} of ${trivia.playerCount} · ${trivia.correctCount} of 3`
-                : "3 curious questions. Same for everyone today."
-            }
-            body={trivia ? "See your trivia rank." : "One board in this bar."}
-          />
+        <div className="mt-6 flex min-h-0 flex-1 flex-col justify-end gap-3 pb-1">
+          {primary === "stack" ? (
+            <PrimaryDare
+              href={trayHref}
+              kicker="Test your table"
+              title="Don’t drop the drinks."
+              dare="Hand this to whoever’s least coordinated."
+              cta="Carry the tray"
+            />
+          ) : null}
+          {primary === "trivia" ? (
+            <PrimaryDare
+              href={triviaHref}
+              kicker="Beat the room"
+              title="Same three questions as everyone."
+              dare="Winner stays on the board tonight."
+              cta="Ask me"
+            />
+          ) : null}
+          {primary === "room" ? (
+            <PrimaryDare
+              href={talkHref}
+              kicker="Talk to the room"
+              title="The night isn’t over."
+              dare={peopleHook(here)}
+              cta="Open the room"
+            />
+          ) : null}
+
+          <div className="grid grid-cols-2 gap-2.5">
+            {primary !== "room" ? (
+              <SideDare
+                href={talkHref}
+                label="Talk"
+                line={here > 0 ? peopleHook(here) : "Patio. Line. Playlist."}
+              />
+            ) : (
+              <SideDare
+                href={trayHref}
+                label="Tray"
+                line={
+                  stack
+                    ? `#${stack.rank} · wobble ${formatWobble(stack.stackWobble)}`
+                    : "Don’t drop the drinks."
+                }
+              />
+            )}
+            {primary !== "trivia" ? (
+              <SideDare
+                href={triviaHref}
+                label="Trivia"
+                line={
+                  trivia
+                    ? `#${trivia.rank} · ${trivia.correctCount} of 3`
+                    : "3 questions. Same for everyone."
+                }
+              />
+            ) : (
+              <SideDare
+                href={trayHref}
+                label="Tray"
+                line={
+                  stack
+                    ? `#${stack.rank} · wobble ${formatWobble(stack.stackWobble)}`
+                    : "Don’t drop the drinks."
+                }
+              />
+            )}
+          </div>
         </div>
       </div>
     </ScannerShell>
   );
 }
 
-function HubDoor({
+function PrimaryDare({
   href,
   kicker,
   title,
-  body,
+  dare,
+  cta,
 }: {
   href: string;
   kicker: string;
   title: string;
-  body: string;
+  dare: string;
+  cta: string;
 }) {
   return (
     <Link
       href={href}
-      className="block rounded-[1.6rem] border border-paper/12 bg-paper/6 px-5 py-5 text-left active:bg-paper/10"
+      className="hub-primary block rounded-[1.85rem] bg-honey px-5 py-6 text-ink active:scale-[0.99]"
     >
-      <p className="font-condensed text-xs tracking-[0.2em] text-honey uppercase">
+      <p className="font-condensed text-xs tracking-[0.22em] text-honey-ink uppercase">
         {kicker}
       </p>
-      <p className="mt-2 font-display text-2xl leading-tight">{title}</p>
-      <p className="mt-2 text-sm text-paper/60">{body}</p>
+      <p className="mt-2 font-display text-[1.85rem] leading-[1.02] tracking-tight">
+        {title}
+      </p>
+      <p className="mt-2 text-sm leading-snug text-ink/70">{dare}</p>
+      <span className="mt-5 flex h-12 items-center justify-center rounded-full bg-ink text-base font-semibold tracking-[0.12em] text-paper">
+        {cta}
+      </span>
+    </Link>
+  );
+}
+
+function SideDare({
+  href,
+  label,
+  line,
+}: {
+  href: string;
+  label: string;
+  line: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex min-h-[6.5rem] flex-col justify-between rounded-[1.35rem] border border-paper/18 bg-paper/6 px-3.5 py-3.5 text-left active:bg-paper/10"
+    >
+      <p className="font-condensed text-xs tracking-[0.18em] text-honey uppercase">
+        {label}
+      </p>
+      <p className="font-display text-lg leading-tight text-paper/90">{line}</p>
     </Link>
   );
 }
