@@ -190,6 +190,7 @@ export const plays = pgTable("plays", {
   rankingEligible: boolean("ranking_eligible").notNull().default(true),
   deviceKey: text("device_key"),
   playSource: text("play_source"),
+  kind: text("kind"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

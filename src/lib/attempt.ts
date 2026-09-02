@@ -2,6 +2,7 @@ import {
   attemptNeedsHands,
   nextPlayPath,
 } from "@/lib/play-rounds";
+import type { PlayKind } from "@/lib/play-kind";
 
 export type AttemptAnswer = {
   questionId: string;
@@ -42,16 +43,29 @@ export type AttemptSnapshot = {
   answers?: AttemptAnswer[];
 };
 
-function storageKey(token: string) {
+function storageKey(token: string, kind: PlayKind) {
+  return `beargo:attempt:${kind}:${token}`;
+}
+
+function legacyKey(token: string) {
   return `beargo:attempt:${token}`;
 }
 
-export function saveAttempt(token: string, attempt: AttemptSnapshot) {
-  sessionStorage.setItem(storageKey(token), JSON.stringify(attempt));
+export function saveAttempt(
+  token: string,
+  attempt: AttemptSnapshot,
+  kind: PlayKind = "stack",
+) {
+  sessionStorage.setItem(storageKey(token, kind), JSON.stringify(attempt));
 }
 
-export function loadAttempt(token: string): AttemptSnapshot | null {
-  const raw = sessionStorage.getItem(storageKey(token));
+export function loadAttempt(
+  token: string,
+  kind: PlayKind = "stack",
+): AttemptSnapshot | null {
+  const raw =
+    sessionStorage.getItem(storageKey(token, kind)) ??
+    (kind === "stack" ? sessionStorage.getItem(legacyKey(token)) : null);
   if (!raw) return null;
 
   try {
@@ -88,4 +102,3 @@ export function beatCopy(playersBeaten: number, playerCount: number) {
   if (playersBeaten === 1) return "You beat 1 player.";
   return `You beat ${playersBeaten} players.`;
 }
-

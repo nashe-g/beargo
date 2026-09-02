@@ -30,12 +30,25 @@ export default async function HostDashboardPage() {
       </p>
       <h1 className="mt-2 font-display text-4xl">Today</h1>
       <p className="mt-3 text-ink-soft">
-        The game runs either way. Block a specific offer on Offers if it
-        competes with this room.
+        Room, tray, and trivia. Block a specific offer on Offers if it competes
+        with this room.
       </p>
 
       <div className="mt-8 grid grid-cols-2 gap-3">
-        <Stat label="Games finished" value={String(todayPlays.length)} />
+        <Stat
+          label="Wobbles tonight"
+          value={String(
+            todayPlays.filter(
+              (play) => play.kind === "stack" || play.kind == null,
+            ).length,
+          )}
+        />
+        <Stat
+          label="Trivia tonight"
+          value={String(
+            todayPlays.filter((play) => play.kind === "trivia").length,
+          )}
+        />
         <Stat
           label="At the bar"
           value={String(

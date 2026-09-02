@@ -20,8 +20,8 @@ export default async function StackPage({
   // One ranked run per device per venue night (the demo paw stays open).
   if (paw.token !== "demo") {
     const deviceKey = await deviceKeyFromCookies();
-    if (deviceKey && (await rankedPlayForDevice(paw, deviceKey))) {
-      redirect(`/p/${pawToken}/result`);
+    if (deviceKey && (await rankedPlayForDevice(paw, deviceKey, "stack"))) {
+      redirect(`/p/${pawToken}/result?game=stack`);
     }
   }
   const seed = seedStackRound(

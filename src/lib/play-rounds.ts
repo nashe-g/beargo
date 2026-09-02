@@ -104,9 +104,8 @@ export function attemptNeedsHands(attempt: AttemptSnapshot | null) {
   return attemptNeedsPour(attempt) || attemptNeedsStack(attempt);
 }
 
-export function attemptNeedsBoardName(attempt: AttemptSnapshot | null) {
-  if (!answersReady(attempt) || attemptNeedsPour(attempt)) return false;
-  return !attempt?.boardName;
+export function attemptNeedsBoardName(_attempt: AttemptSnapshot | null) {
+  return false;
 }
 
 export function nextPlayPath(token: string, attempt: AttemptSnapshot | null) {

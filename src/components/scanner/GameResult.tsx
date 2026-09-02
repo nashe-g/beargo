@@ -2,14 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { BearGuide } from "@/components/bear/BearGuide";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
 import { StampSession } from "@/components/scanner/StampSession";
 import { formatDuration, loadAttempt } from "@/lib/attempt";
-import { answersReady, attemptNeedsBoardName } from "@/lib/play-rounds";
 import type { PawRecord } from "@/lib/paws";
-import { TRIVIA_ENABLED } from "@/lib/config";
+import { playPath, sponsorPath, type PlayKind } from "@/lib/play-kind";
 import { QUESTIONS_PER_CHALLENGE } from "@/lib/questions";
 import type { BoardNeighbor } from "@/lib/rank";
 import { formatWobble } from "@/lib/stack";
@@ -28,21 +26,34 @@ export type ServedResult = {
 
 type Result = ServedResult & { hasAttempt: boolean; hasAnswers: boolean };
 
-function scoreLine(correct: number, ms: number, wobble: number) {
-  const trivia = TRIVIA_ENABLED
-    ? `${correct} / ${QUESTIONS_PER_CHALLENGE} · ${formatDuration(ms)} · `
-    : "";
-  return `${trivia}WOBBLE ${formatWobble(wobble)}`;
+function scoreLine(
+  kind: PlayKind,
+  correct: number,
+  ms: number,
+  wobble: number,
+) {
+  if (kind === "trivia") {
+    return `${correct} / ${QUESTIONS_PER_CHALLENGE} · ${formatDuration(ms)}`;
+  }
+  return `WOBBLE ${formatWobble(wobble)}`;
+}
+
+function neighborScore(kind: PlayKind, row: BoardNeighbor) {
+  if (kind === "trivia") {
+    return `${row.correctCount}/${QUESTIONS_PER_CHALLENGE}`;
+  }
+  return formatWobble(row.stackWobble);
 }
 
 export function GameResult({
   paw,
+  kind,
   served,
 }: {
   paw: PawRecord;
+  kind: PlayKind;
   served: ServedResult | null;
 }) {
-  const router = useRouter();
   const [result, setResult] = useState<Result | null>(
     served ? { ...served, hasAttempt: true, hasAnswers: false } : null,
   );
@@ -50,14 +61,14 @@ export function GameResult({
   const host = paw.hostDisplayName;
 
   useEffect(() => {
-    const attempt = loadAttempt(paw.token);
-    if (attemptNeedsBoardName(attempt) && !served) {
-      router.replace(`/p/${paw.token}/name`);
-      return;
-    }
-    if (attempt?.stackWobble != null && answersReady(attempt)) {
+    const attempt = loadAttempt(paw.token, kind);
+    const ready =
+      kind === "stack"
+        ? attempt?.stackWobble != null
+        : (attempt?.answers?.length ?? 0) > 0;
+    if (ready && attempt) {
       setResult({
-        stackWobble: attempt.stackWobble,
+        stackWobble: attempt.stackWobble ?? served?.stackWobble ?? 0,
         correctCount: attempt.correctCount,
         totalResponseMs: attempt.totalResponseMs,
         boardName: attempt.boardName,
@@ -70,17 +81,14 @@ export function GameResult({
         hasAnswers: (attempt.answers?.length ?? 0) > 0,
       });
     } else if (served) {
-      setResult((current) =>
-        current
-          ? {
-              ...current,
-              hasAnswers: (attempt?.answers?.length ?? 0) > 0,
-            }
-          : current,
-      );
+      setResult({
+        ...served,
+        hasAttempt: true,
+        hasAnswers: (attempt?.answers?.length ?? 0) > 0,
+      });
     }
     setChecked(true);
-  }, [paw.token, router, served]);
+  }, [kind, paw.token, served]);
 
   if (!checked && !result) {
     return (
@@ -99,10 +107,16 @@ export function GameResult({
             Play to see where you stand at {host} tonight.
           </h1>
           <Link
-            href={`/p/${paw.token}/stack`}
+            href={playPath(paw.token, kind)}
             className="btn-honey mt-8 flex h-14 w-full max-w-[20rem] items-center justify-center rounded-full bg-honey text-lg font-semibold tracking-[0.18em] text-ink"
           >
             Play
+          </Link>
+          <Link
+            href={`/p/${paw.token}`}
+            className="mt-3 flex h-12 items-center justify-center text-sm text-paper/60"
+          >
+            Back
           </Link>
         </div>
       </ScannerShell>
@@ -120,7 +134,7 @@ export function GameResult({
         <div className="flex min-h-0 flex-1 flex-col items-center overflow-y-auto text-center">
           <BearGuide state="celebrate" size="sm" />
           <p className="mt-2 text-sm tracking-[0.22em] text-honey uppercase">
-            Your Rank
+            {kind === "stack" ? "The tray" : "Trivia"}
           </p>
           {ranked ? (
             <h1 className="mt-2 font-display text-6xl leading-none">
@@ -140,6 +154,7 @@ export function GameResult({
           </p>
           <p className="mt-3 font-condensed text-lg tracking-[0.12em] text-paper/85">
             {scoreLine(
+              kind,
               result.correctCount,
               result.totalResponseMs,
               result.stackWobble,
@@ -161,9 +176,7 @@ export function GameResult({
                     {row.rank} · {row.mine ? row.name || "You" : row.name}
                   </span>
                   <span className="shrink-0 pl-3 font-condensed tracking-[0.08em]">
-                    {TRIVIA_ENABLED
-                      ? `${row.correctCount}/${QUESTIONS_PER_CHALLENGE} · ${formatWobble(row.stackWobble)}`
-                      : formatWobble(row.stackWobble)}
+                    {neighborScore(kind, row)}
                   </span>
                 </li>
               ))}
@@ -173,19 +186,26 @@ export function GameResult({
 
         <div className="shrink-0 space-y-3 pt-4 text-center">
           <Link
-            href={`/p/${paw.token}/sponsor`}
+            href={sponsorPath(paw.token, kind)}
             className="btn-honey flex h-14 w-full items-center justify-center rounded-full bg-honey text-lg font-semibold tracking-[0.14em] text-ink"
           >
             Tonight’s sponsor
           </Link>
-          {TRIVIA_ENABLED && result.hasAnswers ? (
+          {kind === "trivia" && result.hasAnswers ? (
             <Link
               href={`/p/${paw.token}/play?review=1`}
               className="flex h-12 w-full items-center justify-center text-sm text-paper/60 underline-offset-4 hover:text-paper hover:underline"
             >
               See tonight’s questions
             </Link>
-          ) : null}
+          ) : (
+            <Link
+              href={`/p/${paw.token}`}
+              className="flex h-12 w-full items-center justify-center text-sm text-paper/60"
+            >
+              What else tonight
+            </Link>
+          )}
         </div>
       </div>
     </ScannerShell>

@@ -11,13 +11,13 @@ export const LEGACY_LOCAL_COUPON_PUBLIC_ENABLED = PLAYER_OFFERS_ENABLED;
 export const AFFILIATE_POSTGAME_ENABLED = true;
 
 /**
- * Public night (until the hub ships): Scan → Tray → Trivia → Combined
- * rank → Sponsor. Room is live at /p/{token}/room. Pour stays archived.
+ * Public night: Scan hub → room, wobble, or trivia, each with its own
+ * rank and sponsor. Pour stays archived.
  */
 export const TRIVIA_ENABLED = true;
 export const POUR_ENABLED = false;
 
-/** Venue room behind a paw scan. Hub (three doors) and split boards come next. */
+/** Venue room behind a paw scan. */
 export const FEED_ROOM_ENABLED = true;
 /**
  * Run omni-moderation on every post and store what full policy would do.

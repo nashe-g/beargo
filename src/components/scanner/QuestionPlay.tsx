@@ -9,13 +9,15 @@ import {
   loadAttempt,
   saveAttempt,
   type AttemptAnswer,
+  type AttemptSnapshot,
 } from "@/lib/attempt";
-import { answersReady, attemptNeedsStack } from "@/lib/play-rounds";
+import { answersReady } from "@/lib/play-rounds";
+import { resultPath } from "@/lib/play-kind";
 import { BEAR_DURATIONS, type BearState } from "@/lib/bear";
 import { StampSession } from "@/components/scanner/StampSession";
 import type { DailyChallenge } from "@/lib/daily-challenge";
 import type { PawRecord } from "@/lib/paws";
-import { PLAY_ROUNDS, nextPlayPath } from "@/lib/play-rounds";
+import { PLAY_ROUNDS } from "@/lib/play-rounds";
 
 type Phase = "asking" | "feedback";
 
@@ -48,14 +50,10 @@ export function QuestionPlay({
       : selectedId;
 
   useEffect(() => {
-    const snapshot = loadAttempt(paw.token);
-    if (attemptNeedsStack(snapshot)) {
-      router.replace(nextPlayPath(paw.token, snapshot));
-      return;
-    }
+    const snapshot = loadAttempt(paw.token, "trivia");
     if (reviewMode) {
       if (!answersReady(snapshot) || !snapshot?.answers?.length) {
-        router.replace(`/p/${paw.token}/result`);
+        router.replace(resultPath(paw.token, "trivia"));
         return;
       }
       setAnswers(snapshot.answers);
@@ -63,8 +61,8 @@ export function QuestionPlay({
       setReady(true);
       return;
     }
-    if (answersReady(snapshot)) {
-      router.replace(nextPlayPath(paw.token, snapshot));
+    if (answersReady(snapshot) && paw.token !== "demo") {
+      router.replace(resultPath(paw.token, "trivia"));
       return;
     }
     setReady(true);
@@ -102,14 +100,13 @@ export function QuestionPlay({
     advanceTimer.current = window.setTimeout(async () => {
       const isLast = index === challenge.questions.length - 1;
       if (isLast) {
-        const prior = loadAttempt(paw.token);
         const correctCount = nextAnswers.filter((entry) => {
-          const question = challenge.questions.find(
-            (row) => row.id === entry.questionId,
+          const row = challenge.questions.find(
+            (questionRow) => questionRow.id === entry.questionId,
           );
-          return question?.correctId === entry.choiceId;
+          return row?.correctId === entry.choiceId;
         }).length;
-        const snapshot = {
+        const snapshot: AttemptSnapshot = {
           correctCount,
           totalResponseMs: nextAnswers.reduce(
             (sum, entry) => sum + entry.responseMs,
@@ -117,12 +114,38 @@ export function QuestionPlay({
           ),
           finishedAt: Date.now(),
           answers: nextAnswers,
-          stackWobble: prior?.stackWobble,
-          carryWobbles: prior?.carryWobbles,
-          stackCarries: prior?.stackCarries,
         };
-        saveAttempt(paw.token, snapshot);
-        router.push(`/p/${paw.token}/name`);
+        saveAttempt(paw.token, snapshot, "trivia");
+        try {
+          const response = await fetch(`/api/p/${paw.token}/complete`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ game: "trivia", answers: nextAnswers }),
+          });
+          if (response.ok) {
+            const ranked = (await response.json()) as AttemptSnapshot & {
+              boardName?: string;
+            };
+            saveAttempt(
+              paw.token,
+              {
+                ...snapshot,
+                boardName: ranked.boardName,
+                rank: ranked.rank,
+                playerCount: ranked.playerCount,
+                playersBeaten: ranked.playersBeaten,
+                neighbors: ranked.neighbors,
+                correctCount: ranked.correctCount ?? snapshot.correctCount,
+                totalResponseMs:
+                  ranked.totalResponseMs ?? snapshot.totalResponseMs,
+              },
+              "trivia",
+            );
+          }
+        } catch {
+          // Rank page can still show the local score.
+        }
+        router.push(resultPath(paw.token, "trivia"));
         return;
       }
 
@@ -155,7 +178,7 @@ export function QuestionPlay({
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pt-2 sm:gap-5">
         <div className="flex items-center justify-between">
           <p className="text-sm tracking-[0.2em] text-paper/55 uppercase">
-            {PLAY_ROUNDS.trivia.n} · {PLAY_ROUNDS.trivia.name}
+            {PLAY_ROUNDS.trivia.name}
             {" · "}
             {index + 1} / {challenge.questions.length}
             {review ? " · review" : ""}
@@ -220,7 +243,7 @@ export function QuestionPlay({
               </button>
               {last ? (
                 <Link
-                  href={`/p/${paw.token}/result`}
+                  href={resultPath(paw.token, "trivia")}
                   className="flex h-12 flex-1 items-center justify-center rounded-full bg-honey text-sm font-semibold tracking-[0.16em] text-ink"
                 >
                   Back to your rank

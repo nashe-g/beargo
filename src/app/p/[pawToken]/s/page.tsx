@@ -102,7 +102,7 @@ export default async function SharePage({
             </div>
           ) : (
             <p className="mt-4 max-w-[19rem] text-lg text-paper/85">
-              Don’t drop the drinks. Then beat the crowd in today’s trivia.
+              Talk to the room. Test the tray. Beat tonight’s trivia.
             </p>
           )}
           <p className="mt-6 max-w-[20rem] font-condensed text-sm tracking-[0.12em] text-honey">
@@ -117,7 +117,7 @@ export default async function SharePage({
             Ask it.
           </Link>
           <p className="text-sm text-paper/50">
-            One run a night. Rank is this room, tonight.
+            One board a night, per game.
           </p>
         </div>
       </div>

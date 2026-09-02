@@ -9,30 +9,39 @@ import { ShareRank } from "@/components/scanner/ShareRank";
 import type { AffiliateCardView } from "@/lib/affiliate";
 import { loadAttempt } from "@/lib/attempt";
 import type { PawRecord } from "@/lib/paws";
+import { resultPath, type PlayKind } from "@/lib/play-kind";
 import type { ShareCardStats } from "@/lib/share-card";
 
 export function SponsorScreen({
   paw,
+  kind,
   affiliate,
 }: {
   paw: PawRecord;
+  kind: PlayKind;
   affiliate: AffiliateCardView | null;
 }) {
   const [stats, setStats] = useState<ShareCardStats | null>(null);
 
   useEffect(() => {
-    const attempt = loadAttempt(paw.token);
-    if (attempt?.stackWobble == null) return;
+    const attempt = loadAttempt(paw.token, kind);
+    if (kind === "stack" && attempt?.stackWobble == null) return;
+    if (kind === "trivia" && attempt?.answers == null && attempt?.rank == null) {
+      return;
+    }
+    if (!attempt) return;
     setStats({
+      kind,
       rank: attempt.rank ?? 0,
       playerCount: attempt.playerCount ?? 0,
       correctCount: attempt.correctCount,
-      stackWobble: attempt.stackWobble,
+      stackWobble: attempt.stackWobble ?? 0,
       boardName: attempt.boardName ?? null,
       dropped: attempt.stackLost ?? null,
       packed: attempt.stackPacked ?? null,
+      totalResponseMs: attempt.totalResponseMs,
     });
-  }, [paw.token]);
+  }, [kind, paw.token]);
 
   return (
     <ScannerShell>
@@ -61,7 +70,7 @@ export function SponsorScreen({
         <div className="flex w-full shrink-0 flex-col gap-3 pt-4">
           {stats ? <ShareRank paw={paw} stats={stats} /> : null}
           <Link
-            href={`/p/${paw.token}/result`}
+            href={resultPath(paw.token, kind)}
             className="flex h-14 w-full items-center justify-center rounded-full border border-paper/20 text-lg font-semibold text-paper"
           >
             Back to your rank

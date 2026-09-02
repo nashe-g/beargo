@@ -1,6 +1,11 @@
-import { GameIntro } from "@/components/scanner/GameIntro";
+import { NightHub } from "@/components/scanner/NightHub";
+import { peopleHereTonight } from "@/lib/feed-presence";
 import { getPaw } from "@/lib/paws";
-import { deviceKeyFromCookies } from "@/lib/scan-session";
+import { inferPlaySource } from "@/lib/play-source";
+import {
+  deviceKeyFromCookies,
+  ensureScanSession,
+} from "@/lib/scan-session";
 import { rankedPlayForDevice } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
@@ -14,18 +19,40 @@ export default async function PawIntroPage({
   const fromRaw = Array.isArray(query.from) ? query.from[0] : query.from;
   const from = fromRaw ?? null;
   const paw = await getPaw(pawToken);
+  await ensureScanSession(
+    paw,
+    from != null ? { entrySource: inferPlaySource(paw.token, from) } : {},
+  );
   const deviceKey = paw.token === "demo" ? null : await deviceKeyFromCookies();
-  const played = deviceKey ? await rankedPlayForDevice(paw, deviceKey) : null;
+  const [stack, trivia, peopleHere] = await Promise.all([
+    deviceKey ? rankedPlayForDevice(paw, deviceKey, "stack") : null,
+    deviceKey ? rankedPlayForDevice(paw, deviceKey, "trivia") : null,
+    peopleHereTonight(paw),
+  ]);
   return (
-    <GameIntro
+    <NightHub
       paw={paw}
       from={from}
-      played={
-        played
+      peopleHere={peopleHere}
+      stack={
+        stack
           ? {
-              rank: played.rank,
-              playerCount: played.playerCount,
-              stackWobble: played.stackWobble ?? 0,
+              kind: "stack",
+              rank: stack.rank,
+              playerCount: stack.playerCount,
+              stackWobble: stack.stackWobble ?? 0,
+              correctCount: stack.correctCount,
+            }
+          : null
+      }
+      trivia={
+        trivia
+          ? {
+              kind: "trivia",
+              rank: trivia.rank,
+              playerCount: trivia.playerCount,
+              stackWobble: trivia.stackWobble ?? 0,
+              correctCount: trivia.correctCount,
             }
           : null
       }

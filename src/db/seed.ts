@@ -206,6 +206,7 @@ async function migrateSchema() {
     ALTER TABLE plays ADD COLUMN IF NOT EXISTS stack_wobble integer;
     ALTER TABLE plays ADD COLUMN IF NOT EXISTS board_name text;
     ALTER TABLE plays ADD COLUMN IF NOT EXISTS play_source text;
+    ALTER TABLE plays ADD COLUMN IF NOT EXISTS kind text;
 
     ALTER TABLE scan_sessions ADD COLUMN IF NOT EXISTS entry_source text;
 

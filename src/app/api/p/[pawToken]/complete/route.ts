@@ -2,7 +2,9 @@ import { cookies } from "next/headers";
 import { STACK_ENABLED, TRIVIA_ENABLED } from "@/lib/config";
 import { challengeForPaw, scoreChallenge } from "@/lib/daily-challenge";
 import { serviceDayInZone } from "@/lib/dates";
+import { getOrCreateFeedIdentity } from "@/lib/feed-identity";
 import { getPaw } from "@/lib/paws";
+import { parsePlayKind } from "@/lib/play-kind";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
 import {
   DEVICE_COOKIE,
@@ -17,10 +19,16 @@ import {
   scoreStackRound,
   stackChallengeId,
 } from "@/lib/stack";
-import { rankedPlayForDevice, recordPlay, type RecordedPlay } from "@/lib/store";
+import {
+  challengeIdForPlay,
+  rankedPlayForDevice,
+  recordPlay,
+  type RecordedPlay,
+} from "@/lib/store";
 
 function playPayload(play: RecordedPlay, alreadyPlayed: boolean) {
   return {
+    kind: play.kind,
     stackWobble: play.stackWobble,
     correctCount: play.correctCount,
     totalResponseMs: play.totalResponseMs,
@@ -37,13 +45,10 @@ function playPayload(play: RecordedPlay, alreadyPlayed: boolean) {
 
 export async function POST(
   request: Request,
-  context: RouteContext<"/api/p/[pawToken]/complete">,
+  context: { params: Promise<{ pawToken: string }> },
 ) {
   if (!rateLimit(clientKey(request, "complete"), 20, 60_000)) {
     return Response.json({ error: "Slow down" }, { status: 429 });
-  }
-  if (!STACK_ENABLED) {
-    return Response.json({ error: "Not tonight" }, { status: 400 });
   }
 
   const { pawToken } = await context.params;
@@ -64,69 +69,86 @@ export async function POST(
     return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
+  const record = body as {
+    game?: unknown;
+    stackCarries?: unknown;
+    answers?: unknown;
+    boardName?: unknown;
+  };
+  const kind = parsePlayKind(record.game);
+  if (!kind) {
+    return Response.json({ error: "Which game?" }, { status: 400 });
+  }
+  if (kind === "stack" && !STACK_ENABLED) {
+    return Response.json({ error: "Not tonight" }, { status: 400 });
+  }
+  if (kind === "trivia" && !TRIVIA_ENABLED) {
+    return Response.json({ error: "Not tonight" }, { status: 400 });
+  }
+
   if (deviceKey && paw.token !== "demo") {
-    const existing = await rankedPlayForDevice(paw, deviceKey);
+    const existing = await rankedPlayForDevice(paw, deviceKey, kind);
     if (existing) {
       return Response.json(playPayload(existing, true));
     }
   }
 
-  const record = body as {
-    stackCarries?: unknown;
-    answers?: unknown;
-    boardName?: unknown;
-  };
-  const boardName = sanitizeBoardName(record.boardName);
-  if (TRIVIA_ENABLED && !boardName) {
-    return Response.json({ error: "Name the board" }, { status: 400 });
-  }
+  const identity = await getOrCreateFeedIdentity();
+  const boardName =
+    sanitizeBoardName(record.boardName) || identity.publicHandle;
   const serviceDay = serviceDayInZone(paw.timezone);
-  const stacked = scoreStackRound(
-    serviceDay,
-    paw.hostId,
-    record.stackCarries,
-    paw.token === "demo" ? DEMO_STACK_MODIFIER : undefined,
-  );
-  if (!stacked) {
-    return Response.json({ error: "Invalid stack" }, { status: 400 });
-  }
 
-  let correctCount = 0;
-  let totalResponseMs = 0;
-  if (TRIVIA_ENABLED) {
-    if (!Array.isArray(record.answers)) {
-      return Response.json({ error: "Invalid answers" }, { status: 400 });
-    }
-    const scored = scoreChallenge(
-      await challengeForPaw(paw),
-      record.answers as {
-        questionId: string;
-        choiceId: string;
-        responseMs: number;
-      }[],
+  if (kind === "stack") {
+    const stacked = scoreStackRound(
+      serviceDay,
+      paw.hostId,
+      record.stackCarries,
+      paw.token === "demo" ? DEMO_STACK_MODIFIER : undefined,
     );
-    if (!scored) {
-      return Response.json({ error: "Invalid answers" }, { status: 400 });
+    if (!stacked) {
+      return Response.json({ error: "Invalid stack" }, { status: 400 });
     }
-    correctCount = scored.correctCount;
-    totalResponseMs = scored.totalResponseMs;
+    const play = await recordPlay({
+      paw,
+      kind,
+      challengeId: stackChallengeId(serviceDay),
+      correctCount: 0,
+      totalResponseMs: 0,
+      stackWobble: stacked.stackWobble,
+      boardName,
+      sessionId,
+      deviceKey,
+      playSource,
+    });
+    if (sessionId) await stampSession(sessionId, "game_completed");
+    return Response.json(playPayload(play, false));
   }
 
+  if (!Array.isArray(record.answers)) {
+    return Response.json({ error: "Invalid answers" }, { status: 400 });
+  }
+  const scored = scoreChallenge(
+    await challengeForPaw(paw),
+    record.answers as {
+      questionId: string;
+      choiceId: string;
+      responseMs: number;
+    }[],
+  );
+  if (!scored) {
+    return Response.json({ error: "Invalid answers" }, { status: 400 });
+  }
   const play = await recordPlay({
     paw,
-    challengeId: stackChallengeId(serviceDay),
-    correctCount,
-    totalResponseMs,
-    stackWobble: stacked.stackWobble,
+    kind,
+    challengeId: challengeIdForPlay(kind, serviceDay),
+    correctCount: scored.correctCount,
+    totalResponseMs: scored.totalResponseMs,
     boardName,
     sessionId,
     deviceKey,
     playSource,
   });
-
-  if (sessionId) {
-    await stampSession(sessionId, "game_completed");
-  }
-
+  if (sessionId) await stampSession(sessionId, "game_completed");
   return Response.json(playPayload(play, false));
 }

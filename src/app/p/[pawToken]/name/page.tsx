@@ -1,5 +1,5 @@
-import { NameBoard } from "@/components/scanner/NameBoard";
 import { getPaw } from "@/lib/paws";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -10,5 +10,5 @@ export default async function NamePage({
 }) {
   const { pawToken } = await params;
   const paw = await getPaw(pawToken);
-  return <NameBoard paw={paw} />;
+  redirect(`/p/${paw.token}`);
 }

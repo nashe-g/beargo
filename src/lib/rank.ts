@@ -1,3 +1,5 @@
+import type { PlayKind } from "@/lib/play-kind";
+
 export type Play = {
   id: string;
   pawToken: string;
@@ -11,6 +13,7 @@ export type Play = {
   boardName?: string | null;
   rankingEligible?: boolean;
   playSource?: string | null;
+  kind?: string | null;
   createdAt: string;
 };
 
@@ -29,36 +32,32 @@ export type RankResult = {
   playersBeaten: number;
 };
 
-export function comparePlays(a: Play, b: Play) {
-  if (b.correctCount !== a.correctCount) return b.correctCount - a.correctCount;
-  if (
-    a.pourMg != null &&
-    b.pourMg != null &&
-    a.pourMg !== b.pourMg
-  ) {
-    return a.pourMg - b.pourMg;
+export function comparePlays(a: Play, b: Play, kind: PlayKind = "stack") {
+  if (kind === "trivia") {
+    if (b.correctCount !== a.correctCount) return b.correctCount - a.correctCount;
+    if (a.totalResponseMs !== b.totalResponseMs) {
+      return a.totalResponseMs - b.totalResponseMs;
+    }
+    return a.id < b.id ? -1 : 1;
   }
-  if (
-    a.stackWobble != null &&
-    b.stackWobble != null &&
-    a.stackWobble !== b.stackWobble
-  ) {
-    return a.stackWobble - b.stackWobble;
-  }
-  if (a.totalResponseMs !== b.totalResponseMs) {
-    return a.totalResponseMs - b.totalResponseMs;
-  }
+  const wobbleA = a.stackWobble ?? Number.POSITIVE_INFINITY;
+  const wobbleB = b.stackWobble ?? Number.POSITIVE_INFINITY;
+  if (wobbleA !== wobbleB) return wobbleA - wobbleB;
   return a.id < b.id ? -1 : 1;
 }
 
-export function rankPlay(plays: Play[], play: Play): RankResult {
+export function rankPlay(
+  plays: Play[],
+  play: Play,
+  kind: PlayKind = "stack",
+): RankResult {
   const board = plays.filter(
     (entry) =>
       entry.hostId === play.hostId &&
       entry.localDate === play.localDate &&
       entry.challengeId === play.challengeId,
   );
-  board.sort(comparePlays);
+  board.sort((left, right) => comparePlays(left, right, kind));
   const rank = board.findIndex((entry) => entry.id === play.id) + 1;
 
   return {
@@ -68,7 +67,11 @@ export function rankPlay(plays: Play[], play: Play): RankResult {
   };
 }
 
-export function neighborRows(plays: Play[], play: Play): BoardNeighbor[] {
+export function neighborRows(
+  plays: Play[],
+  play: Play,
+  kind: PlayKind = "stack",
+): BoardNeighbor[] {
   const board = plays
     .filter(
       (entry) =>
@@ -76,7 +79,7 @@ export function neighborRows(plays: Play[], play: Play): BoardNeighbor[] {
         entry.localDate === play.localDate &&
         entry.challengeId === play.challengeId,
     )
-    .sort(comparePlays);
+    .sort((left, right) => comparePlays(left, right, kind));
   const index = board.findIndex((entry) => entry.id === play.id);
   if (index < 0) return [];
 
