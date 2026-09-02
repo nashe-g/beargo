@@ -7,8 +7,8 @@ export default function HostTermsPage() {
         <PublicHeading kicker="POLICY" title="Host terms" />
         <div className="public-prose mt-8">
           <p>
-            You host the physical Paw and the daily game. Players rank at your
-            venue for that day.
+            You host the physical Paw. Players talk in your room and rank at
+            your venue for that night.
           </p>
           <p>
             BearGo may monetize post-game traffic through affiliate or

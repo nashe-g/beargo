@@ -7,10 +7,12 @@ import {
   SCAN_COOKIE,
   attachSessionPromotion,
   ensureScanSession,
+  isLikelyBot,
+  parseDeviceHint,
   stampSession,
   type SessionStamp,
 } from "@/lib/scan-session";
-import { inferPlaySource } from "@/lib/play-source";
+import { ENTRY_COOKIE, inferPlaySource, parsePlaySource } from "@/lib/play-source";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
 
 export async function POST(
@@ -23,11 +25,16 @@ export async function POST(
   }
 
   const paw = await getPaw(pawToken);
+  if (isLikelyBot(request.headers.get("user-agent"))) {
+    return Response.json({ ok: true, skipped: true });
+  }
+
   let body: {
     event?: string;
     promotionId?: string;
     voucherId?: string;
-    from?: string;
+    from?: string | null;
+    deviceHint?: string;
   } = {};
   try {
     body = (await request.json()) as typeof body;
@@ -41,8 +48,17 @@ export async function POST(
     : null;
   const promotionId =
     body.promotionId ?? selected?.promotion.id ?? null;
-  const entrySource = inferPlaySource(paw.token, body.from ?? null);
-  const session = await ensureScanSession(paw, { promotionId, entrySource });
+  const jar = await cookies();
+  const entrySource =
+    body.from === undefined
+      ? parsePlaySource(jar.get(ENTRY_COOKIE)?.value) ??
+        inferPlaySource(paw.token, null)
+      : inferPlaySource(paw.token, body.from);
+  const session = await ensureScanSession(paw, {
+    promotionId,
+    entrySource,
+    deviceHint: parseDeviceHint(body.deviceHint),
+  });
   if (promotionId) await attachSessionPromotion(session.id, promotionId);
   const event = (body.event ?? "scanned") as SessionStamp;
   await stampSession(session.id, event, {
@@ -50,7 +66,6 @@ export async function POST(
     voucherId: body.voucherId,
   });
 
-  const jar = await cookies();
   void jar.get(DEVICE_COOKIE);
   void jar.get(SCAN_COOKIE);
 

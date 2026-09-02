@@ -10,18 +10,18 @@ const BEATS = [
   },
   {
     n: "02",
-    title: "Don’t drop the drinks.",
-    body: "The stack leans on its own. Tap the side it’s falling toward. Three carries — 3, 4, then 5 glasses.",
+    title: "Talk to the room.",
+    body: "See what people here are saying tonight. Scan at the bar to post.",
   },
   {
     n: "03",
-    title: "Beat the room.",
-    body: "3 curious questions. Same ones tonight. Then a name on the board.",
+    title: "Test your table.",
+    body: "Keep a leaning tray of drinks up. Its own board, tonight.",
   },
   {
     n: "04",
-    title: "Your rank.",
-    body: "One run a night.",
+    title: "Beat the room.",
+    body: "3 curious questions. Same ones for everyone here. Its own board.",
   },
 ];
 
@@ -31,22 +31,21 @@ export default function Home() {
       <section className="grid items-center gap-12 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-16">
         <div>
           <p className="font-condensed text-sm tracking-[0.22em] text-honey-ink">
-            A NIGHTLY CHALLENGE AT REAL PLACES
+            TONIGHT, AT THE BAR
           </p>
           <h1 className="mt-4 max-w-xl font-display text-[2.4rem] leading-[1.06] tracking-tight sm:text-6xl">
-            Scan the paw. Don’t drop the drinks.
+            Scan the paw. Pick your night.
           </h1>
           <p className="mt-6 max-w-md text-lg leading-relaxed text-ink-soft sm:text-xl">
-            You’re carrying a leaning stack of pints through a crowded bar.
-            Tap the side it’s falling toward. Then beat the crowd in today’s
-            trivia. No account. Rank is this room, tonight.
+            Talk to the room, test the tray, or beat tonight’s trivia. No
+            account. Each game ranks in this bar, tonight.
           </p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <Link
-              href="/p/demo"
+              href="/p/demo?from=web"
               className="btn-honey flex h-14 items-center justify-center rounded-full bg-honey px-8 text-lg font-semibold text-ink"
             >
-              Play the demo
+              Try the demo
             </Link>
             <Link
               href="/how-it-works"
@@ -61,10 +60,10 @@ export default function Home() {
 
       <section className="mt-20 border-t border-ink/10 pt-14 sm:mt-24">
         <p className="font-condensed text-sm tracking-[0.22em] text-honey-ink">
-          THE GAME
+          THE NIGHT
         </p>
         <h2 className="mt-3 max-w-lg font-display text-3xl tracking-tight sm:text-4xl">
-          Rank is for this room, tonight.
+          Three doors. One paw.
         </h2>
         <ol className="mt-10 grid gap-4 sm:grid-cols-2">
           {BEATS.map((beat) => (
@@ -92,8 +91,8 @@ export default function Home() {
           Put a Paw where people already pause.
         </h2>
         <p className="mt-4 max-w-lg text-lg leading-relaxed text-paper/70">
-          Hosts keep the physical mark. The game is the product. Players rank
-          at your venue for that night.
+          Hosts keep the physical mark. The room talks. The games rank. Players
+          are yours for that night.
         </p>
         <Link
           href="/for-hosts"

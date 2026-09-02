@@ -7,8 +7,8 @@ export default function TermsPage() {
         <PublicHeading kicker="POLICY" title="Terms" />
         <div className="public-prose mt-8">
           <p>
-            BearGo is a daily local challenge. Rank is entertainment. It is
-            separate from any sponsored or affiliate offer.
+            BearGo is a venue night: a room and two games. Rank is
+            entertainment. It is separate from any sponsored or affiliate offer.
           </p>
           <p>
             After gameplay, BearGo may show an optional affiliate or sponsored

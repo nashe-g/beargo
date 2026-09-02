@@ -35,6 +35,8 @@ export const FEED_REPORT_HIDE_WINDOW_MS = 20 * 60 * 1000;
 export const AFFILIATE_ROOM_PLACEMENT = "room_thread";
 export const FEED_NEARBY_MILES = 3;
 export const FEED_NEARBY_LIMIT = 12;
+/** Distinct in-bar devices in this window count as “here”. */
+export const FEED_HERE_WINDOW_MS = 4 * 60 * 60 * 1000;
 
 /** The wobble game. This is BearGo now. */
 export const STACK_ENABLED = true;

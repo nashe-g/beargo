@@ -10,7 +10,7 @@ const ROLES = [
   {
     href: "/host",
     label: "Host",
-    note: "Today’s games, your Paw, and nearby offers.",
+    note: "Tonight’s room, your Paw, and the boards.",
   },
   {
     href: "/merchant",

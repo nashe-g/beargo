@@ -30,7 +30,7 @@ export function PublicShell({ children }: { children: ReactNode }) {
               </Link>
             ))}
             <Link
-              href="/p/demo"
+              href="/p/demo?from=web"
               className="rounded-full bg-honey px-3.5 py-1.5 text-sm font-semibold text-ink shadow-[0_6px_16px_rgba(232,163,26,0.28)] transition-transform hover:-translate-y-px"
             >
               Play
@@ -49,8 +49,7 @@ export function PublicShell({ children }: { children: ReactNode }) {
               <span className="font-display text-lg">BearGo</span>
             </Link>
             <p className="mt-2 max-w-xs text-sm leading-relaxed text-ink-soft">
-              A daily challenge at real places. Scan the paw. No account to
-              play.
+              Tonight at the bar. Scan the paw. No account to play.
             </p>
           </div>
           <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-ink-soft">
@@ -63,8 +62,8 @@ export function PublicShell({ children }: { children: ReactNode }) {
             <Link href="/host-terms" className="hover:text-ink">
               Host terms
             </Link>
-            <Link href="/p/demo" className="hover:text-ink">
-              Play the demo
+            <Link href="/p/demo?from=web" className="hover:text-ink">
+              Try the demo
             </Link>
           </div>
         </div>

@@ -8,10 +8,10 @@ export default function ForHostsPage() {
         <div>
           <PublicHeading kicker="VENUES" title="For hosts" />
           <div className="public-prose mt-6 max-w-xl">
-            <p>Put a Paw where people already pause. The game is the product.</p>
+            <p>Put a Paw where people already pause. The room and the games are the product.</p>
             <p>
               BearGo may display optional affiliate or sponsored offers after
-              gameplay. These offers are separate from the trivia experience
+              a game. These offers are separate from the room and from rank,
               and do not affect a player’s result. Hosts are not advertisers or
               sub-affiliates just because the QR is in the room.
             </p>

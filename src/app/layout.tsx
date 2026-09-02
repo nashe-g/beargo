@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     template: `%s · ${APP_NAME}`,
   },
   description:
-    "Scan the paw. Don’t drop the drinks. Then beat the crowd in today’s trivia. One run a night — rank is this room, tonight.",
+    "Scan the paw. Talk to the room, test the tray, or beat tonight’s trivia. Rank is this bar, tonight.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

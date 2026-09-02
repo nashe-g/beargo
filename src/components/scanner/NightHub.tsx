@@ -8,6 +8,7 @@ import type { NightView } from "@/lib/feed-types";
 import { pulseLine } from "@/lib/feed-pulse";
 import type { PawRecord } from "@/lib/paws";
 import { playPath, resultPath, type PlayKind } from "@/lib/play-kind";
+import { keepFromParam } from "@/lib/play-source";
 import { formatWobble } from "@/lib/stack";
 
 export type HubPlayed = {
@@ -19,7 +20,7 @@ export type HubPlayed = {
 } | null;
 
 function roomHref(token: string, from?: string | null) {
-  return from === "share" ? `/p/${token}/room?from=share` : `/p/${token}/room`;
+  return `/p/${token}/room${keepFromParam(from)}`;
 }
 
 function peopleLine(count: number) {

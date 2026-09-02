@@ -32,7 +32,7 @@ export async function generateMetadata({
   const title = shareCardTitle(paw.hostDisplayName, stats);
   const description = stats
     ? shareCardText(paw.hostDisplayName, stats)
-    : `Don’t drop the drinks at ${paw.hostDisplayName}.`;
+    : `Tonight at ${paw.hostDisplayName}.`;
   const image = stats
     ? `${CANONICAL_ORIGIN}${shareCardImagePath(pawToken, stats)}`
     : `${CANONICAL_ORIGIN}/p/${encodeURIComponent(pawToken)}/s/card`;

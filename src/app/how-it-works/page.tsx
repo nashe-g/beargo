@@ -7,29 +7,30 @@ const STEPS = [
     body: "A printed mark at the venue. No app install.",
   },
   {
-    title: "Don’t drop the drinks.",
-    body: "The stack leans on its own. Tap the side it’s falling toward. Three carries — 3, 4, then 5 glasses. Everyone at the venue plays the same night.",
+    title: "Talk to the room.",
+    body: "Read what people here are saying. Post if you scanned at the bar.",
+  },
+  {
+    title: "Test your table.",
+    body: "Keep a leaning tray of drinks up. Three carries. Its own leaderboard.",
   },
   {
     title: "Beat the room.",
-    body: "You kept the drinks up. Now beat the crowd in today’s trivia. 3 curious questions. Same ones as everyone here tonight.",
+    body: "3 curious questions. Same ones as everyone here tonight. Its own board.",
   },
   {
-    title: "Your rank.",
-    body: "Put a name on the board. One ranked run a night per phone.",
-  },
-  {
-    title: "Optional offers after the game.",
-    body: "After you see your result, BearGo may show a sponsored offer from a third party.",
+    title: "Optional offers after a game.",
+    body: "After you see rank, BearGo may show a sponsored offer from a third party.",
   },
 ];
 
 export default function HowItWorksPage() {
   return (
     <PublicShell>
-      <PublicHeading kicker="THE GAME" title="How it works" />
+      <PublicHeading kicker="THE NIGHT" title="How it works" />
       <p className="mt-5 max-w-xl text-lg leading-relaxed text-ink-soft">
-        No account to play. Tray, then trivia. Rank is this room, tonight.
+        No account. Scan, then pick: the room, the tray, or trivia. Each game
+        ranks in this bar, tonight. One ranked run per game per phone.
       </p>
       <ol className="mt-10 grid gap-4 sm:grid-cols-2">
         {STEPS.map((step, index) => (
@@ -48,10 +49,10 @@ export default function HowItWorksPage() {
         ))}
       </ol>
       <Link
-        href="/p/demo"
+        href="/p/demo?from=web"
         className="btn-honey mt-10 inline-flex h-14 items-center justify-center rounded-full bg-honey px-8 text-lg font-semibold text-ink"
       >
-        Play the demo
+        Try the demo
       </Link>
     </PublicShell>
   );

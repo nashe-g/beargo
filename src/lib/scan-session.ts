@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { cookies } from "next/headers";
 import type { CookieWriter } from "@/lib/http-cookies";
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { scanSessions } from "@/db/schema";
-import { localDateInZone } from "@/lib/dates";
+import { localDateInZone, serviceDayWindow } from "@/lib/dates";
 import type { PawRecord } from "@/lib/paws";
 import {
   ENTRY_COOKIE,
@@ -15,6 +15,22 @@ import {
 
 export const DEVICE_COOKIE = "beargo_device";
 export const SCAN_COOKIE = "beargo_scan";
+
+const DEVICE_HINT =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export function parseDeviceHint(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const value = raw.trim().toLowerCase();
+  return DEVICE_HINT.test(value) ? value : null;
+}
+
+export function isLikelyBot(userAgent: string | null | undefined) {
+  if (!userAgent) return false;
+  return /bot|crawler|spider|preview|facebookexternalhit|slack|whatsapp|telegram|discord|embedly|linkedin|pinterest|googlebot|bingbot|applebot|yandex|baidu|duckduck|semrush|ahrefs|bytespider|petalbot|vercel-screenshot|headless/i.test(
+    userAgent,
+  );
+}
 
 export type SessionStamp =
   | "scanned"
@@ -66,11 +82,14 @@ async function cookieWriterFromHeaders(): Promise<CookieWriter> {
   };
 }
 
-export async function ensureDeviceCookie(writer?: CookieWriter) {
+export async function ensureDeviceCookie(
+  writer?: CookieWriter,
+  hint?: string | null,
+) {
   const jar = writer ?? (await cookieWriterFromHeaders());
   let value = jar.get(DEVICE_COOKIE);
   if (!value) {
-    value = randomUUID();
+    value = parseDeviceHint(hint) ?? randomUUID();
     jar.set(DEVICE_COOKIE, value, cookieOptions(60 * 60 * 24 * 400));
   }
   return value;
@@ -82,11 +101,12 @@ export async function ensureScanSession(
     promotionId?: string | null;
     challengeId?: string | null;
     entrySource?: PlaySource | null;
+    deviceHint?: string | null;
   } = {},
   writer?: CookieWriter,
 ) {
   const jar = writer ?? (await cookieWriterFromHeaders());
-  const deviceKey = await ensureDeviceCookie(jar);
+  const deviceKey = await ensureDeviceCookie(jar, extras.deviceHint);
   await ensureEntrySourceColumn();
   let sessionId = jar.get(SCAN_COOKIE);
   const localDate = localDateInZone(paw.timezone);
@@ -97,6 +117,8 @@ export async function ensureScanSession(
 
   if (!jar.get(ENTRY_COOKIE)) {
     jar.set(ENTRY_COOKIE, entrySource, cookieOptions(60 * 60 * 24));
+  } else if (entrySource === "in_bar") {
+    jar.set(ENTRY_COOKIE, "in_bar", cookieOptions(60 * 60 * 24));
   }
 
   if (sessionId) {
@@ -114,12 +136,34 @@ export async function ensureScanSession(
           .update(scanSessions)
           .set({ entrySource: next })
           .where(eq(scanSessions.id, existing.id));
-        if (upgradeToBar) {
-          jar.set(ENTRY_COOKIE, "in_bar", cookieOptions(60 * 60 * 24));
-        }
       }
       return existing;
     }
+  }
+
+  const night = serviceDayWindow(paw.timezone);
+  const [prior] = await db()
+    .select()
+    .from(scanSessions)
+    .where(
+      and(
+        eq(scanSessions.pawToken, paw.token),
+        eq(scanSessions.deviceKey, deviceKey),
+        gte(scanSessions.scannedAt, night.start),
+      ),
+    )
+    .orderBy(desc(scanSessions.scannedAt))
+    .limit(1);
+  if (prior) {
+    if (extras.entrySource === "in_bar" && prior.entrySource !== "in_bar") {
+      await db()
+        .update(scanSessions)
+        .set({ entrySource: "in_bar" })
+        .where(eq(scanSessions.id, prior.id));
+      prior.entrySource = "in_bar";
+    }
+    jar.set(SCAN_COOKIE, prior.id, cookieOptions(60 * 60 * 24));
+    return prior;
   }
 
   sessionId = randomUUID();

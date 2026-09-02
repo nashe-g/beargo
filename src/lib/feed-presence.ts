@@ -2,6 +2,7 @@ import { and, eq, gte, lt } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { db } from "@/db";
 import { scanSessions } from "@/db/schema";
+import { FEED_HERE_WINDOW_MS } from "@/lib/config";
 import { serviceDayWindow } from "@/lib/dates";
 import type { PawRecord } from "@/lib/paws";
 import { ENTRY_COOKIE, type PlaySource } from "@/lib/play-source";
@@ -32,7 +33,8 @@ export async function canPostToRoom(paw: PawRecord) {
 export async function peopleHereTonight(paw: PawRecord) {
   await ensureEntrySourceColumn();
   const window = serviceDayWindow(paw.timezone);
-  const live = paw.token !== "demo";
+  const floor = new Date(Date.now() - FEED_HERE_WINDOW_MS);
+  const start = floor > window.start ? floor : window.start;
   const rows = await db()
     .select({
       deviceKey: scanSessions.deviceKey,
@@ -42,13 +44,13 @@ export async function peopleHereTonight(paw: PawRecord) {
     .where(
       and(
         eq(scanSessions.hostId, paw.hostId),
-        gte(scanSessions.scannedAt, window.start),
+        gte(scanSessions.scannedAt, start),
         lt(scanSessions.scannedAt, window.end),
       ),
     );
   const keys = new Set(
     rows
-      .filter((row) => (live ? row.entrySource === "in_bar" : true))
+      .filter((row) => row.entrySource === "in_bar")
       .map((row) => row.deviceKey)
       .filter((key): key is string => Boolean(key)),
   );

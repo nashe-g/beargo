@@ -7,13 +7,13 @@ export default function PrivacyPage() {
         <PublicHeading kicker="POLICY" title="Privacy" />
         <div className="public-prose mt-8">
           <p>
-            Playing the daily challenge does not require an account or personal
-            details. Rank is local to the venue and the day.
+            Playing at a venue does not require an account or personal
+            details. Rank is local to the bar and the night.
           </p>
           <p>
-            BearGo records that a game was played at a venue: the paw token,
-            host, challenge, score, and timing needed to rank that day. We use
-            this to run the board and understand how the game is used. We do
+            BearGo records that someone scanned or played at a venue: the paw
+            token, host, challenge, score, and timing needed to rank that
+            night. We use this to run the room and the boards. We do
             not ask for your name, email, or phone to play.
           </p>
           <p>
