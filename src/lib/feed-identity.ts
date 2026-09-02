@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { feedIdentities } from "@/db/schema";
 import { numberedFeedHandle, randomFeedHandle } from "@/lib/feed-handles";
-import { ensureDeviceCookie } from "@/lib/scan-session";
+import { deviceKeyFromCookies, ensureDeviceCookie } from "@/lib/scan-session";
 import { ensureFeedTables } from "@/lib/feed-schema";
 
 export type FeedIdentity = {
@@ -26,6 +26,20 @@ function mapIdentity(row: typeof feedIdentities.$inferSelect): FeedIdentity {
   };
 }
 
+/** Read-only. Safe in a Server Component. Does not mint a cookie. */
+export async function getFeedIdentityIfPresent(): Promise<FeedIdentity | null> {
+  await ensureFeedTables();
+  const deviceKey = await deviceKeyFromCookies();
+  if (!deviceKey) return null;
+  const [existing] = await db()
+    .select()
+    .from(feedIdentities)
+    .where(eq(feedIdentities.deviceKey, deviceKey))
+    .limit(1);
+  return existing ? mapIdentity(existing) : null;
+}
+
+/** Route handlers only. Sets the device cookie if it is missing. */
 export async function getOrCreateFeedIdentity(): Promise<FeedIdentity> {
   await ensureFeedTables();
   const deviceKey = await ensureDeviceCookie();

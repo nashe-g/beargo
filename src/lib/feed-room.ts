@@ -1,5 +1,8 @@
 import { selectAffiliateCard, type AffiliateCardView } from "@/lib/affiliate";
-import { getOrCreateFeedIdentity } from "@/lib/feed-identity";
+import {
+  getFeedIdentityIfPresent,
+  type FeedIdentity,
+} from "@/lib/feed-identity";
 import {
   canPostToRoom,
   peopleHereTonight,
@@ -19,12 +22,16 @@ export type RoomSnapshot = {
   source: PlaySource;
 };
 
-export async function roomSnapshot(paw: PawRecord): Promise<RoomSnapshot> {
-  const identity = await getOrCreateFeedIdentity();
+export async function roomSnapshot(
+  paw: PawRecord,
+  identity?: FeedIdentity | null,
+): Promise<RoomSnapshot> {
+  const resolved =
+    identity === undefined ? await getFeedIdentityIfPresent() : identity;
   const [canPost, peopleHere, posts, source] = await Promise.all([
     canPostToRoom(paw),
     peopleHereTonight(paw),
-    listRoomPosts(paw, identity.id),
+    listRoomPosts(paw, resolved?.id ?? null),
     roomPlaySource(paw),
   ]);
   let sponsor: AffiliateCardView | null = null;
@@ -34,7 +41,7 @@ export async function roomSnapshot(paw: PawRecord): Promise<RoomSnapshot> {
     sponsor = null;
   }
   return {
-    handle: identity.publicHandle,
+    handle: resolved?.publicHandle ?? "",
     canPost,
     peopleHere,
     posts,

@@ -5,7 +5,11 @@ import { scanSessions } from "@/db/schema";
 import { serviceDayWindow } from "@/lib/dates";
 import type { PawRecord } from "@/lib/paws";
 import { ENTRY_COOKIE, type PlaySource } from "@/lib/play-source";
-import { SCAN_COOKIE, playSourceFromSession } from "@/lib/scan-session";
+import {
+  SCAN_COOKIE,
+  ensureEntrySourceColumn,
+  playSourceFromSession,
+} from "@/lib/scan-session";
 
 export function canPostWithSource(paw: PawRecord, source: PlaySource) {
   if (paw.token === "demo") return true;
@@ -26,6 +30,7 @@ export async function canPostToRoom(paw: PawRecord) {
 }
 
 export async function peopleHereTonight(paw: PawRecord) {
+  await ensureEntrySourceColumn();
   const window = serviceDayWindow(paw.timezone);
   const live = paw.token !== "demo";
   const rows = await db()

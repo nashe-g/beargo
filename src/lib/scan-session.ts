@@ -27,7 +27,8 @@ export type SessionStamp =
 
 let entrySourceColumnReady = false;
 
-async function ensureEntrySourceColumn() {
+/** Lazy migrate. Safe from RSC. Do not call ensureScanSession from a page. */
+export async function ensureEntrySourceColumn() {
   if (entrySourceColumnReady) return;
   await db().execute(
     sql`ALTER TABLE scan_sessions ADD COLUMN IF NOT EXISTS entry_source text`,

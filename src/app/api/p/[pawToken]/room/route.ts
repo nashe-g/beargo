@@ -1,4 +1,5 @@
 import { FEED_ROOM_ENABLED } from "@/lib/config";
+import { getOrCreateFeedIdentity } from "@/lib/feed-identity";
 import { roomSnapshot } from "@/lib/feed-room";
 import { getPaw } from "@/lib/paws";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
@@ -17,6 +18,7 @@ export async function GET(
   }
   const { pawToken } = await context.params;
   const paw = await getPaw(pawToken);
-  const snapshot = await roomSnapshot(paw);
+  const identity = await getOrCreateFeedIdentity();
+  const snapshot = await roomSnapshot(paw, identity);
   return Response.json(snapshot);
 }

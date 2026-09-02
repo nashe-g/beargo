@@ -1,11 +1,7 @@
 import { NightHub } from "@/components/scanner/NightHub";
 import { peopleHereTonight } from "@/lib/feed-presence";
 import { getPaw } from "@/lib/paws";
-import { inferPlaySource } from "@/lib/play-source";
-import {
-  deviceKeyFromCookies,
-  ensureScanSession,
-} from "@/lib/scan-session";
+import { deviceKeyFromCookies } from "@/lib/scan-session";
 import { rankedPlayForDevice } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
@@ -19,10 +15,6 @@ export default async function PawIntroPage({
   const fromRaw = Array.isArray(query.from) ? query.from[0] : query.from;
   const from = fromRaw ?? null;
   const paw = await getPaw(pawToken);
-  await ensureScanSession(
-    paw,
-    from != null ? { entrySource: inferPlaySource(paw.token, from) } : {},
-  );
   const deviceKey = paw.token === "demo" ? null : await deviceKeyFromCookies();
   const [stack, trivia, peopleHere] = await Promise.all([
     deviceKey ? rankedPlayForDevice(paw, deviceKey, "stack") : null,

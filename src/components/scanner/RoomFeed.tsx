@@ -63,11 +63,14 @@ export function RoomFeed({
   }, [paw.token]);
 
   useEffect(() => {
+    void refresh();
+    const retry = window.setTimeout(() => void refresh(), 600);
     const poll = setInterval(() => {
       void refresh();
     }, 8000);
     const clock = setInterval(() => setNow(Date.now()), 30_000);
     return () => {
+      window.clearTimeout(retry);
       clearInterval(poll);
       clearInterval(clock);
     };
