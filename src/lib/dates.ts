@@ -43,6 +43,62 @@ export function formatWeekday(dateStr: string) {
   }).format(new Date(Date.UTC(year, month - 1, day)));
 }
 
+function zonedParts(timeZone: string, at: Date) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(at);
+  return Object.fromEntries(parts.map((part) => [part.type, part.value]));
+}
+
+/** UTC instant when `timeZone` local clock reads dateStr at hour:minute. */
+export function zonedLocalToUtc(
+  timeZone: string,
+  dateStr: string,
+  hour: number,
+  minute = 0,
+) {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  let utc = Date.UTC(year, month - 1, day, hour, minute, 0);
+  for (let i = 0; i < 12; i += 1) {
+    const got = zonedParts(timeZone, new Date(utc));
+    const actual = Date.UTC(
+      Number(got.year),
+      Number(got.month) - 1,
+      Number(got.day),
+      Number(got.hour),
+      Number(got.minute),
+      Number(got.second),
+    );
+    const target = Date.UTC(year, month - 1, day, hour, minute, 0);
+    const delta = target - actual;
+    if (Math.abs(delta) < 500) return new Date(utc);
+    utc += delta;
+  }
+  return new Date(utc);
+}
+
+export function serviceDayWindow(
+  timeZone: string,
+  at = new Date(),
+  boundaryHour = 6,
+) {
+  const localDate = serviceDayInZone(timeZone, at, boundaryHour);
+  const start = zonedLocalToUtc(timeZone, localDate, boundaryHour);
+  const end = zonedLocalToUtc(
+    timeZone,
+    addCalendarDays(localDate, 1),
+    boundaryHour,
+  );
+  return { localDate, start, end };
+}
+
 export function weekdayLongInZone(timeZone: string, at = new Date()) {
   return new Intl.DateTimeFormat("en-US", {
     weekday: "long",

@@ -23,6 +23,7 @@ export async function GET(
       offerId: resolved.offer.id,
       advertiserId: resolved.advertiser.id,
       hostId,
+      placement: url.searchParams.get("placement") ?? undefined,
     });
   } catch {
     // Navigation must not wait on analytics.

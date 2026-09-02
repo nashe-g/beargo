@@ -11,11 +11,28 @@ export const LEGACY_LOCAL_COUPON_PUBLIC_ENABLED = PLAYER_OFFERS_ENABLED;
 export const AFFILIATE_POSTGAME_ENABLED = true;
 
 /**
- * Public night: Scan → Tray → Hands score → Head (trivia) → Combined
- * rank → Sponsor. Pour stays archived.
+ * Public night (until the hub ships): Scan → Tray → Trivia → Combined
+ * rank → Sponsor. Room is live at /p/{token}/room. Pour stays archived.
  */
 export const TRIVIA_ENABLED = true;
 export const POUR_ENABLED = false;
+
+/** Venue room behind a paw scan. Hub (three doors) and split boards come next. */
+export const FEED_ROOM_ENABLED = true;
+/**
+ * Run omni-moderation on every post and store what full policy would do.
+ * Enforce PII + high-confidence threats (+ sexual/minors) even while this is on.
+ */
+export const FEED_MODERATION_SHADOW = true;
+export const FEED_POST_MAX = 400;
+export const FEED_POSTS_PER_HOUR = 5;
+export const FEED_POSTS_PER_HOUR_NEW = 3;
+export const FEED_REPLIES_PER_HOUR = 20;
+export const FEED_BURST_LIMIT = 3;
+export const FEED_BURST_WINDOW_MS = 2 * 60 * 1000;
+export const FEED_REPORT_HIDE_COUNT = 3;
+export const FEED_REPORT_HIDE_WINDOW_MS = 20 * 60 * 1000;
+export const AFFILIATE_ROOM_PLACEMENT = "room_thread";
 
 /** The wobble game. This is BearGo now. */
 export const STACK_ENABLED = true;

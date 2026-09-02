@@ -3,7 +3,13 @@
 import { useEffect, useRef } from "react";
 import type { AffiliateCardView } from "@/lib/affiliate";
 
-export function AffiliateCard({ card }: { card: AffiliateCardView }) {
+export function AffiliateCard({
+  card,
+  placement,
+}: {
+  card: AffiliateCardView;
+  placement?: string;
+}) {
   const recorded = useRef(false);
 
   useEffect(() => {
@@ -16,12 +22,15 @@ export function AffiliateCard({ card }: { card: AffiliateCardView }) {
         offerId: card.offerId,
         advertiserId: card.advertiserId,
         hostId: card.hostId,
+        placement,
       }),
       keepalive: true,
     }).catch(() => undefined);
-  }, [card.offerId, card.advertiserId, card.hostId]);
+  }, [card.offerId, card.advertiserId, card.hostId, placement]);
 
-  const href = `/api/affiliate/go/${encodeURIComponent(card.offerId)}?host=${encodeURIComponent(card.hostId)}`;
+  const params = new URLSearchParams({ host: card.hostId });
+  if (placement) params.set("placement", placement);
+  const href = `/api/affiliate/go/${encodeURIComponent(card.offerId)}?${params}`;
 
   return (
     <aside className="w-full rounded-[1.5rem] bg-paper px-5 py-5 text-left text-ink">

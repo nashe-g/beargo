@@ -396,3 +396,101 @@ export const auditLogs = pgTable("audit_logs", {
   payload: jsonb("payload").$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const feedIdentities = pgTable(
+  "feed_identities",
+  {
+    id: text("id").primaryKey(),
+    deviceKey: text("device_key").notNull(),
+    publicHandle: text("public_handle").notNull(),
+    trustLevel: text("trust_level").notNull().default("new"),
+    postingStatus: text("posting_status").notNull().default("ok"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("feed_identities_device_key").on(table.deviceKey),
+    uniqueIndex("feed_identities_public_handle").on(table.publicHandle),
+  ],
+);
+
+export const feedPosts = pgTable("feed_posts", {
+  id: text("id").primaryKey(),
+  hostId: text("host_id").notNull(),
+  pawToken: text("paw_token").notNull(),
+  identityId: text("identity_id")
+    .notNull()
+    .references(() => feedIdentities.id),
+  handleSnapshot: text("handle_snapshot").notNull(),
+  body: text("body").notNull(),
+  parentPostId: text("parent_post_id"),
+  status: text("status").notNull().default("published"),
+  upvoteCount: integer("upvote_count").notNull().default(0),
+  downvoteCount: integer("downvote_count").notNull().default(0),
+  replyCount: integer("reply_count").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const feedModerationResults = pgTable("feed_moderation_results", {
+  id: text("id").primaryKey(),
+  postId: text("post_id")
+    .notNull()
+    .references(() => feedPosts.id),
+  piiDetected: boolean("pii_detected").notNull().default(false),
+  piiTypes: jsonb("pii_types").$type<string[]>().notNull().default([]),
+  omniFlagged: boolean("omni_flagged"),
+  omniCategoryScoresJson: jsonb("omni_category_scores_json").$type<
+    Record<string, number>
+  >(),
+  decision: text("decision").notNull(),
+  decisionReason: text("decision_reason").notNull(),
+  wouldDecision: text("would_decision"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const feedVotes = pgTable(
+  "feed_votes",
+  {
+    id: text("id").primaryKey(),
+    postId: text("post_id")
+      .notNull()
+      .references(() => feedPosts.id),
+    identityId: text("identity_id")
+      .notNull()
+      .references(() => feedIdentities.id),
+    voteType: text("vote_type").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("feed_votes_post_identity").on(table.postId, table.identityId)],
+);
+
+export const feedReports = pgTable(
+  "feed_reports",
+  {
+    id: text("id").primaryKey(),
+    postId: text("post_id")
+      .notNull()
+      .references(() => feedPosts.id),
+    reporterIdentityId: text("reporter_identity_id")
+      .notNull()
+      .references(() => feedIdentities.id),
+    reason: text("reason").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("feed_reports_post_reporter").on(table.postId, table.reporterIdentityId),
+  ],
+);
+
+export const feedEnforcementEvents = pgTable("feed_enforcement_events", {
+  id: text("id").primaryKey(),
+  identityId: text("identity_id")
+    .notNull()
+    .references(() => feedIdentities.id),
+  postId: text("post_id"),
+  eventType: text("event_type").notNull(),
+  reason: text("reason").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }),
+});

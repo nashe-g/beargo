@@ -313,12 +313,13 @@ export async function recordAffiliateEvent(input: {
   advertiserId: string;
   hostId?: string | null;
   country?: string;
+  placement?: string;
 }) {
   await ensureAffiliateTables();
   await db().insert(affiliateEvents).values({
     id: randomUUID(),
     kind: input.kind,
-    placement: AFFILIATE_PLACEMENT,
+    placement: input.placement || AFFILIATE_PLACEMENT,
     offerId: input.offerId,
     advertiserId: input.advertiserId,
     hostId: input.hostId ?? null,

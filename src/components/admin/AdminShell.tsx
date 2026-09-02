@@ -8,6 +8,7 @@ const LINKS = [
   { href: "/admin/paws", label: "Paws" },
   { href: "/admin/challenges", label: "Challenges" },
   { href: "/admin/affiliate", label: "Affiliate" },
+  { href: "/admin/room", label: "Room" },
   { href: "/admin/promotions", label: "Offers" },
   { href: "/admin/players", label: "Players" },
   { href: "/admin/applications", label: "Apply" },
@@ -83,6 +84,8 @@ export function StatusPill({ status }: { status: string }) {
         ? "bg-ink/10 text-ink-soft"
         : status === "pending"
           ? "bg-ink/10 text-ink-soft"
+        : status === "hidden" || status === "blocked"
+          ? "bg-clay/15 text-clay"
         : status === "duplicate" ||
             status === "ended" ||
             status === "cancelled" ||

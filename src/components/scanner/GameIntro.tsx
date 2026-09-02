@@ -9,6 +9,10 @@ import { formatWobble } from "@/lib/stack";
  * The micro-intro. Readable in two seconds; a person watching over a
  * shoulder should understand the game without reading anything at all.
  */
+function roomHref(token: string, from?: string | null) {
+  return from === "share" ? `/p/${token}/room?from=share` : `/p/${token}/room`;
+}
+
 export function GameIntro({
   paw,
   played,
@@ -43,6 +47,12 @@ export function GameIntro({
           >
             See tonight’s rank
           </Link>
+          <Link
+            href={roomHref(paw.token, from)}
+            className="mt-3 flex h-12 w-full max-w-[20rem] items-center justify-center text-sm text-paper/60"
+          >
+            Talk to the room
+          </Link>
         </div>
       </ScannerShell>
     );
@@ -71,6 +81,12 @@ export function GameIntro({
             className="btn-honey flex h-14 w-full items-center justify-center rounded-full bg-honey text-lg font-semibold tracking-[0.14em] text-ink"
           >
             Start
+          </Link>
+          <Link
+            href={roomHref(paw.token, from)}
+            className="flex h-12 w-full items-center justify-center text-sm text-paper/60"
+          >
+            Talk to the room
           </Link>
           <p className="text-sm text-paper/50">
             One run a night. Rank is this room, tonight.
