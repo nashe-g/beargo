@@ -1,5 +1,5 @@
 import { NightHub } from "@/components/scanner/NightHub";
-import { peopleHereTonight } from "@/lib/feed-presence";
+import { nightViewFor } from "@/lib/feed-night";
 import { getPaw } from "@/lib/paws";
 import { deviceKeyFromCookies } from "@/lib/scan-session";
 import { rankedPlayForDevice } from "@/lib/store";
@@ -16,16 +16,17 @@ export default async function PawIntroPage({
   const from = fromRaw ?? null;
   const paw = await getPaw(pawToken);
   const deviceKey = paw.token === "demo" ? null : await deviceKeyFromCookies();
-  const [stack, trivia, peopleHere] = await Promise.all([
+  const [stack, trivia, night] = await Promise.all([
     deviceKey ? rankedPlayForDevice(paw, deviceKey, "stack") : null,
     deviceKey ? rankedPlayForDevice(paw, deviceKey, "trivia") : null,
-    peopleHereTonight(paw),
+    nightViewFor(paw),
   ]);
   return (
     <NightHub
       paw={paw}
       from={from}
-      peopleHere={peopleHere}
+      peopleHere={night.peopleHere}
+      pulse={night}
       stack={
         stack
           ? {

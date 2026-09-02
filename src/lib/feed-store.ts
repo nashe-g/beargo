@@ -6,6 +6,7 @@ import {
   feedModerationResults,
   feedPosts,
   feedReports,
+  feedVotes,
 } from "@/db/schema";
 import {
   FEED_BURST_LIMIT,
@@ -62,6 +63,7 @@ function mapView(
   row: typeof feedPosts.$inferSelect,
   identityId: string | null,
   replies: FeedPostView[] = [],
+  myVote: "up" | "down" | null = null,
 ): FeedPostView {
   return {
     id: row.id,
@@ -71,8 +73,28 @@ function mapView(
     replyCount: row.replyCount,
     parentId: row.parentPostId,
     mine: Boolean(identityId) && row.identityId === identityId,
+    upvoteCount: row.upvoteCount,
+    downvoteCount: row.downvoteCount,
+    myVote,
     replies,
   };
+}
+
+async function votesByPost(identityId: string | null, ids: string[]) {
+  const mine = new Map<string, "up" | "down">();
+  if (!identityId || ids.length === 0) return mine;
+  const rows = await db()
+    .select()
+    .from(feedVotes)
+    .where(
+      and(eq(feedVotes.identityId, identityId), inArray(feedVotes.postId, ids)),
+    );
+  for (const row of rows) {
+    if (row.voteType === "up" || row.voteType === "down") {
+      mine.set(row.postId, row.voteType);
+    }
+  }
+  return mine;
 }
 
 async function activeCooldown(identityId: string) {
@@ -207,11 +229,17 @@ export async function listRoomPosts(
     byParent.set(row.parentPostId, list);
   }
 
+  const replyIds = replyRows.map((row) => row.id);
+  const mine = await votesByPost(identityId, [...ids, ...replyIds]);
+
   return tops.map((row) =>
     mapView(
       row,
       identityId,
-      (byParent.get(row.id) ?? []).map((reply) => mapView(reply, identityId)),
+      (byParent.get(row.id) ?? []).map((reply) =>
+        mapView(reply, identityId, [], mine.get(reply.id) ?? null),
+      ),
+      mine.get(row.id) ?? null,
     ),
   );
 }
@@ -445,6 +473,86 @@ export async function reportRoomPost(input: {
   }
 
   return { ok: true as const };
+}
+
+export async function voteRoomPost(input: {
+  paw: PawRecord;
+  postId: string;
+  vote: unknown;
+}) {
+  await ensureFeedTables();
+  const identity = await getOrCreateFeedIdentity();
+  const vote = input.vote === "up" || input.vote === "down" ? input.vote : null;
+  if (!vote) {
+    return { ok: false as const, status: 400, error: "Up or down." };
+  }
+  const [post] = await db()
+    .select()
+    .from(feedPosts)
+    .where(eq(feedPosts.id, input.postId))
+    .limit(1);
+  if (!post || post.hostId !== input.paw.hostId || post.status !== "published") {
+    return { ok: false as const, status: 404, error: "Not found." };
+  }
+
+  const [existing] = await db()
+    .select()
+    .from(feedVotes)
+    .where(
+      and(eq(feedVotes.postId, post.id), eq(feedVotes.identityId, identity.id)),
+    )
+    .limit(1);
+
+  if (existing?.voteType === vote) {
+    await db().delete(feedVotes).where(eq(feedVotes.id, existing.id));
+    await db()
+      .update(feedPosts)
+      .set(
+        vote === "up"
+          ? { upvoteCount: sql`GREATEST(${feedPosts.upvoteCount} - 1, 0)` }
+          : { downvoteCount: sql`GREATEST(${feedPosts.downvoteCount} - 1, 0)` },
+      )
+      .where(eq(feedPosts.id, post.id));
+    return { ok: true as const, myVote: null as "up" | "down" | null };
+  }
+
+  if (existing) {
+    await db()
+      .update(feedVotes)
+      .set({ voteType: vote })
+      .where(eq(feedVotes.id, existing.id));
+    await db()
+      .update(feedPosts)
+      .set(
+        vote === "up"
+          ? {
+              upvoteCount: sql`${feedPosts.upvoteCount} + 1`,
+              downvoteCount: sql`GREATEST(${feedPosts.downvoteCount} - 1, 0)`,
+            }
+          : {
+              downvoteCount: sql`${feedPosts.downvoteCount} + 1`,
+              upvoteCount: sql`GREATEST(${feedPosts.upvoteCount} - 1, 0)`,
+            },
+      )
+      .where(eq(feedPosts.id, post.id));
+    return { ok: true as const, myVote: vote };
+  }
+
+  await db().insert(feedVotes).values({
+    id: randomUUID(),
+    postId: post.id,
+    identityId: identity.id,
+    voteType: vote,
+  });
+  await db()
+    .update(feedPosts)
+    .set(
+      vote === "up"
+        ? { upvoteCount: sql`${feedPosts.upvoteCount} + 1` }
+        : { downvoteCount: sql`${feedPosts.downvoteCount} + 1` },
+    )
+    .where(eq(feedPosts.id, post.id));
+  return { ok: true as const, myVote: vote };
 }
 
 export async function listModeratedPosts(limit = 80) {

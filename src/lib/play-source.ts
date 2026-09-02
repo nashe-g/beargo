@@ -8,7 +8,7 @@ export function inferPlaySource(
   token: string,
   from?: string | null,
 ): PlaySource {
-  if (from === "share") return "share_link";
+  if (from === "share" || from === "nearby") return "share_link";
   if (token === "demo") return "web";
   return "in_bar";
 }

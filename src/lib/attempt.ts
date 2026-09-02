@@ -1,7 +1,4 @@
-import {
-  attemptNeedsHands,
-  nextPlayPath,
-} from "@/lib/play-rounds";
+import { attemptNeedsHands } from "@/lib/play-rounds";
 import type { PlayKind } from "@/lib/play-kind";
 
 export type AttemptAnswer = {
@@ -87,10 +84,6 @@ export function attemptNeedsSkill(attempt: AttemptSnapshot | null) {
 }
 
 export { attemptNeedsPour, attemptNeedsStack } from "@/lib/play-rounds";
-
-export function skillHref(token: string, attempt?: AttemptSnapshot | null) {
-  return nextPlayPath(token, attempt ?? null);
-}
 
 export function formatDuration(ms: number) {
   const seconds = ms / 1000;

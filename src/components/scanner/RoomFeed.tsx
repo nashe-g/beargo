@@ -6,7 +6,14 @@ import { AffiliateCard } from "@/components/scanner/AffiliateCard";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
 import { StampSession } from "@/components/scanner/StampSession";
 import { AFFILIATE_ROOM_PLACEMENT, FEED_POST_MAX } from "@/lib/config";
-import { FEED_REPORT_REASONS, type FeedPostView, type RoomSnapshot } from "@/lib/feed-types";
+import {
+  FEED_REPORT_REASONS,
+  type FeedPostView,
+  type NearbyPostView,
+  type RoomSnapshot,
+} from "@/lib/feed-types";
+import { pulseLine } from "@/lib/feed-pulse";
+import { formatDistance } from "@/lib/geo";
 import type { PawRecord } from "@/lib/paws";
 
 function peopleLine(count: number) {
@@ -132,19 +139,39 @@ export function RoomFeed({
     );
   }
 
+  async function vote(postId: string, choice: "up" | "down") {
+    await fetch(
+      `/api/p/${encodeURIComponent(paw.token)}/room/posts/${encodeURIComponent(postId)}/vote`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vote: choice }),
+      },
+    );
+    await refresh();
+  }
+
   const sponsorAt = room.posts.length >= 2 ? 2 : room.posts.length > 0 ? 1 : -1;
 
   return (
     <ScannerShell>
-      <StampSession pawToken={paw.token} event="scanned" from={from} />
+      <StampSession
+        pawToken={paw.token}
+        event="scanned"
+        from={from}
+        onStamped={refresh}
+      />
       <div className="flex min-h-0 flex-1 flex-col">
         <header className="shrink-0 pb-3 text-center">
           <p className="text-sm tracking-[0.22em] text-honey uppercase">
             {paw.hostDisplayName}
           </p>
           <h1 className="mt-2 font-display text-3xl">Talk to the room</h1>
-          <p className="mt-2 text-sm text-paper/70">{peopleLine(room.peopleHere)}</p>
-          <p className="mt-1 text-xs text-paper/45">You’re {room.handle}</p>
+          <p className="mt-2 text-sm text-paper/70">{pulseLine(room.pulse)}</p>
+          <p className="mt-1 text-sm text-paper/70">{peopleLine(room.peopleHere)}</p>
+          <p className="mt-1 text-xs text-paper/45">
+            {room.handle ? `You’re ${room.handle}` : "You’re in the room"}
+          </p>
         </header>
 
         <div
@@ -177,9 +204,13 @@ export function RoomFeed({
                 }}
                 onDelete={remove}
                 onReport={report}
+                onVote={vote}
               />
             </div>
           ))}
+          {room.nearby.length > 0 ? (
+            <NearbyStrip posts={room.nearby} now={now} />
+          ) : null}
         </div>
 
         <div className="shrink-0 pt-2">
@@ -241,6 +272,7 @@ function PostCard({
   onReply,
   onDelete,
   onReport,
+  onVote,
 }: {
   post: FeedPostView;
   now: number;
@@ -249,6 +281,7 @@ function PostCard({
   onReply: () => void;
   onDelete: (id: string) => void;
   onReport: (id: string, reason: string) => void;
+  onVote: (id: string, vote: "up" | "down") => void;
 }) {
   const open = menuId === post.id;
   return (
@@ -259,6 +292,7 @@ function PostCard({
       </div>
       <p className="mt-2 text-base leading-relaxed text-paper/90">{post.body}</p>
       <div className="mt-2 flex items-center gap-4 text-xs text-paper/50">
+        <VoteButtons post={post} onVote={onVote} />
         <button type="button" onClick={onReply}>
           Reply
         </button>
@@ -302,10 +336,77 @@ function PostCard({
               <p className="mt-1 text-sm leading-relaxed text-paper/80">
                 {reply.body}
               </p>
+              <div className="mt-1">
+                <VoteButtons post={reply} onVote={onVote} />
+              </div>
             </div>
           ))}
         </div>
       ) : null}
     </article>
+  );
+}
+
+function VoteButtons({
+  post,
+  onVote,
+}: {
+  post: FeedPostView;
+  onVote: (id: string, vote: "up" | "down") => void;
+}) {
+  return (
+    <span className="inline-flex items-center gap-2">
+      <button
+        type="button"
+        className={post.myVote === "up" ? "text-honey" : undefined}
+        onClick={() => onVote(post.id, "up")}
+      >
+        ↑ {post.upvoteCount}
+      </button>
+      <button
+        type="button"
+        className={post.myVote === "down" ? "text-honey" : undefined}
+        onClick={() => onVote(post.id, "down")}
+      >
+        ↓ {post.downvoteCount}
+      </button>
+    </span>
+  );
+}
+
+function NearbyStrip({ posts, now }: { posts: NearbyPostView[]; now: number }) {
+  return (
+    <section className="rounded-2xl border border-paper/10 px-4 py-3">
+      <p className="font-condensed text-xs tracking-[0.18em] text-honey uppercase">
+        Around here
+      </p>
+      <div className="mt-3 space-y-3">
+        {posts.map((post) => {
+          const href = post.pawToken
+            ? `/p/${encodeURIComponent(post.pawToken)}/room?from=nearby`
+            : null;
+          const inner = (
+            <>
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="text-sm font-semibold text-honey">{post.venue}</p>
+                <p className="text-xs text-paper/40">
+                  {formatDistance(post.miles)} · {timeAgo(post.createdAt, now)}
+                </p>
+              </div>
+              <p className="mt-1 text-sm text-paper/80">
+                {post.handle}: {post.body}
+              </p>
+            </>
+          );
+          return href ? (
+            <Link key={post.id} href={href} className="block text-left">
+              {inner}
+            </Link>
+          ) : (
+            <div key={post.id}>{inner}</div>
+          );
+        })}
+      </div>
+    </section>
   );
 }

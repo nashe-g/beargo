@@ -14,29 +14,6 @@ export type PlayRoundCopy = {
   cta: string;
 };
 
-export const PLAY_HOOK = {
-  title: "Who’s still got it?",
-  body: "Keep a leaning tray up. Then beat the crowd in today’s trivia. 3 curious questions. 1 leaderboard in this bar.",
-  dare: "Dare the person next to you to play too.",
-  cta: "Let’s go",
-} as const;
-
-/** After the tray. One game, two halves — not a leftover quiz. */
-export function headInviteTitle(lost: number, packed: number) {
-  if (packed > 0 && lost >= packed) return "You dropped the drinks.";
-  if (lost > 0) return "You kept some of the drinks up.";
-  return "You kept the drinks up.";
-}
-
-export const HEAD_INVITE = {
-  lines: [
-    "Now beat the crowd in today’s trivia.",
-    "3 curious questions.",
-    "1 leaderboard in this bar.",
-  ],
-  cta: "Ask me",
-} as const;
-
 export const PLAY_ROUNDS: Record<PlayRoundId, PlayRoundCopy> = {
   stack: {
     id: "stack",
@@ -89,14 +66,12 @@ export function attemptNeedsStack(attempt: AttemptSnapshot | null) {
 }
 
 export function attemptNeedsPour(attempt: AttemptSnapshot | null) {
-  if (!POUR_ENABLED || attemptNeedsStack(attempt) || !answersReady(attempt)) {
-    return false;
-  }
+  if (!POUR_ENABLED || !answersReady(attempt)) return false;
   return attempt?.pourFills == null && attempt?.pourMg == null;
 }
 
 export function attemptNeedsTrivia(attempt: AttemptSnapshot | null) {
-  if (!TRIVIA_ENABLED || attemptNeedsStack(attempt)) return false;
+  if (!TRIVIA_ENABLED) return false;
   return !answersReady(attempt);
 }
 
@@ -104,24 +79,12 @@ export function attemptNeedsHands(attempt: AttemptSnapshot | null) {
   return attemptNeedsPour(attempt) || attemptNeedsStack(attempt);
 }
 
-export function attemptNeedsBoardName(_attempt: AttemptSnapshot | null) {
-  return false;
-}
-
 export function nextPlayPath(token: string, attempt: AttemptSnapshot | null) {
   const base = `/p/${encodeURIComponent(token)}`;
   if (attemptNeedsStack(attempt)) return `${base}/stack`;
-  if (attemptNeedsTrivia(attempt)) return `${base}/head`;
+  if (attemptNeedsTrivia(attempt)) return `${base}/play`;
   if (attemptNeedsPour(attempt)) return `${base}/pour`;
-  if (attemptNeedsBoardName(attempt)) return `${base}/name`;
   return `${base}/result`;
-}
-
-export function nextHandsCta(attempt: AttemptSnapshot | null) {
-  if (attemptNeedsPour(attempt)) return PLAY_ROUNDS.pour.cta;
-  if (attemptNeedsStack(attempt)) return PLAY_ROUNDS.stack.cta;
-  if (attemptNeedsTrivia(attempt)) return HEAD_INVITE.cta;
-  return "See rank";
 }
 
 export function afterTriviaRoast(
