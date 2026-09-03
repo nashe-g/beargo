@@ -290,7 +290,6 @@ function IntroTalk() {
         <span>this song though</span>
         <span>one more?</span>
         <span>where next</span>
-        <span>who’s driving</span>
       </div>
       <p className="scan-intro-body">
         React to the music. Ask a question. Start a debate. Share a joke.
@@ -306,8 +305,10 @@ function IntroTalk() {
 function IntroHouse() {
   return (
     <>
-      <p className="scan-intro-kicker">The House</p>
-      <h1 className="scan-intro-display is-small">talks too.</h1>
+      <h1 className="scan-intro-display is-house">
+        The House
+        <span>talks too.</span>
+      </h1>
       <p className="scan-intro-body is-narrow">
         Sometimes it drops a quick game into the room — keep a wobbly tray
         steady on your phone, or take a three-question trivia challenge.
