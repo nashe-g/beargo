@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Barlow_Condensed, DM_Sans, Fraunces } from "next/font/google";
 import { APP_NAME, CANONICAL_ORIGIN } from "@/lib/config";
 import "./globals.css";
@@ -27,6 +27,12 @@ export const metadata: Metadata = {
   },
   description:
     "Scan the paw. This is the room’s wall tonight. The House talks first.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -7,7 +7,9 @@ import { ScannerShell } from "@/components/scanner/ScannerShell";
 import { StampSession } from "@/components/scanner/StampSession";
 import { formatDuration, loadAttempt } from "@/lib/attempt";
 import type { PawRecord } from "@/lib/paws";
-import { hubPath, playPath, sponsorPath, type PlayKind } from "@/lib/play-kind";
+import { ShareRank } from "@/components/scanner/ShareRank";
+import { hubPath, playPath, type PlayKind } from "@/lib/play-kind";
+import type { ShareCardStats } from "@/lib/share-card";
 import { QUESTIONS_PER_CHALLENGE } from "@/lib/questions";
 import type { BoardNeighbor } from "@/lib/rank";
 import { formatWobble } from "@/lib/stack";
@@ -116,7 +118,7 @@ export function GameResult({
             href={hubPath(paw.token)}
             className="mt-3 flex h-12 items-center justify-center text-sm text-paper/60"
           >
-            Tonight
+            Back to the room
           </Link>
         </div>
       </ScannerShell>
@@ -126,6 +128,17 @@ export function GameResult({
   const first = result.playerCount <= 1;
   const ranked = result.rank > 0 && result.playerCount > 0;
   const neighbors = result.neighbors ?? [];
+  const shareStats: ShareCardStats = {
+    kind,
+    rank: result.rank,
+    playerCount: result.playerCount,
+    correctCount: result.correctCount,
+    stackWobble: result.stackWobble,
+    boardName: result.boardName ?? null,
+    dropped: null,
+    packed: null,
+    totalResponseMs: result.totalResponseMs,
+  };
 
   return (
     <ScannerShell homeHref={hubPath(paw.token)}>
@@ -186,11 +199,12 @@ export function GameResult({
 
         <div className="shrink-0 space-y-3 pt-4 text-center">
           <Link
-            href={sponsorPath(paw.token, kind)}
+            href={hubPath(paw.token)}
             className="btn-honey flex h-14 w-full items-center justify-center rounded-full bg-honey text-lg font-semibold tracking-[0.14em] text-ink"
           >
-            Tonight’s sponsor
+            Back to the room
           </Link>
+          <ShareRank paw={paw} stats={shareStats} />
           {kind === "trivia" && result.hasAnswers ? (
             <Link
               href={`/p/${paw.token}/play?review=1`}
@@ -199,12 +213,6 @@ export function GameResult({
               See tonight’s questions
             </Link>
           ) : null}
-          <Link
-            href={hubPath(paw.token)}
-            className="flex h-12 w-full items-center justify-center text-sm text-paper/60"
-          >
-            Tonight
-          </Link>
         </div>
       </div>
     </ScannerShell>

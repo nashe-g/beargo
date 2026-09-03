@@ -1,29 +1,33 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+} from "react";
 import Link from "next/link";
-import { AffiliateCard } from "@/components/scanner/AffiliateCard";
 import { ScanEnter } from "@/components/scanner/ScanEnter";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
 import { StampSession, type StampResult } from "@/components/scanner/StampSession";
-import { AFFILIATE_ROOM_PLACEMENT, FEED_POST_MAX } from "@/lib/config";
+import { FEED_POST_MAX } from "@/lib/config";
 import {
   FEED_REPORT_REASONS,
   type FeedPostView,
   type NearbyPostView,
   type RoomSnapshot,
 } from "@/lib/feed-types";
-import { pulseLine } from "@/lib/feed-pulse";
 import { timeAgo } from "@/lib/feed-time";
 import { formatDistance } from "@/lib/geo";
 import type { PawRecord } from "@/lib/paws";
 import { playPath, resultPath, type PlayKind } from "@/lib/play-kind";
 
-function peopleLine(count: number) {
-  if (count <= 0) return "Nobody’s checked in yet.";
-  if (count === 1) return "1 person here tonight";
-  return `${count} people here tonight`;
-}
+const NEAR_BOTTOM_PX = 96;
+const CLUSTER_MS = 5 * 60_000;
+const STAMP_MS = 10 * 60_000;
 
 const REPORT_LABELS: Record<(typeof FEED_REPORT_REASONS)[number], string> = {
   harassment: "Harassment",
@@ -34,6 +38,37 @@ const REPORT_LABELS: Record<(typeof FEED_REPORT_REASONS)[number], string> = {
   sexual_harassment: "Sexual harassment",
   other: "Other",
 };
+
+function hereLine(count: number) {
+  if (count <= 0) return "Nobody here yet";
+  if (count === 1) return "1 here";
+  return `${count} here`;
+}
+
+function gapMs(earlier: string, later: string) {
+  return new Date(later).getTime() - new Date(earlier).getTime();
+}
+
+function insertPosted(room: RoomSnapshot, post: FeedPostView): RoomSnapshot {
+  if (post.parentId) {
+    return {
+      ...room,
+      posts: room.posts.map((item) =>
+        item.id === post.parentId
+          ? {
+              ...item,
+              replyCount: Math.max(item.replyCount, item.replies.length) + 1,
+              replies: item.replies.some((reply) => reply.id === post.id)
+                ? item.replies
+                : [...item.replies, post],
+            }
+          : item,
+      ),
+    };
+  }
+  if (room.posts.some((item) => item.id === post.id)) return room;
+  return { ...room, posts: [post, ...room.posts] };
+}
 
 export function RoomFeed({
   paw,
@@ -54,8 +89,17 @@ export function RoomFeed({
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
   const [menuId, setMenuId] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+  const [showNearby, setShowNearby] = useState(false);
+  const [showLatest, setShowLatest] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const [keyboardInset, setKeyboardInset] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
+  const stickToBottom = useRef(true);
+  const focusId = useRef<string | null>(null);
+  const smoothScroll = useRef(false);
 
   const refresh = useCallback(async () => {
     const response = await fetch(`/api/p/${encodeURIComponent(paw.token)}/room`);
@@ -79,11 +123,90 @@ export function RoomFeed({
     };
   }, [refresh]);
 
-  async function submit(event: FormEvent) {
-    event.preventDefault();
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    const sync = () => {
+      const inset = Math.max(
+        0,
+        window.innerHeight - viewport.height - viewport.offsetTop,
+      );
+      setKeyboardInset(inset);
+    };
+    sync();
+    viewport.addEventListener("resize", sync);
+    viewport.addEventListener("scroll", sync);
+    return () => {
+      viewport.removeEventListener("resize", sync);
+      viewport.removeEventListener("scroll", sync);
+    };
+  }, []);
+
+  const syncEdge = useCallback(() => {
+    const list = listRef.current;
+    if (!list) return;
+    const near =
+      list.scrollHeight - list.scrollTop - list.clientHeight < NEAR_BOTTOM_PX;
+    stickToBottom.current = near;
+    setShowLatest(!near && list.scrollHeight > list.clientHeight + 8);
+  }, []);
+
+  const jumpToLatest = useCallback((smooth = false) => {
+    const list = listRef.current;
+    if (!list) return;
+    stickToBottom.current = true;
+    setShowLatest(false);
+    list.scrollTo({
+      top: list.scrollHeight,
+      behavior: smooth ? "smooth" : "auto",
+    });
+  }, []);
+
+  useEffect(() => {
+    if (keyboardInset <= 0 || !stickToBottom.current) return;
+    const list = listRef.current;
+    if (list) list.scrollTop = list.scrollHeight;
+  }, [keyboardInset]);
+
+  useLayoutEffect(() => {
+    if (entering) return;
+    const list = listRef.current;
+    if (!list) return;
+    const id = focusId.current;
+    if (id) {
+      const node = list.querySelector(`[data-post-id="${CSS.escape(id)}"]`);
+      focusId.current = null;
+      if (node) {
+        node.scrollIntoView({
+          block: "nearest",
+          behavior: smoothScroll.current ? "smooth" : "auto",
+        });
+        smoothScroll.current = false;
+        syncEdge();
+        return;
+      }
+    }
+    if (stickToBottom.current) {
+      list.scrollTop = list.scrollHeight;
+      setShowLatest(false);
+    }
+  }, [entering, room.posts, syncEdge]);
+
+  function resizeComposer() {
+    const field = composerRef.current;
+    if (!field) return;
+    field.style.height = "auto";
+    field.style.height = `${Math.min(field.scrollHeight, 128)}px`;
+  }
+
+  async function submit(event?: FormEvent) {
+    event?.preventDefault();
     if (sending) return;
+    const text = body.trim();
+    if (!text) return;
     setSending(true);
     setError("");
+    const parent = replyTo;
     try {
       const response = await fetch(
         `/api/p/${encodeURIComponent(paw.token)}/room/posts`,
@@ -91,27 +214,43 @@ export function RoomFeed({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            body,
-            parentPostId: replyTo?.id,
+            body: text,
+            parentPostId: parent?.id,
           }),
         },
       );
-      const payload = (await response.json()) as {
+      const payload = (await response.json()) as FeedPostView & {
         error?: string;
-        id?: string;
       };
       if (!response.ok) {
-        setError(payload.error || "Couldn’t post.");
+        setError(payload.error || "Couldn’t send.");
         setSending(false);
         return;
       }
       setBody("");
       setReplyTo(null);
+      if (composerRef.current) {
+        composerRef.current.style.height = "auto";
+      }
+      const latestTop = room.posts[0]?.id;
+      stickToBottom.current = !parent || parent.id === latestTop;
+      if (parent) {
+        setExpanded((prev) => new Set(prev).add(parent.id));
+      }
+      focusId.current = payload.id;
+      smoothScroll.current = true;
+      setRoom((prev) => insertPosted(prev, payload));
       await refresh();
     } catch {
-      setError("Couldn’t post.");
+      setError("Couldn’t send.");
     }
     setSending(false);
+  }
+
+  function onComposerKey(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== "Enter" || event.shiftKey) return;
+    event.preventDefault();
+    void submit();
   }
 
   async function remove(postId: string) {
@@ -155,7 +294,14 @@ export function RoomFeed({
     [refresh],
   );
 
-  const sponsorAt = room.posts.length >= 2 ? 2 : room.posts.length > 0 ? 1 : -1;
+  function startReply(post: FeedPostView) {
+    setReplyTo(post);
+    setError("");
+    setExpanded((prev) => new Set(prev).add(post.id));
+    window.setTimeout(() => composerRef.current?.focus(), 0);
+  }
+
+  const posts = [...room.posts].reverse();
   const played = room.played ?? { stack: false, trivia: false };
 
   return (
@@ -178,92 +324,169 @@ export function RoomFeed({
       ) : null}
       <div
         className="flex min-h-0 flex-1 flex-col"
+        style={keyboardInset ? { paddingBottom: keyboardInset } : undefined}
         aria-hidden={entering}
         {...(entering ? { inert: true } : {})}
       >
-        <header className="shrink-0 pb-3 text-center">
-          <p className="text-sm tracking-[0.22em] text-honey uppercase">
-            {paw.hostDisplayName}
-          </p>
-          <h1 className="mt-2 font-display text-3xl">The room</h1>
-          <p className="mt-2 text-sm text-paper/70">{pulseLine(room.pulse)}</p>
-          <p className="mt-1 text-sm text-paper/70">{peopleLine(room.peopleHere)}</p>
-          <p className="mt-1 text-xs text-paper/45">
-            {handle ? `You’re ${handle}` : "You’re in the room"}
+        <header className="flex shrink-0 items-baseline justify-between gap-3 pb-2">
+          <div className="min-w-0">
+            <p className="truncate text-sm tracking-[0.18em] text-honey uppercase">
+              {paw.hostDisplayName}
+            </p>
+            <p className="mt-0.5 text-xs text-paper/50">
+              {hereLine(room.peopleHere)}
+            </p>
+          </div>
+          <p className="shrink-0 text-xs text-paper/45">
+            {handle ? `You’re ${handle}` : "You’re in"}
           </p>
         </header>
 
-        <div
-          ref={listRef}
-          className="min-h-0 flex-1 space-y-3 overflow-y-auto pb-3"
-        >
-          {room.posts.length === 0 ? (
-            <p className="px-2 py-8 text-center text-base text-paper/70">
-              The House is on its way.
-            </p>
-          ) : null}
-          {room.posts.map((post, index) => (
-            <div key={post.id}>
-              {index === sponsorAt && room.sponsor ? (
-                <div className="mb-3">
-                  <AffiliateCard
-                    card={room.sponsor}
-                    placement={AFFILIATE_ROOM_PLACEMENT}
-                  />
-                </div>
-              ) : null}
-              <PostCard
-                post={post}
-                now={now}
-                menuId={menuId}
-                setMenuId={setMenuId}
-                dareHref={dareHref(paw.token, post, played)}
-                onReply={() => {
-                  setReplyTo(post);
-                  setError("");
-                }}
-                onDelete={remove}
-                onReport={report}
-                onVote={vote}
-              />
-            </div>
-          ))}
+        <div className="flex shrink-0 items-center gap-2 overflow-x-auto pb-2">
+          <GameChip
+            href={
+              played.stack
+                ? resultPath(paw.token, "stack")
+                : playPath(paw.token, "stack")
+            }
+            label="Tray"
+            detail={played.stack ? "Your run" : "Carry it"}
+          />
+          <GameChip
+            href={
+              played.trivia
+                ? resultPath(paw.token, "trivia")
+                : playPath(paw.token, "trivia")
+            }
+            label="Trivia"
+            detail={played.trivia ? "Your score" : "3 questions"}
+          />
           {room.nearby.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => setShowNearby((open) => !open)}
+              className={`shrink-0 rounded-full border px-3 py-1.5 text-xs ${
+                showNearby
+                  ? "border-honey/50 bg-honey/15 text-honey"
+                  : "border-paper/15 text-paper/70"
+              }`}
+            >
+              Around
+            </button>
+          ) : null}
+        </div>
+
+        {showNearby && room.nearby.length > 0 ? (
+          <div className="mb-2 max-h-36 shrink-0 overflow-y-auto border-b border-paper/10 pb-2">
             <NearbyStrip posts={room.nearby} now={now} />
+          </div>
+        ) : null}
+
+        <div className="relative min-h-0 flex-1">
+          <div
+            ref={listRef}
+            className="absolute inset-0 overflow-y-auto overscroll-contain"
+            onScroll={syncEdge}
+          >
+            <div className="flex min-h-full flex-col justify-end gap-0.5 pb-2">
+              {posts.length === 0 ? (
+                <p className="px-2 py-8 text-center text-sm text-paper/55">
+                  The House is on its way.
+                </p>
+              ) : null}
+              {posts.map((post, index) => {
+                const prev = posts[index - 1];
+                const stamp = !prev || gapMs(prev.createdAt, post.createdAt) >= STAMP_MS;
+                const clustered =
+                  Boolean(prev) &&
+                  !stamp &&
+                  prev.authorKind === "human" &&
+                  post.authorKind === "human" &&
+                  prev.handle === post.handle &&
+                  gapMs(prev.createdAt, post.createdAt) < CLUSTER_MS;
+                return (
+                  <div key={post.id}>
+                    {stamp ? (
+                      <p className="py-2 text-center text-[11px] tracking-wide text-paper/35">
+                        {timeAgo(post.createdAt, now)}
+                      </p>
+                    ) : null}
+                    <PostLine
+                      post={post}
+                      now={now}
+                      clustered={clustered}
+                      menuId={menuId}
+                      setMenuId={setMenuId}
+                      activeId={activeId}
+                      setActiveId={setActiveId}
+                      threadOpen={expanded.has(post.id)}
+                      onExpand={() =>
+                        setExpanded((prevSet) => new Set(prevSet).add(post.id))
+                      }
+                      dareHref={dareHref(paw.token, post, played)}
+                      onReply={() => startReply(post)}
+                      onDelete={remove}
+                      onReport={report}
+                      onVote={vote}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          {showLatest ? (
+            <button
+              type="button"
+              className="absolute bottom-2 left-1/2 z-10 -translate-x-1/2 rounded-full bg-honey px-3 py-1 text-xs font-semibold text-ink shadow-[0_8px_20px_rgba(232,163,26,0.35)]"
+              onClick={() => jumpToLatest(true)}
+            >
+              Latest
+            </button>
           ) : null}
         </div>
 
         <div className="shrink-0 pt-2">
-          <GameChips token={paw.token} played={played} />
           {replyTo ? (
-            <button
-              type="button"
-              className="mb-2 text-left text-xs text-paper/55"
-              onClick={() => setReplyTo(null)}
-            >
-              Replying to {replyTo.handle} · cancel
-            </button>
+            <div className="mb-2 flex items-start gap-2 rounded-2xl border border-honey/25 bg-honey/10 px-3 py-2">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-honey">{replyTo.handle}</p>
+                <p className="truncate text-sm text-paper/65">{replyTo.body}</p>
+              </div>
+              <button
+                type="button"
+                className="shrink-0 px-1 text-sm text-paper/45"
+                onClick={() => setReplyTo(null)}
+                aria-label="Cancel reply"
+              >
+                ✕
+              </button>
+            </div>
           ) : null}
           {room.canPost ? (
-            <form onSubmit={submit} className="flex flex-col gap-2">
+            <form onSubmit={submit} className="flex items-end gap-2">
               <textarea
+                ref={composerRef}
                 value={body}
                 onChange={(event) => {
                   setBody(event.target.value);
                   setError("");
+                  window.requestAnimationFrame(resizeComposer);
                 }}
+                onKeyDown={onComposerKey}
                 maxLength={FEED_POST_MAX}
-                rows={2}
-                placeholder={replyTo ? "Reply…" : "Say it"}
-                className="w-full resize-none rounded-2xl border border-paper/20 bg-paper/8 px-4 py-3 text-base text-paper outline-none placeholder:text-paper/35 focus:border-honey"
+                rows={1}
+                enterKeyHint="send"
+                autoComplete="off"
+                placeholder={replyTo ? "Reply…" : "Message"}
+                className="max-h-32 min-h-11 flex-1 resize-none rounded-[1.35rem] border border-paper/20 bg-paper/8 px-4 py-2.5 text-base leading-snug text-paper outline-none placeholder:text-paper/35 focus:border-honey"
               />
-              {error ? <p className="text-sm text-clay">{error}</p> : null}
               <button
                 type="submit"
                 disabled={sending || body.trim().length === 0}
-                className="btn-honey flex h-12 items-center justify-center rounded-full bg-honey text-base font-semibold tracking-[0.12em] text-ink disabled:opacity-40"
+                aria-label="Send"
+                className="btn-honey flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-honey text-ink disabled:opacity-35"
               >
-                {sending ? "Sending…" : "Post"}
+                <SendIcon />
               </button>
             </form>
           ) : (
@@ -271,9 +494,23 @@ export function RoomFeed({
               Scan the Paw at the bar to talk. You can still read.
             </p>
           )}
+          {error ? <p className="mt-1.5 text-sm text-clay">{error}</p> : null}
         </div>
       </div>
     </ScannerShell>
+  );
+}
+
+function SendIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-5 w-5"
+      fill="currentColor"
+      aria-hidden
+    >
+      <path d="M3.4 11.2 20.1 3.7c.7-.3 1.4.4 1.1 1.1l-7.5 16.7c-.3.7-1.3.7-1.6 0l-2.6-6.3-6.3-2.6c-.7-.3-.7-1.3 0-1.6Z" />
+    </svg>
   );
 }
 
@@ -294,48 +531,38 @@ function dareCta(kind: PlayKind, played: boolean) {
   return played ? "Your score" : "Ask me";
 }
 
-function GameChips({
-  token,
-  played,
+function GameChip({
+  href,
+  label,
+  detail,
 }: {
-  token: string;
-  played: { stack: boolean; trivia: boolean };
+  href: string;
+  label: string;
+  detail: string;
 }) {
   return (
-    <div className="mb-2 grid grid-cols-2 gap-2">
-      <Link
-        href={played.stack ? resultPath(token, "stack") : playPath(token, "stack")}
-        className="flex h-10 items-center justify-between rounded-full border border-paper/18 bg-paper/6 px-3.5 text-left"
-      >
-        <span className="font-condensed text-[0.68rem] tracking-[0.16em] text-honey uppercase">
-          Tray
-        </span>
-        <span className="font-display text-sm text-paper/75">
-          {played.stack ? "Your run" : "Carry it"}
-        </span>
-      </Link>
-      <Link
-        href={
-          played.trivia ? resultPath(token, "trivia") : playPath(token, "trivia")
-        }
-        className="flex h-10 items-center justify-between rounded-full border border-paper/18 bg-paper/6 px-3.5 text-left"
-      >
-        <span className="font-condensed text-[0.68rem] tracking-[0.16em] text-honey uppercase">
-          Trivia
-        </span>
-        <span className="font-display text-sm text-paper/75">
-          {played.trivia ? "Your score" : "3 questions"}
-        </span>
-      </Link>
-    </div>
+    <Link
+      href={href}
+      className="shrink-0 rounded-full border border-paper/15 bg-paper/6 px-3 py-1.5 text-xs"
+    >
+      <span className="font-condensed tracking-[0.14em] text-honey uppercase">
+        {label}
+      </span>
+      <span className="ml-1.5 text-paper/65">{detail}</span>
+    </Link>
   );
 }
 
-function PostCard({
+function PostLine({
   post,
   now,
+  clustered,
   menuId,
   setMenuId,
+  activeId,
+  setActiveId,
+  threadOpen,
+  onExpand,
   dareHref,
   onReply,
   onDelete,
@@ -344,8 +571,13 @@ function PostCard({
 }: {
   post: FeedPostView;
   now: number;
+  clustered: boolean;
   menuId: string | null;
   setMenuId: (id: string | null) => void;
+  activeId: string | null;
+  setActiveId: (id: string | null) => void;
+  threadOpen: boolean;
+  onExpand: () => void;
   dareHref: string | null;
   onReply: () => void;
   onDelete: (id: string) => void;
@@ -353,15 +585,51 @@ function PostCard({
   onVote: (id: string, vote: "up" | "down") => void;
 }) {
   const open = menuId === post.id;
+  const active = activeId === post.id;
   const house = post.authorKind === "house";
+  const dare = Boolean(dareHref && post.playKind);
   const kind = post.playKind;
+
   return (
-    <article className="rounded-2xl border border-paper/10 bg-paper/6 px-4 py-3 text-left">
-      <div className="flex items-baseline justify-between gap-3">
-        <p className="text-sm font-semibold text-honey">{post.handle}</p>
-        <p className="text-xs text-paper/40">{timeAgo(post.createdAt, now)}</p>
-      </div>
-      <p className="mt-2 text-base leading-relaxed text-paper/90">{post.body}</p>
+    <article
+      data-post-id={post.id}
+      className={`text-left ${
+        dare
+          ? "my-1.5 rounded-2xl border border-honey/25 bg-honey/12 px-3.5 py-3"
+          : house
+            ? "px-1 py-1.5"
+            : `rounded-2xl px-2.5 py-1.5 ${
+                post.mine ? "bg-paper/8" : ""
+              } ${clustered ? "pt-0.5" : ""}`
+      }`}
+    >
+      {clustered && !house ? null : (
+        <div className="flex items-baseline justify-between gap-3">
+          <p
+            className={`text-sm font-semibold ${
+              house ? "text-honey/90" : "text-honey"
+            }`}
+          >
+            {post.handle}
+          </p>
+          {dare || house ? (
+            <p className="text-[11px] text-paper/35">{timeAgo(post.createdAt, now)}</p>
+          ) : null}
+        </div>
+      )}
+      <button
+        type="button"
+        className="mt-0.5 block w-full text-left"
+        onClick={() => setActiveId(active ? null : post.id)}
+      >
+        <p
+          className={`leading-relaxed ${
+            house ? "text-[15px] text-paper/80" : "text-[15px] text-paper/92"
+          }`}
+        >
+          {post.body}
+        </p>
+      </button>
       {dareHref && kind ? (
         <Link
           href={dareHref}
@@ -370,11 +638,11 @@ function PostCard({
           {dareCta(kind, dareHref.includes("/result"))}
         </Link>
       ) : null}
-      <div className="mt-2 flex items-center gap-4 text-xs text-paper/50">
-        <VoteButtons post={post} onVote={onVote} />
+      <div className="mt-1 flex items-center gap-3 text-[11px] text-paper/40">
         <button type="button" onClick={onReply}>
           Reply
         </button>
+        {active ? <VoteButtons post={post} onVote={onVote} /> : null}
         {house ? null : (
           <button type="button" onClick={() => setMenuId(open ? null : post.id)}>
             {post.mine ? "Delete" : "Report"}
@@ -384,14 +652,14 @@ function PostCard({
       {open && post.mine ? (
         <button
           type="button"
-          className="mt-2 text-sm text-clay"
+          className="mt-1.5 text-sm text-clay"
           onClick={() => onDelete(post.id)}
         >
           Delete this
         </button>
       ) : null}
       {open && !post.mine ? (
-        <div className="mt-2 flex flex-wrap gap-2">
+        <div className="mt-1.5 flex flex-wrap gap-2">
           {FEED_REPORT_REASONS.map((reason) => (
             <button
               key={reason}
@@ -404,27 +672,78 @@ function PostCard({
           ))}
         </div>
       ) : null}
-      {post.replies.length > 0 ? (
-        <div className="mt-3 space-y-2 border-l border-paper/15 pl-3">
-          {post.replies.map((reply) => (
-            <div key={reply.id}>
-              <div className="flex items-baseline justify-between gap-3">
-                <p className="text-sm font-semibold text-honey">{reply.handle}</p>
-                <p className="text-xs text-paper/40">
-                  {timeAgo(reply.createdAt, now)}
-                </p>
-              </div>
-              <p className="mt-1 text-sm leading-relaxed text-paper/80">
-                {reply.body}
-              </p>
-              <div className="mt-1">
-                <VoteButtons post={reply} onVote={onVote} />
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : null}
+      <ThreadReplies
+        replies={post.replies}
+        open={threadOpen}
+        now={now}
+        onExpand={onExpand}
+        onVote={onVote}
+        activeId={activeId}
+        setActiveId={setActiveId}
+      />
     </article>
+  );
+}
+
+function ThreadReplies({
+  replies,
+  open,
+  now,
+  onExpand,
+  onVote,
+  activeId,
+  setActiveId,
+}: {
+  replies: FeedPostView[];
+  open: boolean;
+  now: number;
+  onExpand: () => void;
+  onVote: (id: string, vote: "up" | "down") => void;
+  activeId: string | null;
+  setActiveId: (id: string | null) => void;
+}) {
+  if (replies.length === 0) return null;
+  const latest = replies[replies.length - 1];
+  const hidden = replies.length - 1;
+  const showAll = open || replies.length === 1;
+  const visible = showAll ? replies : [latest];
+
+  return (
+    <div className="mt-2 space-y-2 border-l border-paper/15 pl-3">
+      {!showAll && hidden > 0 ? (
+        <button
+          type="button"
+          className="text-xs font-medium text-honey"
+          onClick={onExpand}
+        >
+          See {hidden} more {hidden === 1 ? "reply" : "replies"}
+        </button>
+      ) : null}
+      {visible.map((reply) => (
+        <div key={reply.id} data-post-id={reply.id}>
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="text-sm font-semibold text-honey">{reply.handle}</p>
+            {showAll ? (
+              <p className="text-[11px] text-paper/35">
+                {timeAgo(reply.createdAt, now)}
+              </p>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            className="mt-0.5 block w-full text-left text-sm leading-relaxed text-paper/80"
+            onClick={() => setActiveId(activeId === reply.id ? null : reply.id)}
+          >
+            {reply.body}
+          </button>
+          {activeId === reply.id ? (
+            <div className="mt-1">
+              <VoteButtons post={reply} onVote={onVote} />
+            </div>
+          ) : null}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -436,7 +755,7 @@ function VoteButtons({
   onVote: (id: string, vote: "up" | "down") => void;
 }) {
   return (
-    <span className="inline-flex items-center gap-2">
+    <span className="inline-flex items-center gap-2 text-[11px] text-paper/40">
       <button
         type="button"
         className={post.myVote === "up" ? "text-honey" : undefined}
@@ -457,37 +776,32 @@ function VoteButtons({
 
 function NearbyStrip({ posts, now }: { posts: NearbyPostView[]; now: number }) {
   return (
-    <section className="rounded-2xl border border-paper/10 px-4 py-3">
-      <p className="font-condensed text-xs tracking-[0.18em] text-honey uppercase">
-        Around here
-      </p>
-      <div className="mt-3 space-y-3">
-        {posts.map((post) => {
-          const href = post.pawToken
-            ? `/p/${encodeURIComponent(post.pawToken)}/room?from=nearby`
-            : null;
-          const inner = (
-            <>
-              <div className="flex items-baseline justify-between gap-3">
-                <p className="text-sm font-semibold text-honey">{post.venue}</p>
-                <p className="text-xs text-paper/40">
-                  {formatDistance(post.miles)} · {timeAgo(post.createdAt, now)}
-                </p>
-              </div>
-              <p className="mt-1 text-sm text-paper/80">
-                {post.handle}: {post.body}
+    <div className="space-y-2.5 px-0.5">
+      {posts.map((post) => {
+        const href = post.pawToken
+          ? `/p/${encodeURIComponent(post.pawToken)}?from=nearby`
+          : null;
+        const inner = (
+          <>
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="text-sm font-semibold text-honey">{post.venue}</p>
+              <p className="text-[11px] text-paper/40">
+                {formatDistance(post.miles)} · {timeAgo(post.createdAt, now)}
               </p>
-            </>
-          );
-          return href ? (
-            <Link key={post.id} href={href} className="block text-left">
-              {inner}
-            </Link>
-          ) : (
-            <div key={post.id}>{inner}</div>
-          );
-        })}
-      </div>
-    </section>
+            </div>
+            <p className="mt-0.5 truncate text-sm text-paper/70">
+              {post.handle}: {post.body}
+            </p>
+          </>
+        );
+        return href ? (
+          <Link key={post.id} href={href} className="block text-left">
+            {inner}
+          </Link>
+        ) : (
+          <div key={post.id}>{inner}</div>
+        );
+      })}
+    </div>
   );
 }

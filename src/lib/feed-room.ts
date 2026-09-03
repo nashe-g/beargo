@@ -1,4 +1,3 @@
-import { selectAffiliateCard } from "@/lib/affiliate";
 import {
   getFeedIdentityIfPresent,
   type FeedIdentity,
@@ -33,12 +32,6 @@ export async function roomSnapshot(
       deviceKey ? rankedPlayForDevice(paw, deviceKey, "stack") : null,
       deviceKey ? rankedPlayForDevice(paw, deviceKey, "trivia") : null,
     ]);
-  let sponsor = null;
-  try {
-    sponsor = await selectAffiliateCard({ hostId: paw.hostId });
-  } catch {
-    sponsor = null;
-  }
   return {
     handle: resolved?.publicHandle ?? "",
     canPost,
@@ -46,7 +39,7 @@ export async function roomSnapshot(
     pulse,
     posts,
     nearby,
-    sponsor,
+    sponsor: null,
     source,
     played: { stack: Boolean(stack), trivia: Boolean(trivia) },
   };

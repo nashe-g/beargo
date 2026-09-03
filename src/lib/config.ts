@@ -7,8 +7,8 @@ export const BEARGO_DAY_ZONE = "America/Chicago";
 export const PLAYER_OFFERS_ENABLED = false;
 export const LEGACY_LOCAL_COUPON_PUBLIC_ENABLED = PLAYER_OFFERS_ENABLED;
 
-/** Post-game CJ affiliate card. Kill switch; still serves nothing without an eligible offer. */
-export const AFFILIATE_POSTGAME_ENABLED = true;
+/** Off until there are real deals. Room and post-game both read this. */
+export const AFFILIATE_POSTGAME_ENABLED = false;
 
 /**
  * Public night: Scan lands in the room. The House posts dares.

@@ -35,8 +35,9 @@ export function AffiliateCard({
   return (
     <aside className="w-full rounded-[1.5rem] bg-paper px-5 py-5 text-left text-ink">
       <p className="text-xs font-semibold tracking-[0.2em] text-ink-soft uppercase">
-        Sponsored
+        Paid mention
       </p>
+      <p className="mt-1 text-sm font-semibold text-ink">{card.advertiserName}</p>
       <h2 className="mt-2 font-display text-2xl leading-tight">{card.title}</h2>
       <p className="mt-2 text-sm text-ink-soft">{card.body}</p>
       {card.imageUrl ? (
