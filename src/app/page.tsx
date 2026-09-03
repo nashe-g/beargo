@@ -11,7 +11,7 @@ const BEATS = [
   {
     n: "02",
     title: "You’re in the room.",
-    body: "A live chat for everyone here tonight. The House talks first.",
+    body: "See what people here are saying. Join in, or just watch.",
   },
   {
     n: "03",
@@ -32,8 +32,8 @@ export default function Home() {
             Scan the paw. You’re in the room.
           </h1>
           <p className="mt-6 max-w-md text-lg leading-relaxed text-ink-soft sm:text-xl">
-            Tonight is a chat for everyone here. The House talks first. Games
-            show up in the conversation. No account.
+            See what people here are saying. Join in, or just watch. No
+            account.
           </p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <Link

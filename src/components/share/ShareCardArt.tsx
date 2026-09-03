@@ -164,9 +164,11 @@ export function ShareCardArt({
         }}
       >
         <div style={{ display: "flex", maxWidth: 820 }}>
-          THE PAW KNOWS HOW LONG YOU’D LAST AS A BARTENDER
+          WHAT’S HAPPENING HERE TONIGHT?
         </div>
-        <div style={{ display: "flex", letterSpacing: "0.22em" }}>ASK IT.</div>
+        <div style={{ display: "flex", letterSpacing: "0.18em" }}>
+          ASK THE PAW.
+        </div>
       </div>
     </div>
   );

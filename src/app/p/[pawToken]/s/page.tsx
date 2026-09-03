@@ -106,7 +106,7 @@ export default async function SharePage({
             </p>
           )}
           <p className="mt-6 max-w-[20rem] font-condensed text-sm tracking-[0.12em] text-honey">
-            THE PAW KNOWS HOW LONG YOU’D LAST AS A BARTENDER
+            WHAT’S HAPPENING HERE TONIGHT?
           </p>
         </div>
         <div className="flex w-full shrink-0 flex-col items-center gap-3 pt-3">
@@ -114,7 +114,7 @@ export default async function SharePage({
             href={playHref}
             className="btn-honey flex h-14 w-full items-center justify-center rounded-full bg-honey text-lg font-semibold tracking-[0.14em] text-ink"
           >
-            Ask it.
+            Ask the paw.
           </Link>
           <p className="text-sm text-paper/50">
             One board a night, per game.
