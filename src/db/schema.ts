@@ -429,9 +429,32 @@ export const feedPosts = pgTable("feed_posts", {
   upvoteCount: integer("upvote_count").notNull().default(0),
   downvoteCount: integer("downvote_count").notNull().default(0),
   replyCount: integer("reply_count").notNull().default(0),
+  authorKind: text("author_kind").notNull().default("human"),
+  houseSlot: text("house_slot"),
+  houseLineId: text("house_line_id"),
+  playKind: text("play_kind"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const houseNights = pgTable(
+  "house_nights",
+  {
+    id: text("id").primaryKey(),
+    hostId: text("host_id").notNull(),
+    pawToken: text("paw_token").notNull(),
+    serviceDay: text("service_day").notNull(),
+    leadKind: text("lead_kind"),
+    leadLineId: text("lead_line_id"),
+    leadPostId: text("lead_post_id"),
+    secondKind: text("second_kind"),
+    secondLineId: text("second_line_id"),
+    secondPostId: text("second_post_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("house_nights_host_day").on(table.hostId, table.serviceDay)],
+);
 
 export const feedModerationResults = pgTable("feed_moderation_results", {
   id: text("id").primaryKey(),

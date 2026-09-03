@@ -14,6 +14,8 @@ import {
 } from "@/lib/scan-session";
 import { ENTRY_COOKIE, inferPlaySource, parsePlaySource } from "@/lib/play-source";
 import { getOrCreateFeedIdentityForDevice } from "@/lib/feed-identity";
+import { canPostWithSource } from "@/lib/feed-presence";
+import { ensureHouseNight } from "@/lib/house-night";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
 
 export async function POST(
@@ -78,6 +80,14 @@ export async function POST(
     }
   } catch {
     handle = null;
+  }
+
+  if (canPostWithSource(paw, entrySource)) {
+    try {
+      await ensureHouseNight(paw);
+    } catch {
+      /* first scan still works if the House is late */
+    }
   }
 
   return Response.json({ ok: true, sessionId: session.id, handle });

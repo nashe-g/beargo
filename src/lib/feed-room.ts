@@ -8,7 +8,10 @@ import { nightPulseFor } from "@/lib/feed-night";
 import { canPostToRoom, roomPlaySource } from "@/lib/feed-presence";
 import { listRoomPosts } from "@/lib/feed-store";
 import type { RoomSnapshot } from "@/lib/feed-types";
+import { ensureHouseNightIfPresent } from "@/lib/house-night";
 import type { PawRecord } from "@/lib/paws";
+import { deviceKeyFromCookies } from "@/lib/scan-session";
+import { rankedPlayForDevice } from "@/lib/store";
 
 export type { RoomSnapshot };
 
@@ -18,13 +21,18 @@ export async function roomSnapshot(
 ): Promise<RoomSnapshot> {
   const resolved =
     identity === undefined ? await getFeedIdentityIfPresent() : identity;
-  const [canPost, pulse, posts, nearby, source] = await Promise.all([
-    canPostToRoom(paw),
-    nightPulseFor(paw),
-    listRoomPosts(paw, resolved?.id ?? null),
-    listNearbyRoomPosts(paw),
-    roomPlaySource(paw),
-  ]);
+  await ensureHouseNightIfPresent(paw);
+  const deviceKey = resolved?.deviceKey ?? (await deviceKeyFromCookies());
+  const [canPost, pulse, posts, nearby, source, stack, trivia] =
+    await Promise.all([
+      canPostToRoom(paw),
+      nightPulseFor(paw),
+      listRoomPosts(paw, resolved?.id ?? null),
+      listNearbyRoomPosts(paw),
+      roomPlaySource(paw),
+      deviceKey ? rankedPlayForDevice(paw, deviceKey, "stack") : null,
+      deviceKey ? rankedPlayForDevice(paw, deviceKey, "trivia") : null,
+    ]);
   let sponsor = null;
   try {
     sponsor = await selectAffiliateCard({ hostId: paw.hostId });
@@ -40,5 +48,6 @@ export async function roomSnapshot(
     nearby,
     sponsor,
     source,
+    played: { stack: Boolean(stack), trivia: Boolean(trivia) },
   };
 }

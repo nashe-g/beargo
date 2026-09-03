@@ -82,6 +82,29 @@ export async function ensureFeedTables() {
       created_at timestamptz NOT NULL DEFAULT now(),
       expires_at timestamptz
     );
+
+    ALTER TABLE feed_posts
+      ADD COLUMN IF NOT EXISTS author_kind text NOT NULL DEFAULT 'human';
+    ALTER TABLE feed_posts ADD COLUMN IF NOT EXISTS house_slot text;
+    ALTER TABLE feed_posts ADD COLUMN IF NOT EXISTS house_line_id text;
+    ALTER TABLE feed_posts ADD COLUMN IF NOT EXISTS play_kind text;
+
+    CREATE TABLE IF NOT EXISTS house_nights (
+      id text PRIMARY KEY,
+      host_id text NOT NULL,
+      paw_token text NOT NULL,
+      service_day text NOT NULL,
+      lead_kind text,
+      lead_line_id text,
+      lead_post_id text,
+      second_kind text,
+      second_line_id text,
+      second_post_id text,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS house_nights_host_day
+      ON house_nights (host_id, service_day);
   `);
   tablesReady = true;
 }

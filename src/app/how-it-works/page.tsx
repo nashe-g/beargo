@@ -7,20 +7,16 @@ const STEPS = [
     body: "A printed mark at the venue. No app install.",
   },
   {
-    title: "Talk to the room.",
-    body: "Read what people here are saying. Post if you scanned at the bar.",
+    title: "You’re in the room.",
+    body: "This thread is the wall for tonight. The House already posted.",
   },
   {
-    title: "Test your table.",
-    body: "Keep a leaning tray of drinks up. Three carries. Its own leaderboard.",
+    title: "Play from the post.",
+    body: "Carry a tray of drinks, or three questions. The dare is in the thread.",
   },
   {
-    title: "Beat the room.",
-    body: "3 curious questions. Same ones as everyone here tonight. Its own board.",
-  },
-  {
-    title: "Optional offers after a game.",
-    body: "After you see rank, BearGo may show a sponsored offer from a third party.",
+    title: "Hand the phone.",
+    body: "That’s how the next person gets in. One more scan, not a download.",
   },
 ];
 
@@ -29,8 +25,8 @@ export default function HowItWorksPage() {
     <PublicShell>
       <PublicHeading kicker="THE NIGHT" title="How it works" />
       <p className="mt-5 max-w-xl text-lg leading-relaxed text-ink-soft">
-        No account. Scan, then pick: the room, the tray, or trivia. Each game
-        ranks in this bar, tonight. One ranked run per game per phone.
+        No account. Scan, and you’re in this bar’s thread tonight. The House
+        talks first. Games are dares on the wall, not a second app.
       </p>
       <ol className="mt-10 grid gap-4 sm:grid-cols-2">
         {STEPS.map((step, index) => (

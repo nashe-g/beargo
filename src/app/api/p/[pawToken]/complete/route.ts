@@ -3,6 +3,7 @@ import { STACK_ENABLED, TRIVIA_ENABLED } from "@/lib/config";
 import { challengeForPaw, scoreChallenge } from "@/lib/daily-challenge";
 import { serviceDayInZone } from "@/lib/dates";
 import { getOrCreateFeedIdentity } from "@/lib/feed-identity";
+import { postHouseResult } from "@/lib/house-night";
 import { getPaw } from "@/lib/paws";
 import { parsePlayKind } from "@/lib/play-kind";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
@@ -121,6 +122,17 @@ export async function POST(
       playSource,
     });
     if (sessionId) await stampSession(sessionId, "game_completed");
+    try {
+      await postHouseResult({
+        paw,
+        kind,
+        handle: boardName,
+        stackWobble: stacked.stackWobble,
+        correctCount: 0,
+      });
+    } catch {
+      /* room still works if the House is quiet */
+    }
     return Response.json(playPayload(play, false));
   }
 
@@ -150,5 +162,16 @@ export async function POST(
     playSource,
   });
   if (sessionId) await stampSession(sessionId, "game_completed");
+  try {
+    await postHouseResult({
+      paw,
+      kind,
+      handle: boardName,
+      stackWobble: play.stackWobble ?? 0,
+      correctCount: scored.correctCount,
+    });
+  } catch {
+    /* room still works if the House is quiet */
+  }
   return Response.json(playPayload(play, false));
 }

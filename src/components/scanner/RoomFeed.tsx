@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { AffiliateCard } from "@/components/scanner/AffiliateCard";
+import { ScanEnter } from "@/components/scanner/ScanEnter";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
-import { StampSession } from "@/components/scanner/StampSession";
+import { StampSession, type StampResult } from "@/components/scanner/StampSession";
 import { AFFILIATE_ROOM_PLACEMENT, FEED_POST_MAX } from "@/lib/config";
 import {
   FEED_REPORT_REASONS,
@@ -16,7 +17,7 @@ import { pulseLine } from "@/lib/feed-pulse";
 import { timeAgo } from "@/lib/feed-time";
 import { formatDistance } from "@/lib/geo";
 import type { PawRecord } from "@/lib/paws";
-import { hubPath } from "@/lib/play-kind";
+import { playPath, resultPath, type PlayKind } from "@/lib/play-kind";
 
 function peopleLine(count: number) {
   if (count <= 0) return "Nobody’s checked in yet.";
@@ -38,12 +39,16 @@ export function RoomFeed({
   paw,
   initial,
   from,
+  serviceDay,
 }: {
   paw: PawRecord;
   initial: RoomSnapshot;
   from?: string | null;
+  serviceDay: string;
 }) {
   const [room, setRoom] = useState(initial);
+  const [handle, setHandle] = useState(initial.handle);
+  const [entering, setEntering] = useState(true);
   const [body, setBody] = useState("");
   const [replyTo, setReplyTo] = useState<FeedPostView | null>(null);
   const [error, setError] = useState("");
@@ -57,6 +62,7 @@ export function RoomFeed({
     if (!response.ok) return;
     const next = (await response.json()) as RoomSnapshot;
     setRoom(next);
+    if (next.handle) setHandle(next.handle);
   }, [paw.token]);
 
   useEffect(() => {
@@ -141,26 +147,49 @@ export function RoomFeed({
     await refresh();
   }
 
+  const onStamped = useCallback(
+    (result: StampResult) => {
+      if (result.handle) setHandle(result.handle);
+      void refresh();
+    },
+    [refresh],
+  );
+
   const sponsorAt = room.posts.length >= 2 ? 2 : room.posts.length > 0 ? 1 : -1;
+  const played = room.played ?? { stack: false, trivia: false };
 
   return (
-    <ScannerShell homeHref={hubPath(paw.token, from)}>
+    <ScannerShell showMark={!entering}>
       <StampSession
         pawToken={paw.token}
         event="scanned"
         from={from}
-        onStamped={refresh}
+        onStamped={onStamped}
       />
-      <div className="flex min-h-0 flex-1 flex-col">
+      {entering ? (
+        <ScanEnter
+          pawToken={paw.token}
+          serviceDay={serviceDay}
+          venue={paw.hostDisplayName}
+          peopleHere={room.peopleHere}
+          handle={handle || null}
+          onDone={() => setEntering(false)}
+        />
+      ) : null}
+      <div
+        className="flex min-h-0 flex-1 flex-col"
+        aria-hidden={entering}
+        {...(entering ? { inert: true } : {})}
+      >
         <header className="shrink-0 pb-3 text-center">
           <p className="text-sm tracking-[0.22em] text-honey uppercase">
             {paw.hostDisplayName}
           </p>
-          <h1 className="mt-2 font-display text-3xl">Talk to the room</h1>
+          <h1 className="mt-2 font-display text-3xl">The room</h1>
           <p className="mt-2 text-sm text-paper/70">{pulseLine(room.pulse)}</p>
           <p className="mt-1 text-sm text-paper/70">{peopleLine(room.peopleHere)}</p>
           <p className="mt-1 text-xs text-paper/45">
-            {room.handle ? `You’re ${room.handle}` : "You’re in the room"}
+            {handle ? `You’re ${handle}` : "You’re in the room"}
           </p>
         </header>
 
@@ -170,7 +199,7 @@ export function RoomFeed({
         >
           {room.posts.length === 0 ? (
             <p className="px-2 py-8 text-center text-base text-paper/70">
-              Nobody’s said anything yet. Patio? Line? Playlist?
+              The House is on its way.
             </p>
           ) : null}
           {room.posts.map((post, index) => (
@@ -188,6 +217,7 @@ export function RoomFeed({
                 now={now}
                 menuId={menuId}
                 setMenuId={setMenuId}
+                dareHref={dareHref(paw.token, post, played)}
                 onReply={() => {
                   setReplyTo(post);
                   setError("");
@@ -204,6 +234,7 @@ export function RoomFeed({
         </div>
 
         <div className="shrink-0 pt-2">
+          <GameChips token={paw.token} played={played} />
           {replyTo ? (
             <button
               type="button"
@@ -223,9 +254,7 @@ export function RoomFeed({
                 }}
                 maxLength={FEED_POST_MAX}
                 rows={2}
-                placeholder={
-                  replyTo ? "Reply to the room…" : "What’s it like in here?"
-                }
+                placeholder={replyTo ? "Reply…" : "Say it"}
                 className="w-full resize-none rounded-2xl border border-paper/20 bg-paper/8 px-4 py-3 text-base text-paper outline-none placeholder:text-paper/35 focus:border-honey"
               />
               {error ? <p className="text-sm text-clay">{error}</p> : null}
@@ -242,15 +271,63 @@ export function RoomFeed({
               Scan the Paw at the bar to talk. You can still read.
             </p>
           )}
-          <Link
-            href={hubPath(paw.token, from)}
-            className="mt-3 flex h-10 items-center justify-center text-sm text-paper/45"
-          >
-            Tonight
-          </Link>
         </div>
       </div>
     </ScannerShell>
+  );
+}
+
+function dareHref(
+  token: string,
+  post: FeedPostView,
+  played: { stack: boolean; trivia: boolean },
+) {
+  if (post.authorKind !== "house") return null;
+  if (post.houseSlot === "result") return null;
+  const kind = post.playKind;
+  if (kind !== "stack" && kind !== "trivia") return null;
+  return played[kind] ? resultPath(token, kind) : playPath(token, kind);
+}
+
+function dareCta(kind: PlayKind, played: boolean) {
+  if (kind === "stack") return played ? "Your run" : "Take it";
+  return played ? "Your score" : "Ask me";
+}
+
+function GameChips({
+  token,
+  played,
+}: {
+  token: string;
+  played: { stack: boolean; trivia: boolean };
+}) {
+  return (
+    <div className="mb-2 grid grid-cols-2 gap-2">
+      <Link
+        href={played.stack ? resultPath(token, "stack") : playPath(token, "stack")}
+        className="flex h-10 items-center justify-between rounded-full border border-paper/18 bg-paper/6 px-3.5 text-left"
+      >
+        <span className="font-condensed text-[0.68rem] tracking-[0.16em] text-honey uppercase">
+          Tray
+        </span>
+        <span className="font-display text-sm text-paper/75">
+          {played.stack ? "Your run" : "Carry it"}
+        </span>
+      </Link>
+      <Link
+        href={
+          played.trivia ? resultPath(token, "trivia") : playPath(token, "trivia")
+        }
+        className="flex h-10 items-center justify-between rounded-full border border-paper/18 bg-paper/6 px-3.5 text-left"
+      >
+        <span className="font-condensed text-[0.68rem] tracking-[0.16em] text-honey uppercase">
+          Trivia
+        </span>
+        <span className="font-display text-sm text-paper/75">
+          {played.trivia ? "Your score" : "3 questions"}
+        </span>
+      </Link>
+    </div>
   );
 }
 
@@ -259,6 +336,7 @@ function PostCard({
   now,
   menuId,
   setMenuId,
+  dareHref,
   onReply,
   onDelete,
   onReport,
@@ -268,12 +346,15 @@ function PostCard({
   now: number;
   menuId: string | null;
   setMenuId: (id: string | null) => void;
+  dareHref: string | null;
   onReply: () => void;
   onDelete: (id: string) => void;
   onReport: (id: string, reason: string) => void;
   onVote: (id: string, vote: "up" | "down") => void;
 }) {
   const open = menuId === post.id;
+  const house = post.authorKind === "house";
+  const kind = post.playKind;
   return (
     <article className="rounded-2xl border border-paper/10 bg-paper/6 px-4 py-3 text-left">
       <div className="flex items-baseline justify-between gap-3">
@@ -281,14 +362,24 @@ function PostCard({
         <p className="text-xs text-paper/40">{timeAgo(post.createdAt, now)}</p>
       </div>
       <p className="mt-2 text-base leading-relaxed text-paper/90">{post.body}</p>
+      {dareHref && kind ? (
+        <Link
+          href={dareHref}
+          className="btn-honey mt-3 flex h-11 items-center justify-center rounded-full bg-honey text-sm font-semibold tracking-[0.12em] text-ink"
+        >
+          {dareCta(kind, dareHref.includes("/result"))}
+        </Link>
+      ) : null}
       <div className="mt-2 flex items-center gap-4 text-xs text-paper/50">
         <VoteButtons post={post} onVote={onVote} />
         <button type="button" onClick={onReply}>
           Reply
         </button>
-        <button type="button" onClick={() => setMenuId(open ? null : post.id)}>
-          {post.mine ? "Delete" : "Report"}
-        </button>
+        {house ? null : (
+          <button type="button" onClick={() => setMenuId(open ? null : post.id)}>
+            {post.mine ? "Delete" : "Report"}
+          </button>
+        )}
       </div>
       {open && post.mine ? (
         <button

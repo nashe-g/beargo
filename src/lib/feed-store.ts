@@ -77,6 +77,10 @@ function mapView(
     downvoteCount: row.downvoteCount,
     myVote,
     replies,
+    authorKind: row.authorKind === "house" ? "house" : "human",
+    houseSlot: row.houseSlot ?? null,
+    playKind:
+      row.playKind === "stack" || row.playKind === "trivia" ? row.playKind : null,
   };
 }
 

@@ -102,7 +102,7 @@ export default async function SharePage({
             </div>
           ) : (
             <p className="mt-4 max-w-[19rem] text-lg text-paper/85">
-              Talk to the room. Test the tray. Beat tonight’s trivia.
+              Scan the paw. You’re in the room.
             </p>
           )}
           <p className="mt-6 max-w-[20rem] font-condensed text-sm tracking-[0.12em] text-honey">

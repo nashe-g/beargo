@@ -22,6 +22,9 @@ export type FeedPostView = {
   downvoteCount: number;
   myVote: "up" | "down" | null;
   replies: FeedPostView[];
+  authorKind: "human" | "house";
+  houseSlot: string | null;
+  playKind: "stack" | "trivia" | null;
 };
 
 export type NearbyVenueView = {
@@ -93,4 +96,5 @@ export type RoomSnapshot = {
   nearby: NearbyPostView[];
   sponsor: RoomSponsorCard | null;
   source: string;
+  played: { stack: boolean; trivia: boolean };
 };

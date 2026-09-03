@@ -11,8 +11,8 @@ export const LEGACY_LOCAL_COUPON_PUBLIC_ENABLED = PLAYER_OFFERS_ENABLED;
 export const AFFILIATE_POSTGAME_ENABLED = true;
 
 /**
- * Public night: Scan hub → room, wobble, or trivia, each with its own
- * rank and sponsor. Pour stays archived.
+ * Public night: Scan lands in the room. The House posts dares.
+ * Tray and trivia play from those posts.
  */
 export const TRIVIA_ENABLED = true;
 export const POUR_ENABLED = false;

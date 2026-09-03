@@ -10,18 +10,13 @@ const BEATS = [
   },
   {
     n: "02",
-    title: "Talk to the room.",
-    body: "See what people here are saying tonight. Scan at the bar to post.",
+    title: "You’re in the room.",
+    body: "This thread is the wall for tonight. The House talks first.",
   },
   {
     n: "03",
-    title: "Test your table.",
-    body: "Keep a leaning tray of drinks up. Its own board, tonight.",
-  },
-  {
-    n: "04",
-    title: "Beat the room.",
-    body: "3 curious questions. Same ones for everyone here. Its own board.",
+    title: "Play from the thread.",
+    body: "Dares land as posts. Carry a tray. Three questions. Hand the phone.",
   },
 ];
 
@@ -34,11 +29,11 @@ export default function Home() {
             TONIGHT, AT THE BAR
           </p>
           <h1 className="mt-4 max-w-xl font-display text-[2.4rem] leading-[1.06] tracking-tight sm:text-6xl">
-            Scan the paw. Pick your night.
+            Scan the paw. You’re in the room.
           </h1>
           <p className="mt-6 max-w-md text-lg leading-relaxed text-ink-soft sm:text-xl">
-            Talk to the room, test the tray, or beat tonight’s trivia. No
-            account. Each game ranks in this bar, tonight.
+            Tonight lives in this thread. The House talks first. Dares show up
+            as posts. No account.
           </p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <Link
@@ -63,7 +58,7 @@ export default function Home() {
           THE NIGHT
         </p>
         <h2 className="mt-3 max-w-lg font-display text-3xl tracking-tight sm:text-4xl">
-          Three doors. One paw.
+          One paw. One room.
         </h2>
         <ol className="mt-10 grid gap-4 sm:grid-cols-2">
           {BEATS.map((beat) => (
@@ -91,7 +86,7 @@ export default function Home() {
           Put a Paw where people already pause.
         </h2>
         <p className="mt-4 max-w-lg text-lg leading-relaxed text-paper/70">
-          Hosts keep the physical mark. The room talks. The games rank. Players
+          Hosts keep the physical mark. The room talks. The House dares. Players
           are yours for that night.
         </p>
         <Link
