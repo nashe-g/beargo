@@ -8,11 +8,11 @@ const STEPS = [
   },
   {
     title: "You’re in the room.",
-    body: "This thread is the wall for tonight. The House already posted.",
+    body: "A live chat for everyone here. The House already said something.",
   },
   {
-    title: "Play from the post.",
-    body: "Carry a tray of drinks, or three questions. The dare is in the thread.",
+    title: "Play from the chat.",
+    body: "Carry a tray, or three questions. The dare is in the conversation.",
   },
   {
     title: "Hand the phone.",
@@ -25,8 +25,8 @@ export default function HowItWorksPage() {
     <PublicShell>
       <PublicHeading kicker="THE NIGHT" title="How it works" />
       <p className="mt-5 max-w-xl text-lg leading-relaxed text-ink-soft">
-        No account. Scan, and you’re in this bar’s thread tonight. The House
-        talks first. Games are dares on the wall, not a second app.
+        No account. Scan, and you’re in this bar’s chat tonight. The House
+        talks first. Games show up in the conversation, not a second app.
       </p>
       <ol className="mt-10 grid gap-4 sm:grid-cols-2">
         {STEPS.map((step, index) => (

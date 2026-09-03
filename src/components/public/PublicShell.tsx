@@ -49,7 +49,7 @@ export function PublicShell({ children }: { children: ReactNode }) {
               <span className="font-display text-lg">BearGo</span>
             </Link>
             <p className="mt-2 max-w-xs text-sm leading-relaxed text-ink-soft">
-              Tonight at the bar. Scan the paw. No account to play.
+              Tonight at the bar. Scan the paw. You’re in the chat. No account.
             </p>
           </div>
           <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-ink-soft">

@@ -11,12 +11,12 @@ const BEATS = [
   {
     n: "02",
     title: "You’re in the room.",
-    body: "This thread is the wall for tonight. The House talks first.",
+    body: "A live chat for everyone here tonight. The House talks first.",
   },
   {
     n: "03",
-    title: "Play from the thread.",
-    body: "Dares land as posts. Carry a tray. Three questions. Hand the phone.",
+    title: "Play from the chat.",
+    body: "The House drops a dare. Carry a tray. Three questions. Hand the phone.",
   },
 ];
 
@@ -32,8 +32,8 @@ export default function Home() {
             Scan the paw. You’re in the room.
           </h1>
           <p className="mt-6 max-w-md text-lg leading-relaxed text-ink-soft sm:text-xl">
-            Tonight lives in this thread. The House talks first. Dares show up
-            as posts. No account.
+            Tonight is a chat for everyone here. The House talks first. Games
+            show up in the conversation. No account.
           </p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <Link

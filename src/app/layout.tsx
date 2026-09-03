@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     template: `%s · ${APP_NAME}`,
   },
   description:
-    "Scan the paw. This is the room’s wall tonight. The House talks first.",
+    "Scan the paw. You’re in tonight’s chat. The House talks first.",
 };
 
 export const viewport: Viewport = {

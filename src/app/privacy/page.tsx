@@ -17,29 +17,16 @@ export default function PrivacyPage() {
             not ask for your name, email, or phone to play.
           </p>
           <p>
-            After you see your result, BearGo may show an optional sponsored or
-            affiliate offer from a third party. If that card appears, we may
-            record that it was shown and whether it was clicked, including the
-            offer, advertiser, venue, and time. We do not put your name, email,
-            phone, or trivia answers into those records or into affiliate
-            tracking parameters.
+            We do not currently show sponsored or affiliate offers. If we add
+            them later, we may record that a card was shown and whether it was
+            clicked, including the offer, advertiser, venue, and time. We would
+            not put your name, email, phone, or trivia answers into those
+            records.
           </p>
           <p>
-            Clicking an affiliate link leaves BearGo and sends you to a third
-            party such as an advertiser site. CJ Affiliate and/or the
-            advertiser may use cookies or other identifiers on their sites to
-            attribute a qualifying purchase. Those sites operate under their
-            own privacy practices.
-          </p>
-          <p>
-            BearGo’s affiliate measurement uses a normal tracked link after
-            your click. We do not install a global third-party affiliate tag
-            on every page. You can control cookies in your browser settings.
-          </p>
-          <p>
-            We keep gameplay and affiliate measurement records for operations,
-            fraud, and reporting. Hosts see game counts, not player contact
-            details. We do not sell player contact as a lead.
+            We keep gameplay records for operations, fraud, and reporting.
+            Hosts see game counts, not player contact details. We do not sell
+            player contact as a lead.
           </p>
           <p>Questions: hello@beargo.pro</p>
         </div>

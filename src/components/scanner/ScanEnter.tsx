@@ -262,7 +262,7 @@ function IntroRoom({ peopleHere }: { peopleHere: number }) {
         <span>the room.</span>
       </h1>
       <p className="scan-intro-lead">
-        This is the live feed for everyone here tonight.
+        This is the chat for everyone here tonight.
       </p>
       <p className="scan-intro-body">
         See what people are saying, join in, or just watch.

@@ -7,24 +7,13 @@ export default function TermsPage() {
         <PublicHeading kicker="POLICY" title="Terms" />
         <div className="public-prose mt-8">
           <p>
-            BearGo is a venue night: a room and two games. Rank is
-            entertainment. It is separate from any sponsored or affiliate offer.
+            BearGo is a venue night: a chat for the room, and two games. Rank is
+            entertainment.
           </p>
           <p>
-            After gameplay, BearGo may show an optional affiliate or sponsored
-            offer from a third party. Viewing or clicking it does not change
-            your score or rank. You do not have to click.
-          </p>
-          <p>
-            BearGo may receive a commission if you later complete a qualifying
-            purchase with that third party. BearGo is not the seller of those
-            products or services. Price, inventory, eligibility, fulfillment,
-            refunds, and availability are controlled by the advertiser. Their
-            site has its own terms and privacy policy.
-          </p>
-          <p>
-            Affiliate offers can change or disappear at any time. BearGo does
-            not guarantee any savings, stock, or advertiser program.
+            We do not currently show sponsored or affiliate offers. If we add
+            them later, they will be optional and will not change your score or
+            rank.
           </p>
           <p>Houston, Texas. Contact hello@beargo.pro.</p>
         </div>
