@@ -7,7 +7,7 @@ import { ScannerShell } from "@/components/scanner/ScannerShell";
 import { StampSession } from "@/components/scanner/StampSession";
 import "@/components/lab/stack/stack.css";
 import { loadAttempt, saveAttempt, type AttemptSnapshot } from "@/lib/attempt";
-import { resultPath } from "@/lib/play-kind";
+import { hubPath, resultPath } from "@/lib/play-kind";
 import type { PawRecord } from "@/lib/paws";
 import type { StackCarryResult } from "@/components/lab/stack/StackRound";
 import { wobbleTenths, type StackRoundSeed } from "@/lib/stack";
@@ -91,14 +91,14 @@ export function StackPlay({
 
   if (!ready) {
     return (
-      <ScannerShell>
+      <ScannerShell homeHref={hubPath(paw.token)}>
         <div className="flex-1" />
       </ScannerShell>
     );
   }
 
   return (
-    <ScannerShell>
+    <ScannerShell homeHref={hubPath(paw.token)}>
       <StampSession pawToken={paw.token} event="game_started" />
       {error ? (
         <p className="pb-2 text-center text-sm text-clay">{error}</p>

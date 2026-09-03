@@ -1,3 +1,5 @@
+import { keepFromParam } from "@/lib/play-source";
+
 export const PLAY_KINDS = ["stack", "trivia"] as const;
 export type PlayKind = (typeof PLAY_KINDS)[number];
 
@@ -12,6 +14,10 @@ export function triviaChallengeId(serviceDay: string) {
 
 export function isLegacyCombinedKind(kind: string | null | undefined) {
   return kind == null || kind === "combined";
+}
+
+export function hubPath(token: string, from?: string | null) {
+  return `/p/${encodeURIComponent(token)}${keepFromParam(from)}`;
 }
 
 export function resultPath(token: string, kind: PlayKind) {

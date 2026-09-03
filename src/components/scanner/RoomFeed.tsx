@@ -16,6 +16,7 @@ import { pulseLine } from "@/lib/feed-pulse";
 import { timeAgo } from "@/lib/feed-time";
 import { formatDistance } from "@/lib/geo";
 import type { PawRecord } from "@/lib/paws";
+import { hubPath } from "@/lib/play-kind";
 
 function peopleLine(count: number) {
   if (count <= 0) return "Nobody’s checked in yet.";
@@ -143,7 +144,7 @@ export function RoomFeed({
   const sponsorAt = room.posts.length >= 2 ? 2 : room.posts.length > 0 ? 1 : -1;
 
   return (
-    <ScannerShell>
+    <ScannerShell homeHref={hubPath(paw.token, from)}>
       <StampSession
         pawToken={paw.token}
         event="scanned"
@@ -242,10 +243,10 @@ export function RoomFeed({
             </p>
           )}
           <Link
-            href={`/p/${paw.token}`}
+            href={hubPath(paw.token, from)}
             className="mt-3 flex h-10 items-center justify-center text-sm text-paper/45"
           >
-            Back
+            Tonight
           </Link>
         </div>
       </div>

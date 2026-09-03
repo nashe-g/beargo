@@ -1,8 +1,10 @@
+import Link from "next/link";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
 import { VoucherQr } from "@/components/scanner/VoucherQr";
 import { CANONICAL_ORIGIN } from "@/lib/config";
 import { formatStamp } from "@/lib/format";
 import { offerTitle } from "@/lib/offer";
+import { hubPath } from "@/lib/play-kind";
 import type { PromotionRecord } from "@/lib/promotions";
 import type { VoucherRecord } from "@/lib/vouchers";
 
@@ -25,7 +27,7 @@ export function VoucherTicket({
         : "Show this when you pay";
 
   return (
-    <ScannerShell>
+    <ScannerShell homeHref={hubPath(voucher.pawToken)}>
       <div className="flex min-h-0 flex-1 flex-col items-center py-4 text-center">
         <p className="text-xs tracking-[0.22em] text-honey uppercase">
           BearGo voucher
@@ -54,6 +56,12 @@ export function VoucherTicket({
         <p className="mt-auto pt-6 text-sm text-paper/45">
           Screenshot this if you want to keep it.
         </p>
+        <Link
+          href={hubPath(voucher.pawToken)}
+          className="mt-3 flex h-10 items-center justify-center text-sm text-paper/45"
+        >
+          Tonight
+        </Link>
       </div>
     </ScannerShell>
   );

@@ -7,6 +7,7 @@ import { ScannerShell } from "@/components/scanner/ScannerShell";
 import { StampSession } from "@/components/scanner/StampSession";
 import type { OfferCard } from "@/lib/select-promotion";
 import type { PawRecord } from "@/lib/paws";
+import { hubPath } from "@/lib/play-kind";
 
 type Step = "offer" | "form" | "wait";
 
@@ -71,7 +72,7 @@ export function OfferReveal({
   }
 
   return (
-    <ScannerShell>
+    <ScannerShell homeHref={hubPath(paw.token)}>
       <StampSession
         pawToken={paw.token}
         event="offer_viewed"
@@ -114,6 +115,12 @@ export function OfferReveal({
             <p className="mt-3 text-center text-sm text-paper/50">
               You pay $0.
             </p>
+            <Link
+              href={hubPath(paw.token)}
+              className="mt-3 flex h-10 items-center justify-center text-sm text-paper/45"
+            >
+              Tonight
+            </Link>
           </div>
         </div>
       ) : null}
@@ -171,6 +178,12 @@ export function OfferReveal({
             >
               {busy ? "SENDING" : "EMAIL ME THE VOUCHER"}
             </button>
+            <Link
+              href={hubPath(paw.token)}
+              className="mt-3 flex h-10 items-center justify-center text-sm text-paper/45"
+            >
+              Tonight
+            </Link>
           </div>
         </form>
       ) : null}
@@ -218,6 +231,12 @@ export function OfferReveal({
             >
               {busy ? "SENDING" : "Resend"}
             </button>
+            <Link
+              href={hubPath(paw.token)}
+              className="flex h-12 items-center justify-center text-sm text-paper/60"
+            >
+              Tonight
+            </Link>
           </div>
         </div>
       ) : null}

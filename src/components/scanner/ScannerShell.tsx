@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { PawMark } from "@/components/paw/PawMark";
 import { PawProgress } from "@/components/paw/PawProgress";
 
 type ScannerShellProps = {
   children: ReactNode;
   showMark?: boolean;
+  homeHref?: string;
   progress?: {
     filledToes: number;
     padFilled?: boolean;
@@ -14,6 +16,7 @@ type ScannerShellProps = {
 export function ScannerShell({
   children,
   showMark = true,
+  homeHref,
   progress,
 }: ScannerShellProps) {
   return (
@@ -28,6 +31,14 @@ export function ScannerShell({
                 padFilled={progress.padFilled}
               />
             </div>
+          ) : showMark && homeHref ? (
+            <Link
+              href={homeHref}
+              className="-mx-3 flex justify-center px-3 pb-1"
+              aria-label="Tonight"
+            >
+              <PawMark className="h-7 w-7 text-honey" title="Tonight" />
+            </Link>
           ) : showMark ? (
             <div className="flex justify-center pb-1">
               <PawMark className="h-7 w-7 text-honey" title="BearGo" />

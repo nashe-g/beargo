@@ -9,7 +9,7 @@ import { ShareRank } from "@/components/scanner/ShareRank";
 import type { AffiliateCardView } from "@/lib/affiliate";
 import { loadAttempt } from "@/lib/attempt";
 import type { PawRecord } from "@/lib/paws";
-import { resultPath, type PlayKind } from "@/lib/play-kind";
+import { resultPath, hubPath, type PlayKind } from "@/lib/play-kind";
 import type { ShareCardStats } from "@/lib/share-card";
 
 export function SponsorScreen({
@@ -44,7 +44,7 @@ export function SponsorScreen({
   }, [kind, paw.token]);
 
   return (
-    <ScannerShell>
+    <ScannerShell homeHref={hubPath(paw.token)}>
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="flex min-h-0 flex-1 flex-col items-center overflow-y-auto pt-2 text-center">
           <BearGuide state="thanks" size="sm" />
@@ -70,8 +70,14 @@ export function SponsorScreen({
         <div className="flex w-full shrink-0 flex-col gap-3 pt-4">
           {stats ? <ShareRank paw={paw} stats={stats} /> : null}
           <Link
+            href={hubPath(paw.token)}
+            className="btn-honey flex h-14 w-full items-center justify-center rounded-full bg-honey text-lg font-semibold tracking-[0.14em] text-ink"
+          >
+            Tonight
+          </Link>
+          <Link
             href={resultPath(paw.token, kind)}
-            className="flex h-14 w-full items-center justify-center rounded-full border border-paper/20 text-lg font-semibold text-paper"
+            className="flex h-12 w-full items-center justify-center text-sm text-paper/60"
           >
             Back to your rank
           </Link>

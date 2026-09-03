@@ -12,7 +12,7 @@ import {
   type AttemptSnapshot,
 } from "@/lib/attempt";
 import { answersReady } from "@/lib/play-rounds";
-import { resultPath } from "@/lib/play-kind";
+import { hubPath, resultPath } from "@/lib/play-kind";
 import { BEAR_DURATIONS, type BearState } from "@/lib/bear";
 import { StampSession } from "@/components/scanner/StampSession";
 import type { DailyChallenge } from "@/lib/daily-challenge";
@@ -167,11 +167,15 @@ export function QuestionPlay({
   }
 
   if (!ready) {
-    return <ScannerShell><div className="flex-1" /></ScannerShell>;
+    return (
+      <ScannerShell homeHref={hubPath(paw.token)}>
+        <div className="flex-1" />
+      </ScannerShell>
+    );
   }
 
   return (
-    <ScannerShell>
+    <ScannerShell homeHref={hubPath(paw.token)}>
       {review ? null : (
         <StampSession pawToken={paw.token} event="game_started" />
       )}
@@ -268,6 +272,12 @@ export function QuestionPlay({
             >
               {reported ? "Reported. Thanks." : "Report this question"}
             </button>
+            <Link
+              href={hubPath(paw.token)}
+              className="flex h-10 w-full items-center justify-center text-sm text-paper/45"
+            >
+              Tonight
+            </Link>
           </div>
         ) : null}
       </div>

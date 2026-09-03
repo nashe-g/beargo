@@ -7,7 +7,7 @@ import { ScannerShell } from "@/components/scanner/ScannerShell";
 import { StampSession } from "@/components/scanner/StampSession";
 import { formatDuration, loadAttempt } from "@/lib/attempt";
 import type { PawRecord } from "@/lib/paws";
-import { playPath, sponsorPath, type PlayKind } from "@/lib/play-kind";
+import { hubPath, playPath, sponsorPath, type PlayKind } from "@/lib/play-kind";
 import { QUESTIONS_PER_CHALLENGE } from "@/lib/questions";
 import type { BoardNeighbor } from "@/lib/rank";
 import { formatWobble } from "@/lib/stack";
@@ -92,7 +92,7 @@ export function GameResult({
 
   if (!checked && !result) {
     return (
-      <ScannerShell>
+      <ScannerShell homeHref={hubPath(paw.token)}>
         <div className="flex-1" />
       </ScannerShell>
     );
@@ -100,7 +100,7 @@ export function GameResult({
 
   if (!result) {
     return (
-      <ScannerShell>
+      <ScannerShell homeHref={hubPath(paw.token)}>
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center text-center">
           <BearGuide state="arrive" size="md" />
           <h1 className="mt-6 font-display text-3xl leading-tight">
@@ -113,10 +113,10 @@ export function GameResult({
             Play
           </Link>
           <Link
-            href={`/p/${paw.token}`}
+            href={hubPath(paw.token)}
             className="mt-3 flex h-12 items-center justify-center text-sm text-paper/60"
           >
-            Back
+            Tonight
           </Link>
         </div>
       </ScannerShell>
@@ -128,7 +128,7 @@ export function GameResult({
   const neighbors = result.neighbors ?? [];
 
   return (
-    <ScannerShell>
+    <ScannerShell homeHref={hubPath(paw.token)}>
       <StampSession pawToken={paw.token} event="game_completed" />
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="flex min-h-0 flex-1 flex-col items-center overflow-y-auto text-center">
@@ -198,14 +198,13 @@ export function GameResult({
             >
               See tonight’s questions
             </Link>
-          ) : (
-            <Link
-              href={`/p/${paw.token}`}
-              className="flex h-12 w-full items-center justify-center text-sm text-paper/60"
-            >
-              What else tonight
-            </Link>
-          )}
+          ) : null}
+          <Link
+            href={hubPath(paw.token)}
+            className="flex h-12 w-full items-center justify-center text-sm text-paper/60"
+          >
+            Tonight
+          </Link>
         </div>
       </div>
     </ScannerShell>
