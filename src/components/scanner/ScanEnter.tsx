@@ -1,12 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import { PawMark } from "@/components/paw/PawMark";
+import { PawProgress } from "@/components/paw/PawProgress";
 
 const BEAT_COPY_MS = 780;
 const HOLD_COPY_MS = 2000;
-const FADE_MS = 280;
-const INTRO_KEY = "beargo:intro";
+const FADE_MS = 320;
+const INTRO_KEY = "beargo:intro:a5";
+const INTRO_PAGES = 4;
 
 function enterKey(token: string, serviceDay: string) {
   return `beargo:enter:${token}:${serviceDay}`;
@@ -117,10 +126,14 @@ export function ScanEnter({
 
   if (phase === "intro" || (phase === "out" && teach)) {
     return (
-      <div className={`scan-enter scan-intro${phase === "out" ? " is-out" : ""}`}>
+      <div
+        className={`scan-enter scan-intro is-bleed${phase === "out" ? " is-out" : ""}`}
+        data-page={page}
+      >
         <ScanIntroPages
           venue={venue}
           handle={handle}
+          peopleHere={peopleHere}
           page={page}
           onPage={setPage}
           onEnter={finish}
@@ -167,32 +180,57 @@ export function ScanEnter({
 function ScanIntroPages({
   venue,
   handle,
+  peopleHere,
   page,
   onPage,
   onEnter,
 }: {
   venue: string;
   handle: string | null;
+  peopleHere: number;
   page: number;
   onPage: (page: number) => void;
   onEnter: () => void;
 }) {
-  const last = page === 2;
-  return (
-    <div className="scan-intro-stage">
-      <div className="scan-intro-dots" aria-hidden>
-        {[0, 1, 2].map((index) => (
-          <span
-            key={index}
-            className={`scan-intro-dot${index === page ? " is-on" : ""}`}
-          />
-        ))}
-      </div>
+  const last = page === INTRO_PAGES - 1;
+  const startX = useRef<number | null>(null);
 
-      <div key={page} className="scan-intro-page">
-        {page === 0 ? <IntroWall venue={venue} /> : null}
-        {page === 1 ? <IntroHouse /> : null}
-        {page === 2 ? <IntroYou handle={handle} /> : null}
+  function onPointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+    startX.current = event.clientX;
+  }
+
+  function onPointerUp(event: ReactPointerEvent<HTMLDivElement>) {
+    if (startX.current == null) return;
+    const delta = event.clientX - startX.current;
+    startX.current = null;
+    if (Math.abs(delta) < 56) return;
+    if (delta < 0 && !last) onPage(page + 1);
+    if (delta > 0 && page > 0) onPage(page - 1);
+  }
+
+  return (
+    <div
+      className="scan-intro-stage"
+      onPointerDown={onPointerDown}
+      onPointerUp={onPointerUp}
+    >
+      <header className="scan-intro-top">
+        <PawProgress
+          className="h-8 w-8 text-honey"
+          filledToes={page + 1}
+          padFilled={last}
+        />
+        <p className="scan-intro-venue">{venue}</p>
+        <button type="button" className="scan-intro-skip" onClick={onEnter}>
+          Skip
+        </button>
+      </header>
+
+      <div key={page} className={`scan-intro-page is-${page}`}>
+        {page === 0 ? <IntroRoom peopleHere={peopleHere} /> : null}
+        {page === 1 ? <IntroTalk /> : null}
+        {page === 2 ? <IntroHouse /> : null}
+        {page === 3 ? <IntroName handle={handle} /> : null}
       </div>
 
       <div className="scan-intro-actions">
@@ -203,30 +241,64 @@ function ScanIntroPages({
         ) : (
           <button
             type="button"
-            className="scan-intro-cta"
+            className="scan-intro-next"
             onClick={() => onPage(page + 1)}
           >
             Next
+            <span aria-hidden> →</span>
           </button>
         )}
-        <button type="button" className="scan-intro-skip" onClick={onEnter}>
-          Skip
-        </button>
       </div>
     </div>
   );
 }
 
-function IntroWall({ venue }: { venue: string }) {
+function IntroRoom({ peopleHere }: { peopleHere: number }) {
   return (
     <>
-      <p className="scan-intro-kicker">{venue}</p>
-      <h1 className="scan-intro-title">The wall for tonight.</h1>
-      <p className="scan-intro-body">This thread is the room. Read it. Talk in it.</p>
-      <div className="scan-intro-card" aria-hidden>
-        <p className="scan-intro-card-handle">The House</p>
-        <p className="scan-intro-card-body">Tonight starts here.</p>
+      <p className="scan-intro-kicker">Tonight</p>
+      <h1 className="scan-intro-display">
+        You’re in
+        <span>the room.</span>
+      </h1>
+      <p className="scan-intro-lead">
+        This is the live feed for everyone here tonight.
+      </p>
+      <p className="scan-intro-body">
+        See what people are saying, join in, or just watch.
+      </p>
+      <div className="scan-intro-stamps">
+        <span className="scan-intro-stamp">Only people here can get in.</span>
+        {peopleHere > 0 ? (
+          <span className="scan-intro-live">
+            <span className="hub-live-dot" aria-hidden />
+            {peopleHere} here
+          </span>
+        ) : null}
       </div>
+    </>
+  );
+}
+
+function IntroTalk() {
+  return (
+    <>
+      <h1 className="scan-intro-display is-tight">
+        Say what everyone’s thinking.
+      </h1>
+      <div className="scan-intro-chips" aria-hidden>
+        <span>this song though</span>
+        <span>one more?</span>
+        <span>where next</span>
+        <span>who’s driving</span>
+      </div>
+      <p className="scan-intro-body">
+        React to the music. Ask a question. Start a debate. Share a joke.
+      </p>
+      <p className="scan-intro-rule">
+        It’s a conversation with the room you’re already in.
+        <span>No followers. No permanent profile.</span>
+      </p>
     </>
   );
 }
@@ -235,9 +307,10 @@ function IntroHouse() {
   return (
     <>
       <p className="scan-intro-kicker">The House</p>
-      <h1 className="scan-intro-title">It talks first.</h1>
-      <p className="scan-intro-body">
-        Dares land in the thread. Carry a tray. Three questions. Play from the post.
+      <h1 className="scan-intro-display is-small">talks too.</h1>
+      <p className="scan-intro-body is-narrow">
+        Sometimes it drops a quick game into the room — keep a wobbly tray
+        steady on your phone, or take a three-question trivia challenge.
       </p>
       <div className="scan-intro-dare" aria-hidden>
         <p className="scan-intro-dare-kicker">Tray</p>
@@ -250,22 +323,12 @@ function IntroHouse() {
   );
 }
 
-function IntroYou({ handle }: { handle: string | null }) {
+function IntroName({ handle }: { handle: string | null }) {
   return (
-    <>
-      <p className="scan-intro-kicker">Tonight</p>
-      <h1 className="scan-intro-title">
-        {handle ? (
-          <>
-            You’re <em>{handle}</em>.
-          </>
-        ) : (
-          "You’re in."
-        )}
-      </h1>
-      <p className="scan-intro-body">
-        Show someone at the table. Hand them the phone.
-      </p>
-    </>
+    <div className="scan-intro-name">
+      <p className="scan-intro-kicker">Tonight you’re</p>
+      <h1 className="scan-intro-handle">{handle || "in."}</h1>
+      <p className="scan-intro-body">That’s your name in here. Not a profile.</p>
+    </div>
   );
 }
