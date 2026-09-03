@@ -17,6 +17,10 @@ function deviceHint() {
   }
 }
 
+export type StampResult = {
+  handle: string | null;
+};
+
 export function StampSession({
   pawToken,
   event,
@@ -30,7 +34,7 @@ export function StampSession({
   promotionId?: string;
   voucherId?: string;
   from?: string | null;
-  onStamped?: () => void;
+  onStamped?: (result: StampResult) => void;
 }) {
   useEffect(() => {
     fetch(`/api/p/${pawToken}/session`, {
@@ -44,8 +48,11 @@ export function StampSession({
         ...(from === undefined ? {} : { from }),
       }),
     })
-      .catch(() => undefined)
-      .finally(() => onStamped?.());
+      .then((response) => (response.ok ? response.json() : null))
+      .then((body: { handle?: string } | null) => {
+        onStamped?.({ handle: body?.handle ?? null });
+      })
+      .catch(() => onStamped?.({ handle: null }));
   }, [pawToken, event, promotionId, voucherId, from, onStamped]);
   return null;
 }

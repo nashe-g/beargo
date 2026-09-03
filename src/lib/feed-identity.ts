@@ -39,10 +39,11 @@ export async function getFeedIdentityIfPresent(): Promise<FeedIdentity | null> {
   return existing ? mapIdentity(existing) : null;
 }
 
-/** Route handlers only. Sets the device cookie if it is missing. */
-export async function getOrCreateFeedIdentity(): Promise<FeedIdentity> {
+/** Mint or load a room identity for a known device. Does not write cookies. */
+export async function getOrCreateFeedIdentityForDevice(
+  deviceKey: string,
+): Promise<FeedIdentity> {
   await ensureFeedTables();
-  const deviceKey = await ensureDeviceCookie();
   const [existing] = await db()
     .select()
     .from(feedIdentities)
@@ -97,6 +98,12 @@ export async function getOrCreateFeedIdentity(): Promise<FeedIdentity> {
     .limit(1);
   if (!again) throw new Error("Could not mint a room identity");
   return mapIdentity(again);
+}
+
+/** Route handlers only. Sets the device cookie if it is missing. */
+export async function getOrCreateFeedIdentity(): Promise<FeedIdentity> {
+  const deviceKey = await ensureDeviceCookie();
+  return getOrCreateFeedIdentityForDevice(deviceKey);
 }
 
 export function identityIsNew(identity: FeedIdentity, at = new Date()) {

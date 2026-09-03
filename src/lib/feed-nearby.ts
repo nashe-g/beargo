@@ -3,23 +3,24 @@ import { db } from "@/db";
 import { feedPosts, paws } from "@/db/schema";
 import { FEED_NEARBY_LIMIT, FEED_NEARBY_MILES } from "@/lib/config";
 import { listHosts } from "@/lib/catalog";
-import { getHost } from "@/lib/hosts";
+import { getHost, type HostRecord } from "@/lib/hosts";
 import { milesBetween } from "@/lib/geo";
 import { isoRequired } from "@/lib/money";
 import type { PawRecord } from "@/lib/paws";
 import { ensureFeedTables } from "@/lib/feed-schema";
 import type { NearbyPostView } from "@/lib/feed-types";
 
-export async function listNearbyRoomPosts(
-  paw: PawRecord,
-  limit = FEED_NEARBY_LIMIT,
-): Promise<NearbyPostView[]> {
-  await ensureFeedTables();
+export type NearbyHost = {
+  host: HostRecord;
+  miles: number;
+};
+
+export async function nearbyHostsFor(paw: PawRecord): Promise<NearbyHost[]> {
   const host = await getHost(paw.hostId);
   if (host?.lat == null || host?.lng == null) return [];
 
   const origin = { lat: host.lat, lng: host.lng };
-  const near = (await listHosts())
+  return (await listHosts())
     .filter(
       (row) =>
         row.id !== host.id &&
@@ -33,11 +34,20 @@ export async function listNearbyRoomPosts(
     }))
     .filter((row) => row.miles <= FEED_NEARBY_MILES)
     .sort((a, b) => a.miles - b.miles);
+}
 
+export async function listNearbyRoomPosts(
+  paw: PawRecord,
+  limit = FEED_NEARBY_LIMIT,
+): Promise<NearbyPostView[]> {
+  await ensureFeedTables();
+  const near = await nearbyHostsFor(paw);
   if (near.length === 0) return [];
 
   const milesByHost = new Map(near.map((row) => [row.host.id, row.miles]));
-  const nameByHost = new Map(near.map((row) => [row.host.id, row.host.displayName]));
+  const nameByHost = new Map(
+    near.map((row) => [row.host.id, row.host.displayName]),
+  );
   const hostIds = near.map((row) => row.host.id);
 
   const [postRows, pawRows] = await Promise.all([
@@ -53,9 +63,10 @@ export async function listNearbyRoomPosts(
       )
       .orderBy(desc(feedPosts.createdAt))
       .limit(limit * 3),
-    db().select({ token: paws.token, hostId: paws.hostId }).from(paws).where(
-      inArray(paws.hostId, hostIds),
-    ),
+    db()
+      .select({ token: paws.token, hostId: paws.hostId })
+      .from(paws)
+      .where(inArray(paws.hostId, hostIds)),
   ]);
 
   const pawByHost = new Map<string, string>();

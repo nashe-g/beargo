@@ -24,6 +24,15 @@ export type FeedPostView = {
   replies: FeedPostView[];
 };
 
+export type NearbyVenueView = {
+  hostId: string;
+  venue: string;
+  pawToken: string | null;
+  miles: number;
+  label: string;
+  score: number;
+};
+
 export type NearbyPostView = {
   id: string;
   venue: string;
@@ -42,7 +51,27 @@ export type NightPulseView = {
   postsTonight: number;
 };
 
-export type NightView = NightPulseView & { nearbyCount: number };
+export type OverheardPost = {
+  id: string;
+  handle: string;
+  body: string;
+  createdAt: string;
+  upvotes: number;
+};
+
+export type NightCrown = {
+  handle: string;
+  wobble: number | null;
+  correctCount: number;
+};
+
+export type NightView = NightPulseView & {
+  nearbyCount: number;
+  nearbyVenues: NearbyVenueView[];
+  overheard: OverheardPost[];
+  trayCrown: NightCrown | null;
+  triviaCrown: NightCrown | null;
+};
 
 export type RoomSponsorCard = {
   offerId: string;

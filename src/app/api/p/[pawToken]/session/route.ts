@@ -13,6 +13,7 @@ import {
   type SessionStamp,
 } from "@/lib/scan-session";
 import { ENTRY_COOKIE, inferPlaySource, parsePlaySource } from "@/lib/play-source";
+import { getOrCreateFeedIdentityForDevice } from "@/lib/feed-identity";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
 
 export async function POST(
@@ -69,5 +70,15 @@ export async function POST(
   void jar.get(DEVICE_COOKIE);
   void jar.get(SCAN_COOKIE);
 
-  return Response.json({ ok: true, sessionId: session.id });
+  let handle: string | null = null;
+  try {
+    if (session.deviceKey) {
+      const identity = await getOrCreateFeedIdentityForDevice(session.deviceKey);
+      handle = identity.publicHandle;
+    }
+  } catch {
+    handle = null;
+  }
+
+  return Response.json({ ok: true, sessionId: session.id, handle });
 }

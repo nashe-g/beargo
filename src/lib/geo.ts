@@ -20,3 +20,9 @@ export function formatDistance(miles: number) {
   if (miles < 10) return `${miles.toFixed(1)} miles away`;
   return `${Math.round(miles)} miles away`;
 }
+
+export function formatMilesShort(miles: number) {
+  if (miles < 0.05) return "here";
+  if (miles < 10) return `${Number(miles.toFixed(1))} mi`;
+  return `${Math.round(miles)} mi`;
+}

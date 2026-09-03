@@ -274,3 +274,32 @@ export async function rankedPlayForDevice(
 export function challengeIdForPlay(kind: PlayKind, serviceDay: string) {
   return challengeIdForKind(kind, serviceDay);
 }
+
+export async function nightCrownFor(
+  paw: PawRecord,
+  kind: PlayKind,
+): Promise<{ handle: string; wobble: number | null; correctCount: number } | null> {
+  await ensurePlayColumns();
+  const serviceDay = serviceDayInZone(paw.timezone);
+  const challengeId = challengeIdForKind(kind, serviceDay);
+  const rows = await db()
+    .select()
+    .from(plays)
+    .where(and(eq(plays.hostId, paw.hostId), eq(plays.localDate, serviceDay)));
+  const board = rows
+    .filter((row) => {
+      if (row.rankingEligible === false) return false;
+      if (row.kind === kind && row.challengeId === challengeId) return true;
+      return isLegacyCombinedKind(row.kind);
+    })
+    .map(mapPlay)
+    .sort((left, right) => comparePlays(left, right, kind));
+  const lead = board[0];
+  const handle = lead?.boardName?.trim();
+  if (!lead || !handle) return null;
+  return {
+    handle,
+    wobble: lead.stackWobble ?? null,
+    correctCount: lead.correctCount,
+  };
+}
