@@ -313,13 +313,14 @@ function IntroHouse() {
         Sometimes it drops a quick game into the room — keep a wobbly tray
         steady on your phone, or take a three-question trivia challenge.
       </p>
-      <div className="scan-intro-dare" aria-hidden>
+      <figure className="scan-intro-dare" aria-hidden>
+        <figcaption className="scan-intro-dare-stamp">Example</figcaption>
         <p className="scan-intro-dare-kicker">Tray</p>
         <p className="scan-intro-dare-title">
           Make the least coordinated person at your table play this.
         </p>
         <span className="scan-intro-dare-btn">Take it</span>
-      </div>
+      </figure>
     </>
   );
 }
