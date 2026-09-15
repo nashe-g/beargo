@@ -2,26 +2,15 @@ import { HostShell } from "@/components/host/HostShell";
 import { requireHost } from "@/lib/host-auth";
 import { serviceDayInZone } from "@/lib/dates";
 import { formatWobble } from "@/lib/stack";
-import { listPlays } from "@/lib/store";
+import { hostNightTableStats } from "@/lib/night-tables";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 export default async function HostDashboardPage() {
   const host = await requireHost();
-  const plays = await listPlays();
   const localDate = serviceDayInZone(host.timezone);
-  const todayPlays = plays.filter(
-    (play) => play.hostId === host.id && play.localDate === localDate,
-  );
-  const month = localDate.slice(0, 7);
-  const monthPlays = plays.filter(
-    (play) => play.hostId === host.id && play.localDate.startsWith(month),
-  );
-  const wobbles = todayPlays
-    .map((play) => play.stackWobble)
-    .filter((value): value is number => value != null);
-  const bestWobble = wobbles.length === 0 ? null : Math.min(...wobbles);
+  const night = await hostNightTableStats(host.id, localDate);
 
   return (
     <HostShell host={host} current="/host/dashboard">
@@ -30,38 +19,13 @@ export default async function HostDashboardPage() {
       </p>
       <h1 className="mt-2 font-display text-4xl">Today</h1>
       <p className="mt-3 text-ink-soft">
-        Room, tray, and trivia. Block a specific offer on Offers if it competes
-        with this room.
+        Tables sit, play the test, then the tray. The room opens after.
       </p>
 
       <div className="mt-8 grid grid-cols-2 gap-3">
-        <Stat
-          label="Wobbles tonight"
-          value={String(
-            todayPlays.filter(
-              (play) => play.kind === "stack" || play.kind == null,
-            ).length,
-          )}
-        />
-        <Stat
-          label="Trivia tonight"
-          value={String(
-            todayPlays.filter((play) => play.kind === "trivia").length,
-          )}
-        />
-        <Stat
-          label="At the bar"
-          value={String(
-            todayPlays.filter((play) => play.playSource === "in_bar").length,
-          )}
-        />
-        <Stat
-          label="From a share"
-          value={String(
-            todayPlays.filter((play) => play.playSource === "share_link").length,
-          )}
-        />
-        <Stat label="This month" value={String(monthPlays.length)} />
+        <Stat label="Tables tonight" value={String(night.tables)} />
+        <Stat label="Finished the test" value={String(night.finishedTest)} />
+        <Stat label="Finished the tray" value={String(night.finishedTray)} />
       </div>
 
       <p className="mt-8 rounded-3xl bg-ink px-5 py-6 text-paper">
@@ -69,7 +33,7 @@ export default async function HostDashboardPage() {
           Best wobble tonight
         </span>
         <span className="mt-2 block font-display text-3xl">
-          {bestWobble == null ? "Nobody yet" : formatWobble(bestWobble)}
+          {night.bestWobble == null ? "Nobody yet" : formatWobble(night.bestWobble)}
         </span>
       </p>
 

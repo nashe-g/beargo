@@ -1,6 +1,4 @@
 import {
-  enqueueCandidate,
-  GENERATE_PROMPT_VERSION,
   generationSystemPrompt,
   type CandidateDraft,
 } from "@/lib/questions-pipeline";
@@ -151,50 +149,6 @@ function dayUserPrompt(localDate: string, note?: string) {
   ]
     .filter(Boolean)
     .join("\n");
-}
-
-export async function generateQuestionCandidates(input: {
-  count?: number;
-  note?: string;
-}) {
-  const count = Math.min(12, Math.max(3, input.count ?? 6));
-  const user = [
-    `Generate ${count} questions.`,
-    "Return JSON as {\"questions\":[...]}.",
-    "Return 2 easy, 2 medium, and 2 hard if count is 6.",
-    "Wide mix of domains. Do not default to beer, darts, or sports.",
-    input.note ? `Operator note: ${input.note}` : "",
-  ]
-    .filter(Boolean)
-    .join("\n");
-
-  const result = await completeJson(user);
-  if (!result.ok) return result;
-
-  const parsed = result.parsed as GeneratedPayload;
-  const rows = Array.isArray(parsed.questions) ? parsed.questions : [];
-  if (rows.length === 0) {
-    return { ok: false as const, error: "LLM returned no questions." };
-  }
-
-  const queued = [];
-  for (const row of rows) {
-    const draft = asDraft(row);
-    if (!draft) continue;
-    queued.push(
-      await enqueueCandidate(draft, {
-        model: result.model,
-        promptVersion: GENERATE_PROMPT_VERSION,
-      }),
-    );
-  }
-
-  return {
-    ok: true as const,
-    model: result.model,
-    created: queued.length,
-    candidates: queued,
-  };
 }
 
 export async function generateWeekSlates(input: {

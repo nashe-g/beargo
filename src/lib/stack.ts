@@ -187,10 +187,6 @@ export function formatWobble(tenths: number) {
   return (tenths / 10).toFixed(1);
 }
 
-export function stackChallengeId(serviceDay: string) {
-  return `stack:${serviceDay}`;
-}
-
 export function scoreStackRound(
   date: string,
   hostId: string,

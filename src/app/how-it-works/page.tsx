@@ -7,16 +7,16 @@ const STEPS = [
     body: "A printed mark at the venue. No app install.",
   },
   {
-    title: "You’re in the room.",
-    body: "A live chat for everyone here. The House already said something.",
+    title: "Sit a table.",
+    body: "Name it. Friends join with a code. Solo is a table of one.",
   },
   {
-    title: "Play from the chat.",
-    body: "Carry a tray, or three questions. The dare is in the conversation.",
+    title: "Play the night.",
+    body: "The Table Test, then the tray. Everyone at once.",
   },
   {
-    title: "Hand the phone.",
-    body: "That’s how the next person gets in. One more scan, not a download.",
+    title: "The room is the reward.",
+    body: "After the games, talk as this table. Chat hides at 6am.",
   },
 ];
 
@@ -25,8 +25,8 @@ export default function HowItWorksPage() {
     <PublicShell>
       <PublicHeading kicker="THE NIGHT" title="How it works" />
       <p className="mt-5 max-w-xl text-lg leading-relaxed text-ink-soft">
-        No account. Scan, and you’re in this bar’s chat tonight. The House
-        talks first. Games show up in the conversation, not a second app.
+        No account. Scan, sit a table, play tonight’s games. The room opens
+        after — as this table, not an anonymous chat.
       </p>
       <ol className="mt-10 grid gap-4 sm:grid-cols-2">
         {STEPS.map((step, index) => (

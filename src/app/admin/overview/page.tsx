@@ -43,8 +43,8 @@ export default async function AdminOverviewPage() {
       <p className="text-sm tracking-[0.2em] uppercase text-ink-soft">{today}</p>
       <h1 className="mt-2 font-display text-4xl">Network</h1>
       <p className="mt-3 max-w-2xl text-ink-soft">
-        Scan lands in the room chat. The House talks first. Games are dares
-        in the conversation. Sponsorships are off.
+        Scan sits a table. The Table Test, then the tray. The room opens
+        after, as the table. Sponsorships are off.
       </p>
       <h2 className="mt-10 font-display text-2xl">Game</h2>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

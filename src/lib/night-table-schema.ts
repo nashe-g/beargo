@@ -45,6 +45,18 @@ export async function ensureNightTables() {
       ADD COLUMN IF NOT EXISTS round1_answers jsonb NOT NULL DEFAULT '[]'::jsonb;
     ALTER TABLE night_table_members
       ADD COLUMN IF NOT EXISTS round1_finished_at timestamptz;
+    ALTER TABLE night_tables ADD COLUMN IF NOT EXISTS round1_rank integer;
+    ALTER TABLE night_tables ADD COLUMN IF NOT EXISTS slate_date text;
+    ALTER TABLE night_tables ADD COLUMN IF NOT EXISTS round2_mode text;
+    ALTER TABLE night_tables ADD COLUMN IF NOT EXISTS champion_device_key text;
+    ALTER TABLE night_tables ADD COLUMN IF NOT EXISTS round2_wobble integer;
+    ALTER TABLE night_tables ADD COLUMN IF NOT EXISTS combined_score double precision;
+    ALTER TABLE night_tables
+      ADD COLUMN IF NOT EXISTS round2_skipped boolean NOT NULL DEFAULT false;
+    ALTER TABLE night_table_members ADD COLUMN IF NOT EXISTS round2_carries jsonb;
+    ALTER TABLE night_table_members ADD COLUMN IF NOT EXISTS round2_wobble integer;
+    ALTER TABLE night_table_members
+      ADD COLUMN IF NOT EXISTS round2_finished_at timestamptz;
   `);
   tablesReady = true;
 }

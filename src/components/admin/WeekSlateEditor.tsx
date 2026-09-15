@@ -28,7 +28,6 @@ export function WeekSlateEditor({
   const emptyCount = days.filter((day) => day.status === "empty").length;
   const draftCount = days.filter((day) => day.status === "draft").length;
   const publishedCount = days.filter((day) => day.status === "published").length;
-  const unpublishedCount = emptyCount + draftCount;
 
   async function generate() {
     setBusy("generate");
@@ -162,14 +161,13 @@ export function WeekSlateEditor({
         </p>
         <h2 className="mt-1 font-display text-3xl">{rangeLabel}</h2>
         <p className="mt-2 text-ink-soft">
-          {publishedCount}/7 published · {draftCount} draft · {emptyCount} empty.
-          Generate writes unpublished days (empty and drafts). Published days
-          stay live. Publish makes that night 21 questions (seven packs) at every
-          host.
+          Generate writes the next two empty days (21 questions each). Published
+          days stay live. Click again later for the two after that. Publish makes
+          that night seven packs at every host.
         </p>
         {!configured ? (
           <p className="mt-4 text-clay">
-            No OPENAI_API_KEY. Add it to generate the week.
+            Add it to generate the next two days.
           </p>
         ) : null}
         <textarea
@@ -181,11 +179,11 @@ export function WeekSlateEditor({
         <div className="mt-4 flex flex-wrap gap-3">
           <button
             type="button"
-            disabled={Boolean(busy) || !configured || unpublishedCount === 0}
+            disabled={Boolean(busy) || !configured || emptyCount === 0}
             onClick={generate}
             className="h-12 rounded-full bg-ink px-6 text-paper disabled:opacity-40"
           >
-            {busy === "generate" ? "Generating…" : "Generate unpublished days"}
+            {busy === "generate" ? "Generating…" : "Generate next 2 days"}
           </button>
           <button
             type="button"
@@ -227,7 +225,7 @@ export function WeekSlateEditor({
 
               {questions.length === 0 ? (
                 <p className="mt-5 text-ink-soft">
-                  Empty. Generate the week to fill this day.
+                  Empty. Generate the next two days to fill this night.
                 </p>
               ) : (
                 <ol className="mt-5 grid gap-4 lg:grid-cols-3">

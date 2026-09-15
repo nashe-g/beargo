@@ -3,18 +3,31 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { nightTableMembers, nightTables } from "@/db/schema";
 import { TABLE_CODE_LENGTH, TABLE_NAME_MAX } from "@/lib/config";
-import { getTonightSlate } from "@/lib/daily-challenge";
+import { networkSlateDate } from "@/lib/daily-challenge";
 import { serviceDayInZone } from "@/lib/dates";
 import { ensureNightTables } from "@/lib/night-table-schema";
 import type {
+  NightBoard,
+  NightCombined,
   NightTableMemberView,
   NightTableReveal,
   NightTableStatus,
   NightTableView,
+  NightTrayMode,
+  NightTrayView,
 } from "@/lib/night-table-types";
+import { getPublishedSlate } from "@/lib/question-slate-store";
+import { packsForNight, isFullNightSlate } from "@/lib/question-packs";
 import type { PawRecord } from "@/lib/paws";
-import { packsForNight } from "@/lib/question-packs";
 import type { Question } from "@/lib/questions";
+import { scoreStackRound, seedStackRound } from "@/lib/stack";
+import {
+  combinedNightScore,
+  compareCombined,
+  NIGHT_DONE,
+  ROUND1_DONE,
+  SKIP_WOBBLE_TENTHS,
+} from "@/lib/table-night";
 import {
   CODE_ALPHABET,
   foldKey,
@@ -52,11 +65,18 @@ function asStatus(raw: string): NightTableStatus {
     raw === "open" ||
     raw === "locked" ||
     raw === "live" ||
-    raw === "revealed"
+    raw === "revealed" ||
+    raw === "tray" ||
+    raw === "night" ||
+    raw === "room"
   ) {
     return raw;
   }
   return "open";
+}
+
+function pastRound1(status: NightTableStatus) {
+  return (ROUND1_DONE as string[]).includes(status);
 }
 
 async function membersFor(tableId: string) {
@@ -67,9 +87,12 @@ async function membersFor(tableId: string) {
     .orderBy(asc(nightTableMembers.createdAt));
 }
 
-async function packsTonight(paw: PawRecord): Promise<Question[][]> {
-  const slate = await getTonightSlate(paw.hostId, paw.timezone);
-  return packsForNight(slate.questions);
+async function packsForTable(
+  table: typeof nightTables.$inferSelect,
+): Promise<Question[][]> {
+  const date = table.slateDate ?? table.serviceDay;
+  const questions = (await getPublishedSlate(date)) ?? [];
+  return packsForNight(questions);
 }
 
 function packForMember(
@@ -106,7 +129,7 @@ async function rankAmongTonight(
       and(
         eq(nightTables.hostId, paw.hostId),
         eq(nightTables.serviceDay, serviceDay),
-        inArray(nightTables.status, ["revealed"]),
+        inArray(nightTables.status, [...ROUND1_DONE]),
       ),
     );
   const scored: { id: string; nameKey: string; score: ReturnType<typeof scoreTable> }[] =
@@ -130,6 +153,146 @@ async function rankAmongTonight(
   return { rank, tableCount: scored.length, score: mine };
 }
 
+async function round1Board(
+  paw: PawRecord,
+  serviceDay: string,
+  tableId: string,
+  packs: Question[][],
+  members: (typeof nightTableMembers.$inferSelect)[],
+): Promise<NightBoard> {
+  const ranked = await rankAmongTonight(paw, serviceDay, tableId, packs, members);
+  const siblings = await db()
+    .select()
+    .from(nightTables)
+    .where(
+      and(
+        eq(nightTables.hostId, paw.hostId),
+        eq(nightTables.serviceDay, serviceDay),
+        inArray(nightTables.status, [...ROUND1_DONE]),
+      ),
+    );
+  const rows = await Promise.all(
+    siblings.map(async (sibling) => {
+      const people = await membersFor(sibling.id);
+      const score = scoreTable(people.map((member) => personFromMember(member, packs)));
+      return { sibling, score };
+    }),
+  );
+  rows.sort((left, right) => {
+    const byScore = compareTableScores(left.score, right.score);
+    if (byScore !== 0) return byScore;
+    return left.sibling.id.localeCompare(right.sibling.id);
+  });
+  return {
+    rank: ranked.rank,
+    tableCount: ranked.tableCount,
+    rows: rows.map((row, index) => ({
+      name: row.sibling.name,
+      mine: row.sibling.id === tableId,
+      rank: index + 1,
+      correctCount: row.score.correctCount,
+      asked: row.score.asked,
+      averageMs: row.score.averageMs,
+    })),
+  };
+}
+
+async function combinedBoard(
+  paw: PawRecord,
+  table: typeof nightTables.$inferSelect,
+  packs: Question[][],
+  members: (typeof nightTableMembers.$inferSelect)[],
+): Promise<NightCombined | null> {
+  if (table.round2Wobble == null) return null;
+  const mineScore = scoreTable(members.map((member) => personFromMember(member, packs)));
+  const mineCombined =
+    table.combinedScore ?? combinedNightScore(mineScore, table.round2Wobble);
+  const siblings = await db()
+    .select()
+    .from(nightTables)
+    .where(
+      and(
+        eq(nightTables.hostId, paw.hostId),
+        eq(nightTables.serviceDay, table.serviceDay),
+        inArray(nightTables.status, [...NIGHT_DONE]),
+      ),
+    );
+  const rows = siblings
+    .filter((row) => row.round2Wobble != null)
+    .map((row) => ({
+      id: row.id,
+      name: row.name,
+      wobble: row.round2Wobble ?? SKIP_WOBBLE_TENTHS,
+      skipped: Boolean(row.round2Skipped),
+      combined: row.combinedScore ?? Number.POSITIVE_INFINITY,
+    }));
+  if (!rows.some((row) => row.id === table.id)) {
+    rows.push({
+      id: table.id,
+      name: table.name,
+      wobble: table.round2Wobble,
+      skipped: Boolean(table.round2Skipped),
+      combined: mineCombined,
+    });
+  }
+  rows.sort((left, right) => {
+    const byScore = compareCombined(left.combined, right.combined);
+    if (byScore !== 0) return byScore;
+    return left.id.localeCompare(right.id);
+  });
+  const rank = rows.findIndex((row) => row.id === table.id) + 1;
+  const prior = table.round1Rank ?? rank;
+  return {
+    rank,
+    tableCount: rows.length,
+    jumped: prior - rank,
+    wobble: table.round2Wobble,
+    skipped: Boolean(table.round2Skipped),
+    rows: rows.map((row, index) => ({
+      name: row.name,
+      mine: row.id === table.id,
+      rank: index + 1,
+      wobble: row.wobble,
+      skipped: row.skipped,
+    })),
+  };
+}
+
+function trayView(
+  table: typeof nightTables.$inferSelect,
+  members: (typeof nightTableMembers.$inferSelect)[],
+  deviceKey: string | null,
+  paw: PawRecord,
+): NightTrayView {
+  const mode = (table.round2Mode as NightTrayMode | null) ?? null;
+  const champion = members.find(
+    (member) => member.deviceKey === table.championDeviceKey,
+  );
+  const mine = members.find((member) => member.deviceKey === deviceKey);
+  const waiting =
+    mode === "champion"
+      ? champion && !champion.round2FinishedAt
+        ? champion.deviceKey === deviceKey
+          ? []
+          : [champion.nickname]
+        : []
+      : members
+          .filter((member) => !member.round2FinishedAt && member.deviceKey !== deviceKey)
+          .map((member) => member.nickname);
+  const minePlays =
+    Boolean(mine) &&
+    !mine?.round2FinishedAt &&
+    (mode === "everyone" ||
+      (mode === "champion" && mine?.deviceKey === table.championDeviceKey));
+  return {
+    mode: mode === "skip" ? "skip" : mode,
+    championNickname: champion?.nickname ?? null,
+    minePlays,
+    waitingNames: waiting,
+    seed: seedStackRound(table.serviceDay, paw.hostId),
+  };
+}
+
 async function viewFor(
   table: typeof nightTables.$inferSelect,
   deviceKey: string | null,
@@ -137,32 +300,36 @@ async function viewFor(
 ): Promise<NightTableView> {
   const members = await membersFor(table.id);
   const status = asStatus(table.status);
-  const packs =
-    status === "live" || status === "revealed" ? await packsTonight(paw) : [];
+  const packs = pastRound1(status) || status === "live" ? await packsForTable(table) : [];
   const people = members.map((member) => personFromMember(member, packs));
-  const carried =
-    status === "revealed"
-      ? carriedNickname(
-          members.map((member, index) => ({
-            nickname: member.nickname,
-            ...people[index],
-          })),
-        )
-      : null;
-  const revealRows: NightTableReveal["people"] | null =
-    status === "revealed"
-      ? members.map((member, index) => ({
+  const showPeople = pastRound1(status);
+  const carried = showPeople
+    ? carriedNickname(
+        members.map((member, index) => ({
           nickname: member.nickname,
-          mine: Boolean(deviceKey) && member.deviceKey === deviceKey,
-          correctCount: people[index].correctCount,
-          asked: people[index].asked,
-          averageMs: people[index].averageMs,
-          carried: carried === member.nickname,
-        }))
-      : null;
-  const ranked =
-    status === "revealed"
-      ? await rankAmongTonight(paw, table.serviceDay, table.id, packs, members)
+          ...people[index],
+        })),
+      )
+    : null;
+  const revealRows: NightTableReveal["people"] | null = showPeople
+    ? members.map((member, index) => ({
+        nickname: member.nickname,
+        mine: Boolean(deviceKey) && member.deviceKey === deviceKey,
+        correctCount: people[index].correctCount,
+        asked: people[index].asked,
+        averageMs: people[index].averageMs,
+        carried: carried === member.nickname,
+      }))
+    : null;
+  const ranked = showPeople
+    ? await rankAmongTonight(paw, table.serviceDay, table.id, packs, members)
+    : null;
+  const board = showPeople
+    ? await round1Board(paw, table.serviceDay, table.id, packs, members)
+    : null;
+  const night =
+    status === "night" || status === "room"
+      ? await combinedBoard(paw, table, packs, members)
       : null;
 
   const mine = members.find((member) => member.deviceKey === deviceKey);
@@ -175,10 +342,9 @@ async function viewFor(
     mine: Boolean(deviceKey) && member.deviceKey === deviceKey,
     ready: Boolean(member.readyAt),
     finished: Boolean(member.round1FinishedAt),
-    correctCount: status === "revealed" ? people[index].correctCount : undefined,
-    averageMs: status === "revealed" ? people[index].averageMs : undefined,
-    carried:
-      status === "revealed" ? carried === member.nickname : undefined,
+    correctCount: showPeople ? people[index].correctCount : undefined,
+    averageMs: showPeople ? people[index].averageMs : undefined,
+    carried: showPeople ? carried === member.nickname : undefined,
   }));
 
   return {
@@ -201,7 +367,7 @@ async function viewFor(
           }
         : null,
     reveal:
-      status === "revealed" && ranked && revealRows
+      ranked && revealRows
         ? {
             correctCount: ranked.score.correctCount,
             asked: ranked.score.asked,
@@ -211,6 +377,9 @@ async function viewFor(
             people: revealRows,
           }
         : null,
+    board,
+    tray: status === "tray" ? trayView(table, members, deviceKey, paw) : null,
+    night,
   };
 }
 
@@ -508,14 +677,16 @@ export async function goNightTable(input: {
     return { ok: false, status: 409, error: "Wait until everyone’s ready." };
   }
 
-  const packs = await packsTonight(input.paw);
-  if (!packs.length) {
+  const slateDate = networkSlateDate();
+  const questions = (await getPublishedSlate(slateDate)) ?? [];
+  if (!isFullNightSlate(questions)) {
     return {
       ok: false,
       status: 409,
-      error: "Tonight’s questions aren’t up yet.",
+      error: "Tonight’s 21 questions aren’t published yet.",
     };
   }
+  const packs = packsForNight(questions);
 
   const people = await membersFor(found.table.id);
   const indexes = assignPackIndexes(people.length, packs.length, found.table.id);
@@ -534,6 +705,7 @@ export async function goNightTable(input: {
       status: "live" satisfies NightTableStatus,
       round1GoAt: new Date(),
       packMap,
+      slateDate,
     })
     .where(eq(nightTables.id, found.table.id));
 
@@ -551,7 +723,7 @@ export async function answerNightTable(input: {
   await ensureNightTables();
   const found = await getTableByCode(input.paw, input.code, input.deviceKey);
   if (!found.ok) return found;
-  if (found.table.status === "revealed") {
+  if (found.table.status === "revealed" || pastRound1(found.table.status)) {
     return { ok: true, table: found.table };
   }
   if (found.table.status !== "live") {
@@ -575,7 +747,14 @@ export async function answerNightTable(input: {
     return reload(found.table.id, input.deviceKey, input.paw);
   }
 
-  const packs = await packsTonight(input.paw);
+  const [row] = await db()
+    .select()
+    .from(nightTables)
+    .where(eq(nightTables.id, found.table.id))
+    .limit(1);
+  if (!row) return { ok: false, status: 404, error: "No table with that code." };
+
+  const packs = await packsForTable(row);
   const pack = packForMember(packs, member.packIndex);
   const answers = asTableAnswers(member.round1Answers);
   const next = pack[answers.length];
@@ -619,12 +798,267 @@ export async function answerNightTable(input: {
       (row) => row.id === member.id || row.round1FinishedAt,
     );
     if (allDone) {
+      const ranked = await rankAmongTonight(
+        input.paw,
+        found.table.serviceDay,
+        found.table.id,
+        packs,
+        people,
+      );
       await db()
         .update(nightTables)
-        .set({ status: "revealed" satisfies NightTableStatus })
+        .set({
+          status: "revealed" satisfies NightTableStatus,
+          round1Rank: ranked.rank,
+        })
         .where(eq(nightTables.id, found.table.id));
     }
   }
 
   return reload(found.table.id, input.deviceKey, input.paw);
+}
+
+export async function pickTrayMode(input: {
+  paw: PawRecord;
+  deviceKey: string;
+  code: unknown;
+  mode: unknown;
+  champion: unknown;
+}): Promise<NightTableWrite> {
+  await ensureNightTables();
+  const found = await getTableByCode(input.paw, input.code, input.deviceKey);
+  if (!found.ok) return found;
+  if (found.table.status === "tray") return { ok: true, table: found.table };
+  if (found.table.status !== "revealed") {
+    return { ok: false, status: 409, error: "Finish the test first." };
+  }
+  if (!found.table.members.some((member) => member.mine)) {
+    return { ok: false, status: 403, error: "You’re not at this table." };
+  }
+  const mode = input.mode === "champion" || input.mode === "everyone" ? input.mode : null;
+  if (!mode) {
+    return { ok: false, status: 400, error: "Send your steadiest, or everyone." };
+  }
+  const people = await membersFor(found.table.id);
+  let championKey = people[0]?.deviceKey ?? input.deviceKey;
+  if (mode === "champion") {
+    if (people.length === 1) {
+      championKey = people[0]!.deviceKey;
+    } else {
+      const nick =
+        typeof input.champion === "string" ? foldKey(input.champion) : "";
+      const hit = people.find((member) => foldKey(member.nickname) === nick);
+      if (!hit) {
+        return { ok: false, status: 400, error: "Who’s carrying?" };
+      }
+      championKey = hit.deviceKey;
+    }
+  }
+  const [row] = await db()
+    .select()
+    .from(nightTables)
+    .where(eq(nightTables.id, found.table.id))
+    .limit(1);
+  if (!row) return { ok: false, status: 404, error: "No table with that code." };
+  await freezeRound1Rank(row, input.paw);
+  await db()
+    .update(nightTables)
+    .set({
+      status: "tray" satisfies NightTableStatus,
+      round2Mode: mode,
+      championDeviceKey: mode === "champion" ? championKey : null,
+    })
+    .where(eq(nightTables.id, found.table.id));
+  return reload(found.table.id, input.deviceKey, input.paw);
+}
+
+async function freezeRound1Rank(
+  table: typeof nightTables.$inferSelect,
+  paw: PawRecord,
+) {
+  if (table.round1Rank != null) return;
+  const people = await membersFor(table.id);
+  const packs = await packsForTable(table);
+  const ranked = await rankAmongTonight(
+    paw,
+    table.serviceDay,
+    table.id,
+    packs,
+    people,
+  );
+  await db()
+    .update(nightTables)
+    .set({ round1Rank: ranked.rank })
+    .where(eq(nightTables.id, table.id));
+}
+
+async function closeTray(
+  table: typeof nightTables.$inferSelect,
+  paw: PawRecord,
+  wobble: number,
+  skipped: boolean,
+) {
+  const people = await membersFor(table.id);
+  const packs = await packsForTable(table);
+  await freezeRound1Rank(table, paw);
+  const round1 = scoreTable(people.map((member) => personFromMember(member, packs)));
+  const combined = combinedNightScore(round1, wobble);
+  await db()
+    .update(nightTables)
+    .set({
+      status: "night" satisfies NightTableStatus,
+      round2Wobble: wobble,
+      combinedScore: combined,
+      round2Skipped: skipped,
+      round2Mode: skipped ? "skip" : table.round2Mode,
+    })
+    .where(eq(nightTables.id, table.id));
+}
+
+export async function skipTray(input: {
+  paw: PawRecord;
+  deviceKey: string;
+  code: unknown;
+}): Promise<NightTableWrite> {
+  await ensureNightTables();
+  const found = await getTableByCode(input.paw, input.code, input.deviceKey);
+  if (!found.ok) return found;
+  if (found.table.status === "night" || found.table.status === "room") {
+    return { ok: true, table: found.table };
+  }
+  if (found.table.status !== "revealed" && found.table.status !== "tray") {
+    return { ok: false, status: 409, error: "Finish the test first." };
+  }
+  if (!found.table.members.some((member) => member.mine)) {
+    return { ok: false, status: 403, error: "You’re not at this table." };
+  }
+  const [row] = await db()
+    .select()
+    .from(nightTables)
+    .where(eq(nightTables.id, found.table.id))
+    .limit(1);
+  if (!row) return { ok: false, status: 404, error: "No table with that code." };
+  await freezeRound1Rank(row, input.paw);
+  await closeTray(row, input.paw, SKIP_WOBBLE_TENTHS, true);
+  return reload(found.table.id, input.deviceKey, input.paw);
+}
+
+export async function submitTray(input: {
+  paw: PawRecord;
+  deviceKey: string;
+  code: unknown;
+  carries: unknown;
+}): Promise<NightTableWrite> {
+  await ensureNightTables();
+  const found = await getTableByCode(input.paw, input.code, input.deviceKey);
+  if (!found.ok) return found;
+  if (found.table.status !== "tray") {
+    return { ok: false, status: 409, error: "The tray isn’t open." };
+  }
+  const [row] = await db()
+    .select()
+    .from(nightTables)
+    .where(eq(nightTables.id, found.table.id))
+    .limit(1);
+  if (!row) return { ok: false, status: 404, error: "No table with that code." };
+
+  const [member] = await db()
+    .select()
+    .from(nightTableMembers)
+    .where(
+      and(
+        eq(nightTableMembers.tableId, found.table.id),
+        eq(nightTableMembers.deviceKey, input.deviceKey),
+      ),
+    )
+    .limit(1);
+  if (!member) {
+    return { ok: false, status: 403, error: "You’re not at this table." };
+  }
+  if (row.round2Mode === "champion" && row.championDeviceKey !== input.deviceKey) {
+    return { ok: false, status: 403, error: "They’re carrying." };
+  }
+  if (member.round2FinishedAt) {
+    return reload(found.table.id, input.deviceKey, input.paw);
+  }
+
+  const scored = scoreStackRound(row.serviceDay, input.paw.hostId, input.carries);
+  if (!scored) {
+    return { ok: false, status: 400, error: "That carry doesn’t look right." };
+  }
+
+  await db()
+    .update(nightTableMembers)
+    .set({
+      round2Carries: scored.wobbles.map((wobble, index) => ({
+        glasses: seedStackRound(row.serviceDay, input.paw.hostId).carries[index]
+          ?.glasses ?? 0,
+        wobble,
+      })),
+      round2Wobble: scored.stackWobble,
+      round2FinishedAt: new Date(),
+    })
+    .where(eq(nightTableMembers.id, member.id));
+
+  const people = await membersFor(found.table.id);
+  const needed =
+    row.round2Mode === "champion"
+      ? people.filter((person) => person.deviceKey === row.championDeviceKey)
+      : people;
+  const allDone = needed.every(
+    (person) => person.id === member.id || person.round2FinishedAt,
+  );
+  if (allDone) {
+    const wobbles = needed.map((person) =>
+      person.id === member.id ? scored.stackWobble : (person.round2Wobble ?? 0),
+    );
+    const mean = Math.round(
+      wobbles.reduce((sum, value) => sum + value, 0) / wobbles.length,
+    );
+    await closeTray(row, input.paw, mean, false);
+  }
+  return reload(found.table.id, input.deviceKey, input.paw);
+}
+
+export async function enterRoom(input: {
+  paw: PawRecord;
+  deviceKey: string;
+  code: unknown;
+}): Promise<NightTableWrite> {
+  await ensureNightTables();
+  const found = await getTableByCode(input.paw, input.code, input.deviceKey);
+  if (!found.ok) return found;
+  if (found.table.status === "room") return { ok: true, table: found.table };
+  if (found.table.status !== "night") {
+    return { ok: false, status: 409, error: "Finish the night first." };
+  }
+  if (!found.table.members.some((member) => member.mine)) {
+    return { ok: false, status: 403, error: "You’re not at this table." };
+  }
+  await db()
+    .update(nightTables)
+    .set({ status: "room" satisfies NightTableStatus })
+    .where(eq(nightTables.id, found.table.id));
+  return reload(found.table.id, input.deviceKey, input.paw);
+}
+
+export async function hostNightTableStats(hostId: string, serviceDay: string) {
+  await ensureNightTables();
+  const rows = await db()
+    .select()
+    .from(nightTables)
+    .where(
+      and(eq(nightTables.hostId, hostId), eq(nightTables.serviceDay, serviceDay)),
+    );
+  const played = rows.filter((row) => pastRound1(asStatus(row.status)));
+  const trayDone = rows.filter(
+    (row) => row.round2Wobble != null && !row.round2Skipped,
+  );
+  const best = trayDone.map((row) => row.round2Wobble as number);
+  return {
+    tables: rows.length,
+    finishedTest: played.length,
+    finishedTray: trayDone.length,
+    bestWobble: best.length ? Math.min(...best) : null,
+  };
 }

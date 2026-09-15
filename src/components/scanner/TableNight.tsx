@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation";
 import { JoinQr } from "@/components/scanner/JoinQr";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
 import { StampSession } from "@/components/scanner/StampSession";
+import { TableStandings } from "@/components/scanner/TableStandings";
 import { TableTest } from "@/components/scanner/TableTest";
+import { TableTray } from "@/components/scanner/TableTray";
+import { RoomFeed } from "@/components/scanner/RoomFeed";
 import { TABLE_CODE_LENGTH, TABLE_NAME_MAX, TABLE_NICK_MAX } from "@/lib/config";
 import type { NightTableView } from "@/lib/night-table-types";
 import type { PawRecord } from "@/lib/paws";
@@ -109,7 +112,7 @@ export function TableNight({
   }, [joinCode, router, token]);
 
   useEffect(() => {
-    if (!joinCode || tableStatus === "revealed") return;
+    if (!joinCode || tableStatus === "room") return;
     const poll = window.setInterval(async () => {
       const response = await fetch(
         withDeviceHint(
@@ -288,8 +291,33 @@ export function TableNight({
           <p className="text-sm text-paper/50">Tonight…</p>
         </div>
       ) : table ? (
-        table.status === "live" || table.status === "revealed" ? (
+        table.status === "live" ? (
           <TableTest pawToken={token} table={table} onTable={setTable} />
+        ) : table.status === "tray" ? (
+          <TableTray pawToken={token} table={table} onTable={setTable} />
+        ) : table.status === "revealed" || table.status === "night" ? (
+          <TableStandings pawToken={token} table={table} onTable={setTable} />
+        ) : table.status === "room" ? (
+          <RoomFeed
+            paw={paw}
+            from={from}
+            asReward
+            tableName={table.name}
+            initial={{
+              handle: table.name,
+              canPost: true,
+              peopleHere: 0,
+              pulse: {
+                score: 0,
+                label: "",
+                peopleHere: 0,
+                postsTonight: 0,
+              },
+              posts: [],
+              nearby: [],
+              source: "in_bar",
+            }}
+          />
         ) : (
         <div className="flex min-h-0 flex-1 flex-col">
           <header className="shrink-0 pb-2">
@@ -304,7 +332,7 @@ export function TableNight({
               {table.mineCreator && joinUrl ? (
                 <div className="rounded-[1.4rem] border border-paper/12 bg-paper/6 py-4">
                   <JoinQr value={joinUrl} label={`Join ${table.name}`} />
-                  <p className="mt-3 text-center font-condensed text-3xl tracking-[0.28em] text-honey">
+                  <p className="mt-3 text-center font-condensed text-4xl tracking-[0.32em] text-honey drop-shadow-[0_0_18px_rgba(245,196,76,0.45)]">
                     {table.joinCode}
                   </p>
                   <p className="mt-1 text-center text-xs text-paper/45">
@@ -337,7 +365,7 @@ export function TableNight({
             <div className="min-h-0 flex-1 overflow-y-auto pt-3">
               <p className="font-display text-3xl leading-tight">The Table Test</p>
               <p className="mt-2 text-sm text-paper/65">
-                Everyone at once. Your phone, your three.
+                Everyone at once. Your phone, your pack.
               </p>
               <ul className="mt-5 space-y-2">
                 {table.members.map((member) => (

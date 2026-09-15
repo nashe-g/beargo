@@ -2,8 +2,12 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { ADMIN_COOKIE } from "@/lib/admin-auth";
 import { audit } from "@/lib/audit";
+import { SLATE_GENERATE_DAYS } from "@/lib/config";
 import { generateWeekSlates, llmConfigured } from "@/lib/question-generate";
-import { listHorizonSlates } from "@/lib/question-slate-store";
+import {
+  listHorizonSlates,
+  nextEmptyDates,
+} from "@/lib/question-slate-store";
 
 export const maxDuration = 300;
 
@@ -14,7 +18,7 @@ export async function POST(request: Request) {
   }
   if (!llmConfigured()) {
     return NextResponse.json(
-      { error: "No OPENAI_API_KEY. Add it to generate the week." },
+      { error: "No OPENAI_API_KEY. Add it to generate nights." },
       { status: 400 },
     );
   }
@@ -27,20 +31,18 @@ export async function POST(request: Request) {
   }
 
   const days = await listHorizonSlates();
-  const unpublished = days
-    .filter((day) => day.status !== "published")
-    .map((day) => day.localDate);
-  if (unpublished.length === 0) {
+  const dates = nextEmptyDates(days, SLATE_GENERATE_DAYS);
+  if (dates.length === 0) {
     return NextResponse.json({
       ok: true,
       created: [],
       failed: [],
-      message: "Next 7 days are already published.",
+      message: "No empty days in the next week. Publish drafts, or wait for a new day.",
     });
   }
 
   const result = await generateWeekSlates({
-    dates: unpublished,
+    dates,
     note: body.note,
   });
   if (!result.ok) {
@@ -56,6 +58,7 @@ export async function POST(request: Request) {
   await audit("admin", "questions.week.generate", {
     created: result.created,
     failed: result.failed,
+    ahead: SLATE_GENERATE_DAYS,
   });
   return NextResponse.json(result);
 }

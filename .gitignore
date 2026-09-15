@@ -43,3 +43,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local notes, not the product
+/revamp.txt
+/beargo-cj-affiliate-monetization-implementation.md
+/venue_live_feed_mvp_spec.md

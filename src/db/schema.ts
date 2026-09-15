@@ -452,6 +452,13 @@ export const nightTables = pgTable(
     lockedAt: timestamp("locked_at", { withTimezone: true }),
     round1GoAt: timestamp("round1_go_at", { withTimezone: true }),
     packMap: jsonb("pack_map").$type<Record<string, number>>(),
+    slateDate: text("slate_date"),
+    round1Rank: integer("round1_rank"),
+    round2Mode: text("round2_mode"),
+    championDeviceKey: text("champion_device_key"),
+    round2Wobble: integer("round2_wobble"),
+    combinedScore: doublePrecision("combined_score"),
+    round2Skipped: boolean("round2_skipped").notNull().default(false),
   },
   (table) => [
     uniqueIndex("night_tables_host_day_code").on(
@@ -485,6 +492,11 @@ export const nightTableMembers = pgTable(
       .notNull()
       .default([]),
     round1FinishedAt: timestamp("round1_finished_at", { withTimezone: true }),
+    round2Carries: jsonb("round2_carries").$type<
+      { glasses: number; wobble: number }[]
+    >(),
+    round2Wobble: integer("round2_wobble"),
+    round2FinishedAt: timestamp("round2_finished_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [

@@ -90,10 +90,6 @@ export function shareCardQuery(stats: ShareCardStats) {
   return params.toString();
 }
 
-export function shareCardPath(token: string, stats: ShareCardStats) {
-  return `/p/${encodeURIComponent(token)}/s?${shareCardQuery(stats)}`;
-}
-
 export function shareCardImagePath(token: string, stats: ShareCardStats) {
   return `/p/${encodeURIComponent(token)}/s/card?${shareCardQuery(stats)}`;
 }

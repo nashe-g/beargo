@@ -11,8 +11,7 @@ function siteOrigin() {
 }
 
 export async function emailAdminWeekReminder(days: DaySlate[]) {
-  const start = days[0]?.label ?? "this week";
-  const end = days[days.length - 1]?.label ?? "";
+  const start = days[0]?.label ?? "tonight";
   const url = `${siteOrigin()}/admin/challenges`;
   const lines = days.map((day) => {
     const state =
@@ -23,17 +22,17 @@ export async function emailAdminWeekReminder(days: DaySlate[]) {
           : "empty";
     return `- ${day.label} (${day.localDate}): ${state}`;
   });
-  const text = `Thursday reminder: generate and publish BearGo questions for ${start} through ${end}.
+  const text = `BearGo nights need 21 questions. Generate the next two empty days, then publish.
 
 ${lines.join("\n")}
 
-Open the week calendar:
+Open the calendar:
 ${url}`;
   return sendMail({
     to: adminInbox(),
-    subject: `Generate next week’s BearGo questions (${start}–${end})`,
+    subject: `BearGo questions: next nights from ${start}`,
     text,
-    html: `<p>Thursday reminder: generate and publish BearGo questions for <strong>${start}</strong> through <strong>${end}</strong>.</p><ul>${days
+    html: `<p>BearGo nights need 21 questions. Generate the next two empty days, then publish.</p><ul>${days
       .map(
         (day) =>
           `<li>${day.label} (${day.localDate}): ${
@@ -44,6 +43,6 @@ ${url}`;
                 : "empty"
           }</li>`,
       )
-      .join("")}</ul><p><a href="${url}">Open the week calendar</a></p>`,
+      .join("")}</ul><p><a href="${url}">Open the calendar</a></p>`,
   });
 }

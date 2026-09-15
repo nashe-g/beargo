@@ -42,17 +42,6 @@ export type AffiliateOffer = {
   active: boolean;
 };
 
-export type AffiliateCardView = {
-  offerId: string;
-  advertiserId: string;
-  advertiserName: string;
-  title: string;
-  body: string;
-  ctaLabel: string;
-  imageUrl: string | null;
-  hostId: string;
-};
-
 let tablesReady = false;
 
 export async function ensureAffiliateTables() {
@@ -196,57 +185,6 @@ export function offerIsEligible(
   if (!countryAllowed(offer.targetCountries, country)) return false;
   if (!countryAllowed(advertiser.serviceableCountries, country)) return false;
   return true;
-}
-
-function pickWeighted(offers: AffiliateOffer[]) {
-  const total = offers.reduce(
-    (sum, offer) => sum + Math.max(1, offer.adminWeight),
-    0,
-  );
-  let cursor = Math.random() * total;
-  for (const offer of offers) {
-    cursor -= Math.max(1, offer.adminWeight);
-    if (cursor <= 0) return offer;
-  }
-  return offers[offers.length - 1];
-}
-
-export async function selectAffiliateCard(input: {
-  hostId: string;
-  country?: string;
-}): Promise<AffiliateCardView | null> {
-  if (!AFFILIATE_POSTGAME_ENABLED) return null;
-  try {
-    await ensureAffiliateTables();
-  } catch {
-    return null;
-  }
-  const country = (input.country ?? "US").toUpperCase();
-  const [offers, advertisers] = await Promise.all([
-    listAffiliateOffers(),
-    listAffiliateAdvertisers(),
-  ]);
-  const byAdvertiser = new Map(advertisers.map((row) => [row.id, row]));
-  const eligible = offers.filter((offer) => {
-    const advertiser = byAdvertiser.get(offer.advertiserId);
-    return advertiser
-      ? offerIsEligible(offer, advertiser, country)
-      : false;
-  });
-  if (eligible.length === 0) return null;
-  const chosen = pickWeighted(eligible);
-  const advertiser = byAdvertiser.get(chosen.advertiserId)!;
-  return {
-    offerId: chosen.id,
-    advertiserId: advertiser.id,
-    advertiserName: advertiser.name,
-    title: chosen.title,
-    body: chosen.body,
-    ctaLabel: chosen.ctaLabel,
-    imageUrl:
-      chosen.imageUrl && isHttpsUrl(chosen.imageUrl) ? chosen.imageUrl : null,
-    hostId: input.hostId,
-  };
 }
 
 export function affiliateSid(offerId: string, hostId?: string | null) {

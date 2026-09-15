@@ -9,9 +9,9 @@ export default function ForHostsPage() {
           <PublicHeading kicker="VENUES" title="For hosts" />
           <div className="public-prose mt-6 max-w-xl">
             <p>
-              Put a Paw where people already pause. They scan it and they’re in
-              tonight’s chat. The House talks first. Games show up as dares in
-              the room, not a second app.
+              Put a Paw where people already pause. They scan it, sit a table,
+              and play tonight’s games. Chat is the reward after, posted as the
+              table, not a second app.
             </p>
           </div>
         </div>

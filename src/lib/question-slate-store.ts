@@ -2,7 +2,7 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { questionSlates, questions } from "@/db/schema";
 import { insertApprovedQuestion } from "@/lib/catalog";
-import { BEARGO_DAY_ZONE } from "@/lib/config";
+import { BEARGO_DAY_ZONE, SLATE_HORIZON_DAYS } from "@/lib/config";
 import {
   dateRange,
   formatWeekday,
@@ -51,7 +51,7 @@ export async function ensureQuestionSlatesTable() {
 }
 
 export function horizonDates(at = new Date()) {
-  return dateRange(localDateInZone(BEARGO_DAY_ZONE, at), 7);
+  return dateRange(localDateInZone(BEARGO_DAY_ZONE, at), SLATE_HORIZON_DAYS);
 }
 
 function asQuestions(value: unknown): Question[] {
@@ -88,6 +88,13 @@ export async function listSlatesForDates(dates: string[]): Promise<DaySlate[]> {
 
 export async function listHorizonSlates(at = new Date()) {
   return listSlatesForDates(horizonDates(at));
+}
+
+export function nextEmptyDates(days: DaySlate[], count: number) {
+  return days
+    .filter((day) => day.status === "empty")
+    .slice(0, Math.max(0, count))
+    .map((day) => day.localDate);
 }
 
 export async function getPublishedSlate(localDate: string) {

@@ -10,7 +10,6 @@ import {
   type KeyboardEvent,
 } from "react";
 import Link from "next/link";
-import { ScanEnter } from "@/components/scanner/ScanEnter";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
 import { StampSession, type StampResult } from "@/components/scanner/StampSession";
 import { FEED_POST_MAX } from "@/lib/config";
@@ -23,7 +22,6 @@ import {
 import { timeAgo } from "@/lib/feed-time";
 import { formatDistance } from "@/lib/geo";
 import type { PawRecord } from "@/lib/paws";
-import { playPath, resultPath, type PlayKind } from "@/lib/play-kind";
 
 const NEAR_BOTTOM_PX = 96;
 const CLUSTER_MS = 5 * 60_000;
@@ -74,16 +72,17 @@ export function RoomFeed({
   paw,
   initial,
   from,
-  serviceDay,
+  asReward = false,
+  tableName,
 }: {
   paw: PawRecord;
   initial: RoomSnapshot;
   from?: string | null;
-  serviceDay: string;
+  asReward?: boolean;
+  tableName?: string;
 }) {
   const [room, setRoom] = useState(initial);
-  const [handle, setHandle] = useState(initial.handle);
-  const [entering, setEntering] = useState(true);
+  const [handle, setHandle] = useState(tableName || initial.handle);
   const [body, setBody] = useState("");
   const [replyTo, setReplyTo] = useState<FeedPostView | null>(null);
   const [error, setError] = useState("");
@@ -106,8 +105,9 @@ export function RoomFeed({
     if (!response.ok) return;
     const next = (await response.json()) as RoomSnapshot;
     setRoom(next);
-    if (next.handle) setHandle(next.handle);
-  }, [paw.token]);
+    if (tableName) setHandle(tableName);
+    else if (next.handle) setHandle(next.handle);
+  }, [paw.token, tableName]);
 
   useEffect(() => {
     void refresh();
@@ -169,7 +169,6 @@ export function RoomFeed({
   }, [keyboardInset]);
 
   useLayoutEffect(() => {
-    if (entering) return;
     const list = listRef.current;
     if (!list) return;
     const id = focusId.current;
@@ -190,7 +189,7 @@ export function RoomFeed({
       list.scrollTop = list.scrollHeight;
       setShowLatest(false);
     }
-  }, [entering, room.posts, syncEdge]);
+  }, [room.posts, syncEdge]);
 
   function resizeComposer() {
     const field = composerRef.current;
@@ -302,31 +301,18 @@ export function RoomFeed({
   }
 
   const posts = [...room.posts].reverse();
-  const played = room.played ?? { stack: false, trivia: false };
 
   return (
-    <ScannerShell showMark={!entering}>
+    <ScannerShell>
       <StampSession
         pawToken={paw.token}
         event="scanned"
         from={from}
         onStamped={onStamped}
       />
-      {entering ? (
-        <ScanEnter
-          pawToken={paw.token}
-          serviceDay={serviceDay}
-          venue={paw.hostDisplayName}
-          peopleHere={room.peopleHere}
-          handle={handle || null}
-          onDone={() => setEntering(false)}
-        />
-      ) : null}
       <div
         className="flex min-h-0 flex-1 flex-col"
         style={keyboardInset ? { paddingBottom: keyboardInset } : undefined}
-        aria-hidden={entering}
-        {...(entering ? { inert: true } : {})}
       >
         <header className="flex shrink-0 items-baseline justify-between gap-3 pb-2">
           <div className="min-w-0">
@@ -342,26 +328,8 @@ export function RoomFeed({
           </p>
         </header>
 
-        <div className="flex shrink-0 items-center gap-2 overflow-x-auto pb-2">
-          <GameChip
-            href={
-              played.stack
-                ? resultPath(paw.token, "stack")
-                : playPath(paw.token, "stack")
-            }
-            label="Tray"
-            detail={played.stack ? "Your run" : "Carry it"}
-          />
-          <GameChip
-            href={
-              played.trivia
-                ? resultPath(paw.token, "trivia")
-                : playPath(paw.token, "trivia")
-            }
-            label="Trivia"
-            detail={played.trivia ? "Your score" : "3 questions"}
-          />
-          {room.nearby.length > 0 ? (
+        {room.nearby.length > 0 ? (
+          <div className="flex shrink-0 items-center gap-2 overflow-x-auto pb-2">
             <button
               type="button"
               onClick={() => setShowNearby((open) => !open)}
@@ -373,8 +341,8 @@ export function RoomFeed({
             >
               Around
             </button>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
 
         {showNearby && room.nearby.length > 0 ? (
           <div className="mb-2 max-h-36 shrink-0 overflow-y-auto border-b border-paper/10 pb-2">
@@ -391,7 +359,7 @@ export function RoomFeed({
             <div className="flex min-h-full flex-col justify-end gap-0.5 pb-2">
               {posts.length === 0 ? (
                 <p className="px-2 py-8 text-center text-sm text-paper/55">
-                  The House is on its way.
+                  {asReward ? "The room is yours." : "Say something."}
                 </p>
               ) : null}
               {posts.map((post, index) => {
@@ -423,7 +391,6 @@ export function RoomFeed({
                       onExpand={() =>
                         setExpanded((prevSet) => new Set(prevSet).add(post.id))
                       }
-                      dareHref={dareHref(paw.token, post, played)}
                       onReply={() => startReply(post)}
                       onDelete={remove}
                       onReport={report}
@@ -514,45 +481,6 @@ function SendIcon() {
   );
 }
 
-function dareHref(
-  token: string,
-  post: FeedPostView,
-  played: { stack: boolean; trivia: boolean },
-) {
-  if (post.authorKind !== "house") return null;
-  if (post.houseSlot === "result") return null;
-  const kind = post.playKind;
-  if (kind !== "stack" && kind !== "trivia") return null;
-  return played[kind] ? resultPath(token, kind) : playPath(token, kind);
-}
-
-function dareCta(kind: PlayKind, played: boolean) {
-  if (kind === "stack") return played ? "Your run" : "Take it";
-  return played ? "Your score" : "Ask me";
-}
-
-function GameChip({
-  href,
-  label,
-  detail,
-}: {
-  href: string;
-  label: string;
-  detail: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="shrink-0 rounded-full border border-paper/15 bg-paper/6 px-3 py-1.5 text-xs"
-    >
-      <span className="font-condensed tracking-[0.14em] text-honey uppercase">
-        {label}
-      </span>
-      <span className="ml-1.5 text-paper/65">{detail}</span>
-    </Link>
-  );
-}
-
 function PostLine({
   post,
   now,
@@ -563,7 +491,6 @@ function PostLine({
   setActiveId,
   threadOpen,
   onExpand,
-  dareHref,
   onReply,
   onDelete,
   onReport,
@@ -578,7 +505,6 @@ function PostLine({
   setActiveId: (id: string | null) => void;
   threadOpen: boolean;
   onExpand: () => void;
-  dareHref: string | null;
   onReply: () => void;
   onDelete: (id: string) => void;
   onReport: (id: string, reason: string) => void;
@@ -587,20 +513,16 @@ function PostLine({
   const open = menuId === post.id;
   const active = activeId === post.id;
   const house = post.authorKind === "house";
-  const dare = Boolean(dareHref && post.playKind);
-  const kind = post.playKind;
 
   return (
     <article
       data-post-id={post.id}
       className={`text-left ${
-        dare
-          ? "my-1.5 rounded-2xl border border-honey/25 bg-honey/12 px-3.5 py-3"
-          : house
-            ? "px-1 py-1.5"
-            : `rounded-2xl px-2.5 py-1.5 ${
-                post.mine ? "bg-paper/8" : ""
-              } ${clustered ? "pt-0.5" : ""}`
+        house
+          ? "px-1 py-1.5"
+          : `rounded-2xl px-2.5 py-1.5 ${
+              post.mine ? "bg-paper/8" : ""
+            } ${clustered ? "pt-0.5" : ""}`
       }`}
     >
       {clustered && !house ? null : (
@@ -612,7 +534,7 @@ function PostLine({
           >
             {post.handle}
           </p>
-          {dare || house ? (
+          {house ? (
             <p className="text-[11px] text-paper/35">{timeAgo(post.createdAt, now)}</p>
           ) : null}
         </div>
@@ -630,14 +552,6 @@ function PostLine({
           {post.body}
         </p>
       </button>
-      {dareHref && kind ? (
-        <Link
-          href={dareHref}
-          className="btn-honey mt-3 flex h-11 items-center justify-center rounded-full bg-honey text-sm font-semibold tracking-[0.12em] text-ink"
-        >
-          {dareCta(kind, dareHref.includes("/result"))}
-        </Link>
-      ) : null}
       <div className="mt-1 flex items-center gap-3 text-[11px] text-paper/40">
         <button type="button" onClick={onReply}>
           Reply

@@ -13,10 +13,6 @@ export const AFFILIATE_POSTGAME_ENABLED = false;
 /**
  * Public night: Scan sits a table. The room is the reward after the games.
  */
-export const TRIVIA_ENABLED = true;
-export const POUR_ENABLED = false;
-
-/** Venue room behind a paw scan. */
 export const FEED_ROOM_ENABLED = true;
 /**
  * Run omni-moderation on every post and store what full policy would do.
@@ -34,14 +30,14 @@ export const FEED_BURST_LIMIT = 3;
 export const FEED_BURST_WINDOW_MS = 2 * 60 * 1000;
 export const FEED_REPORT_HIDE_COUNT = 3;
 export const FEED_REPORT_HIDE_WINDOW_MS = 20 * 60 * 1000;
-export const AFFILIATE_ROOM_PLACEMENT = "room_thread";
 export const FEED_NEARBY_MILES = 3;
 export const FEED_NEARBY_LIMIT = 12;
 /** Distinct in-bar devices in this window count as “here”. */
 export const FEED_HERE_WINDOW_MS = 4 * 60 * 60 * 1000;
 
-/** The wobble game. This is BearGo now. */
-export const STACK_ENABLED = true;
+/** How many nights the admin calendar shows. Generate fills the next two empty days. */
+export const SLATE_HORIZON_DAYS = 7;
+export const SLATE_GENERATE_DAYS = 2;
 
 export function pawScanUrl(token: string, origin: string = CANONICAL_ORIGIN) {
   return `${origin.replace(/\/$/, "")}/p/${encodeURIComponent(token)}`;

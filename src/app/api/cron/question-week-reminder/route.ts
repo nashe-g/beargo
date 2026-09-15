@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { BEARGO_DAY_ZONE } from "@/lib/config";
-import { weekdayLongInZone } from "@/lib/dates";
+import { SLATE_GENERATE_DAYS } from "@/lib/config";
 import { listHorizonSlates } from "@/lib/question-slate-store";
 import { emailAdminWeekReminder } from "@/lib/question-week-mail";
 
@@ -18,14 +17,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (weekdayLongInZone(BEARGO_DAY_ZONE) !== "Thursday") {
-    return NextResponse.json({ ok: true, sent: false, reason: "not_thursday" });
-  }
-
   const days = await listHorizonSlates();
-  const needsWork = days.some((day) => day.status !== "published");
+  const upcoming = days.slice(0, SLATE_GENERATE_DAYS);
+  const needsWork = upcoming.some((day) => day.status !== "published");
   if (!needsWork) {
-    return NextResponse.json({ ok: true, sent: false, reason: "week_published" });
+    return NextResponse.json({ ok: true, sent: false, reason: "ahead_published" });
   }
 
   const mailed = await emailAdminWeekReminder(days);
@@ -33,6 +29,6 @@ export async function GET(request: Request) {
     ok: true,
     sent: mailed.ok,
     mode: mailed.mode,
-    dates: days.map((day) => day.localDate),
+    dates: upcoming.map((day) => day.localDate),
   });
 }

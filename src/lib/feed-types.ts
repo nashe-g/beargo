@@ -23,17 +23,6 @@ export type FeedPostView = {
   myVote: "up" | "down" | null;
   replies: FeedPostView[];
   authorKind: "human" | "house";
-  houseSlot: string | null;
-  playKind: "stack" | "trivia" | null;
-};
-
-export type NearbyVenueView = {
-  hostId: string;
-  venue: string;
-  pawToken: string | null;
-  miles: number;
-  label: string;
-  score: number;
 };
 
 export type NearbyPostView = {
@@ -54,39 +43,6 @@ export type NightPulseView = {
   postsTonight: number;
 };
 
-export type OverheardPost = {
-  id: string;
-  handle: string;
-  body: string;
-  createdAt: string;
-  upvotes: number;
-};
-
-export type NightCrown = {
-  handle: string;
-  wobble: number | null;
-  correctCount: number;
-};
-
-export type NightView = NightPulseView & {
-  nearbyCount: number;
-  nearbyVenues: NearbyVenueView[];
-  overheard: OverheardPost[];
-  trayCrown: NightCrown | null;
-  triviaCrown: NightCrown | null;
-};
-
-export type RoomSponsorCard = {
-  offerId: string;
-  advertiserId: string;
-  advertiserName: string;
-  title: string;
-  body: string;
-  ctaLabel: string;
-  imageUrl: string | null;
-  hostId: string;
-};
-
 export type RoomSnapshot = {
   handle: string;
   canPost: boolean;
@@ -94,7 +50,5 @@ export type RoomSnapshot = {
   pulse: NightPulseView;
   posts: FeedPostView[];
   nearby: NearbyPostView[];
-  sponsor: RoomSponsorCard | null;
   source: string;
-  played: { stack: boolean; trivia: boolean };
 };

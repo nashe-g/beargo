@@ -8,31 +8,10 @@ export function parsePlayKind(raw: unknown): PlayKind | null {
   return null;
 }
 
-export function triviaChallengeId(serviceDay: string) {
-  return `trivia:${serviceDay}`;
-}
-
-export function isLegacyCombinedKind(kind: string | null | undefined) {
-  return kind == null || kind === "combined";
-}
-
 export function hubPath(token: string, from?: string | null) {
   return `/p/${encodeURIComponent(token)}${keepFromParam(from)}`;
 }
 
 export function tableJoinPath(token: string, code: string) {
   return `/p/${encodeURIComponent(token)}/t/${encodeURIComponent(code)}`;
-}
-
-export function resultPath(token: string, kind: PlayKind) {
-  return `/p/${encodeURIComponent(token)}/result?game=${kind}`;
-}
-
-export function sponsorPath(token: string, kind: PlayKind) {
-  return `/p/${encodeURIComponent(token)}/sponsor?game=${kind}`;
-}
-
-export function playPath(token: string, kind: PlayKind) {
-  if (kind === "stack") return `/p/${encodeURIComponent(token)}/stack`;
-  return `/p/${encodeURIComponent(token)}/play`;
 }

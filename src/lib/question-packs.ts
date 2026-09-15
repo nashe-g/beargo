@@ -24,7 +24,7 @@ export function nightPacksFromSlate(questions: Question[]): Question[][] | null 
   );
 }
 
-/** Full 21 → seven packs. A 3-question host pool is one shared pack. */
+/** Full 21 → seven packs. A leftover 3-question night stays one shared pack. */
 export function packsForNight(questions: Question[]): Question[][] {
   const full = nightPacksFromSlate(questions);
   if (full) return full;

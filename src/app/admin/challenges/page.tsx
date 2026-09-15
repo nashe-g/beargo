@@ -3,6 +3,7 @@ import { WeekSlateEditor } from "@/components/admin/WeekSlateEditor";
 import { requireAdmin } from "@/lib/admin-auth";
 import { adminHostRows } from "@/lib/admin-stats";
 import { llmConfigured } from "@/lib/question-generate";
+import { isFullNightSlate } from "@/lib/question-packs";
 import {
   horizonReadyCount,
   listHorizonSlates,
@@ -16,14 +17,16 @@ export default async function AdminChallengesPage() {
   const [plays, days] = await Promise.all([listPlays(), listHorizonSlates()]);
   const rows = await adminHostRows(plays);
   const ready = horizonReadyCount(days);
-  const networkLive = days[0]?.status === "published";
+  const tonight = days[0];
+  const networkLive =
+    tonight?.status === "published" && isFullNightSlate(tonight.questions);
 
   return (
     <AdminShell current="/admin/challenges">
       <h1 className="font-display text-4xl">Challenges</h1>
       <p className="mt-3 max-w-2xl text-ink-soft">
-        Each week, generate the next 7 days, edit the drafts, then publish.
-        Published nights are 21 questions — seven packs of three — at every host.
+        Each night is 21 questions. Generate the next two empty days, edit,
+        then publish. Same slate at every host.
       </p>
       <p className="mt-4 text-sm text-ink-soft">
         Next 7 days: {ready}/7 published
@@ -37,8 +40,8 @@ export default async function AdminChallengesPage() {
       <h2 className="mt-16 font-display text-3xl">Today by host</h2>
       <p className="mt-3 max-w-2xl text-ink-soft">
         {networkLive
-          ? "A published slate is live, so every host below should show the same 21 questions."
-          : "No network slate for today. Each host is still drawing from the approved pool."}
+          ? "A published 21-question slate is live, so every host below should match."
+          : "No 21-question night published for today yet. Generate the next two days, then publish."}
       </p>
 
       <div className="mt-8 space-y-8">
@@ -49,7 +52,8 @@ export default async function AdminChallengesPage() {
           >
             <h2 className="font-display text-2xl">{row.host.displayName}</h2>
             <p className="mt-1 text-sm text-ink-soft">
-              {row.challenge.localDate} · {row.challenge.source === "network" ? "network slate" : "host pool"} · {row.challenge.id}
+              {row.challenge.localDate} · network · {row.challenge.questions.length}{" "}
+              questions
             </p>
             <ol className="mt-5 grid gap-4 lg:grid-cols-3">
               {row.challenge.questions.map((question, index) => (

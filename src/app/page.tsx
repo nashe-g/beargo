@@ -10,13 +10,13 @@ const BEATS = [
   },
   {
     n: "02",
-    title: "You’re in the room.",
-    body: "See what people here are saying. Join in, or just watch.",
+    title: "Sit a table.",
+    body: "Name it. Join your people. Everyone plays at once.",
   },
   {
     n: "03",
-    title: "Play from the chat.",
-    body: "The House drops a dare. Carry a tray. Three questions. Hand the phone.",
+    title: "The room is the reward.",
+    body: "Trivia, then the tray. Chat comes after, as this table.",
   },
 ];
 
@@ -29,11 +29,10 @@ export default function Home() {
             TONIGHT, AT THE BAR
           </p>
           <h1 className="mt-4 max-w-xl font-display text-[2.4rem] leading-[1.06] tracking-tight sm:text-6xl">
-            Scan the paw. You’re in the room.
+            Scan the paw. Sit a table.
           </h1>
           <p className="mt-6 max-w-md text-lg leading-relaxed text-ink-soft sm:text-xl">
-            See what people here are saying. Join in, or just watch. No
-            account.
+            Name your table, play the night, then talk. No account.
           </p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <Link
@@ -58,7 +57,7 @@ export default function Home() {
           THE NIGHT
         </p>
         <h2 className="mt-3 max-w-lg font-display text-3xl tracking-tight sm:text-4xl">
-          One paw. One room.
+          One paw. One table.
         </h2>
         <ol className="mt-10 grid gap-4 sm:grid-cols-2">
           {BEATS.map((beat) => (
@@ -86,8 +85,8 @@ export default function Home() {
           Put a Paw where people already pause.
         </h2>
         <p className="mt-4 max-w-lg text-lg leading-relaxed text-paper/70">
-          Hosts keep the physical mark. The room talks. The House dares. Players
-          are yours for that night.
+          Hosts keep the physical mark. Tables play the night. The room talks
+          after. Players are yours until 6am.
         </p>
         <Link
           href="/for-hosts"

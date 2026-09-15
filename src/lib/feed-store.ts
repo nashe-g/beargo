@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, desc, eq, gt, inArray, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, gt, gte, inArray, isNull, lt, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   feedEnforcementEvents,
@@ -18,6 +18,7 @@ import {
   FEED_REPORT_HIDE_COUNT,
   FEED_REPORT_HIDE_WINDOW_MS,
 } from "@/lib/config";
+import { serviceDayWindow } from "@/lib/dates";
 import {
   getOrCreateFeedIdentity,
   identityIsNew,
@@ -37,6 +38,7 @@ import {
   type FeedReportReason,
 } from "@/lib/feed-types";
 import type { PawRecord } from "@/lib/paws";
+import { tableForDeviceTonight } from "@/lib/night-tables";
 
 export { FEED_REPORT_REASONS, type FeedPostView, type FeedReportReason };
 
@@ -78,9 +80,6 @@ function mapView(
     myVote,
     replies,
     authorKind: row.authorKind === "house" ? "house" : "human",
-    houseSlot: row.houseSlot ?? null,
-    playKind:
-      row.playKind === "stack" || row.playKind === "trivia" ? row.playKind : null,
   };
 }
 
@@ -195,6 +194,7 @@ export async function listRoomPosts(
   limit = 40,
 ) {
   await ensureFeedTables();
+  const window = serviceDayWindow(paw.timezone);
   const tops = await db()
     .select()
     .from(feedPosts)
@@ -203,6 +203,8 @@ export async function listRoomPosts(
         eq(feedPosts.hostId, paw.hostId),
         eq(feedPosts.status, "published"),
         isNull(feedPosts.parentPostId),
+        gte(feedPosts.createdAt, window.start),
+        lt(feedPosts.createdAt, window.end),
       ),
     )
     .orderBy(desc(feedPosts.createdAt))
@@ -256,6 +258,8 @@ export async function createRoomPost(input: {
   await ensureFeedTables();
   const identity = await getOrCreateFeedIdentity();
   await maybePromoteIdentity(identity);
+  const sitting = await tableForDeviceTonight(input.paw, identity.deviceKey);
+  const byline = sitting?.name || identity.publicHandle;
 
   if (!(await canPostToRoom(input.paw))) {
     return {
@@ -337,7 +341,7 @@ export async function createRoomPost(input: {
     hostId: input.paw.hostId,
     pawToken: input.paw.token,
     identityId: identity.id,
-    handleSnapshot: identity.publicHandle,
+    handleSnapshot: byline,
     body,
     parentPostId: parentId,
     status,

@@ -11,7 +11,7 @@ export default async function VoucherPage({
   params,
 }: PageProps<"/p/[pawToken]/voucher/[token]">) {
   const { pawToken, token } = await params;
-  if (!PLAYER_OFFERS_ENABLED) redirect(`/p/${pawToken}/result`);
+  if (!PLAYER_OFFERS_ENABLED) redirect(`/p/${pawToken}`);
   const voucher = await getVoucherByToken(token);
   if (!voucher) notFound();
   const promotion = await getPromotion(voucher.promotionId);
