@@ -286,6 +286,9 @@ export function TableNight({
       {table?.status === "live" ? (
         <StampSession pawToken={token} event="game_started" />
       ) : null}
+      {table?.status === "night" || table?.status === "room" ? (
+        <StampSession pawToken={token} event="game_completed" />
+      ) : null}
       {loading ? (
         <div className="flex min-h-0 flex-1 items-center justify-center">
           <p className="text-sm text-paper/50">Tonight…</p>

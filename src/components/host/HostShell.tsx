@@ -7,7 +7,7 @@ const LINKS = [
   { href: "/host/dashboard", label: "Today" },
   { href: "/host/challenges", label: "Challenge" },
   { href: "/host/paws", label: "Paw" },
-  { href: "/host/exclusions", label: "Offers" },
+  { href: "/host/exclusions", label: "Nearby" },
 ];
 
 export function HostShell({

@@ -17,8 +17,8 @@ export default async function MerchantRedeemPage({
     <MerchantShell merchant={merchant} current="/merchant/redeem">
       <h1 className="font-display text-4xl">Redeem</h1>
       <p className="mt-3 max-w-xl text-ink-soft">
-        Scan the customer’s BearGo QR or type the short code. Confirm the
-        purchase qualifies, then redeem. That creates a $1 BearGo fee.
+        For vouchers already issued under the closed program. New player offers
+        are off. Redeeming a still-valid voucher records the historical $1 fee.
       </p>
       <div className="mt-8 max-w-xl">
         <RedeemDesk initialCode={code ?? ""} />

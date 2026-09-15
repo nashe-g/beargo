@@ -22,9 +22,9 @@ export default async function AdminAffiliatePage() {
     <AdminShell current="/admin/affiliate">
       <h1 className="font-display text-4xl">Affiliate</h1>
       <p className="mt-3 max-w-2xl text-ink-soft">
-        One optional card after rank. Paste approved CJ links. A pending
-        advertiser or an unreviewed offer will not show. Disable an offer to
-        take it down immediately.
+        Paused. Players do not see affiliate cards. Inventory stays here for
+        when there are real deals. A pending advertiser or an unreviewed offer
+        will not show even if the flag comes back on.
       </p>
       <div className="mt-8">
         <AffiliateAdmin

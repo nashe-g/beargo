@@ -32,6 +32,7 @@ export function TableTest({
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [armed, setArmed] = useState(false);
+  const [reported, setReported] = useState(false);
   const startedAt = useRef(0);
 
   const play = table.play;
@@ -48,6 +49,7 @@ export function TableTest({
       return;
     }
     setArmed(false);
+    setReported(false);
     let inner = 0;
     const outer = requestAnimationFrame(() => {
       inner = requestAnimationFrame(() => {
@@ -60,6 +62,20 @@ export function TableTest({
       cancelAnimationFrame(inner);
     };
   }, [question?.id]);
+
+  async function report() {
+    if (!question || reported) return;
+    setReported(true);
+    try {
+      await fetch(`/api/p/${encodeURIComponent(pawToken)}/report`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ questionId: question.id, reason: "table_test" }),
+      });
+    } catch {
+      setReported(false);
+    }
+  }
 
   async function answer(choiceId: string) {
     if (!question || !armed || busy) return;
@@ -116,6 +132,14 @@ export function TableTest({
           ))}
         </div>
         {error ? <p className="pt-2 text-sm text-clay">{error}</p> : null}
+        <button
+          type="button"
+          disabled={!question || busy}
+          onClick={() => void report()}
+          className="pt-3 text-left text-sm text-paper/40"
+        >
+          {reported ? "Got it." : "This question is wrong"}
+        </button>
       </div>
     );
   }

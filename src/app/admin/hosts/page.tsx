@@ -5,14 +5,12 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { adminHostRows } from "@/lib/admin-stats";
 import { emailsForHost } from "@/lib/auth";
 import { offerTitle } from "@/lib/offer";
-import { listPlays } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminHostsPage() {
   await requireAdmin();
-  const plays = await listPlays();
-  const rows = await adminHostRows(plays);
+  const rows = await adminHostRows();
   const logins = Object.fromEntries(
     await Promise.all(
       rows.map(async (row) => [row.host.id, await emailsForHost(row.host.id)]),
@@ -35,7 +33,8 @@ export default async function AdminHostsPage() {
             <tr>
               <th className="pb-3 font-normal">Host</th>
               <th className="pb-3 font-normal">Login</th>
-              <th className="pb-3 font-normal">Games today</th>
+              <th className="pb-3 font-normal">Tables tonight</th>
+              <th className="pb-3 font-normal">People</th>
               <th className="pb-3 font-normal">Nearby offer</th>
               <th className="pb-3 font-normal">Paws</th>
             </tr>
@@ -54,7 +53,8 @@ export default async function AdminHostsPage() {
                   <td className="py-3 text-ink-soft">
                     {logins[row.host.id]?.join(", ") || "None yet"}
                   </td>
-                  <td>{row.today.gamesFinished}</td>
+                  <td>{row.night.tables}</td>
+                  <td>{row.night.people}</td>
                 <td className="py-3">
                   {(() => {
                     const shown = row.nearby.find(

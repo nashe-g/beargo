@@ -13,7 +13,7 @@ export default function AdminLoginPage() {
           <PawMark className="w-24" />
           <h1 className="mt-6 font-display text-4xl">Admin</h1>
           <p className="mt-3 text-lg text-ink-soft">
-            Sign in as admin@beargo.pro. One redeemed customer is $1.
+            Sign in as admin@beargo.pro. Tables, questions, and the room.
           </p>
         </div>
         <div className="space-y-4">

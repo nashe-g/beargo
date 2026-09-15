@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
+import { desc, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { questionReports } from "@/db/schema";
+import { questionReports, questions } from "@/db/schema";
+import { isoRequired } from "@/lib/money";
 
 const SPONSOR_WORDS = [
   "jobradar",
@@ -87,6 +89,30 @@ export async function reportQuestion(input: {
     pawToken: input.pawToken ?? null,
     reason: input.reason ?? null,
   });
+}
+
+export async function listQuestionReports(limit = 80) {
+  const rows = await db()
+    .select({
+      id: questionReports.id,
+      questionId: questionReports.questionId,
+      pawToken: questionReports.pawToken,
+      reason: questionReports.reason,
+      createdAt: questionReports.createdAt,
+      prompt: questions.prompt,
+    })
+    .from(questionReports)
+    .leftJoin(questions, eq(questions.id, questionReports.questionId))
+    .orderBy(desc(questionReports.createdAt))
+    .limit(limit);
+  return rows.map((row) => ({
+    id: row.id,
+    questionId: row.questionId,
+    pawToken: row.pawToken,
+    reason: row.reason,
+    createdAt: isoRequired(row.createdAt),
+    prompt: row.prompt,
+  }));
 }
 
 export function generationSystemPrompt() {

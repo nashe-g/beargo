@@ -674,7 +674,7 @@ async function main() {
       ? "Wiped commercial data. Question pool and admin@beargo.pro / hello@beargo.pro staff only."
       : demo
         ? "Seeded demo hosts, merchants, promotions, questions, and staff users."
-        : "Production staff: admin@beargo.pro and hello@beargo.pro. Demo logins removed. Live offers will bill $1.",
+        : "Production staff: admin@beargo.pro and hello@beargo.pro. Demo logins removed. The $1 local-offer program is not live.",
   );
   await client.end();
 }

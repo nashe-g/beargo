@@ -11,10 +11,10 @@ export default async function HostExclusionsPage() {
 
   return (
     <HostShell host={host} current="/host/exclusions">
-      <h1 className="font-display text-4xl">Nearby offers</h1>
+      <h1 className="font-display text-4xl">Nearby</h1>
       <p className="mt-3 text-ink-soft">
-        Players see one offer after they rank: the closest live offer this room
-        allows. Block a specific offer if it competes with you.
+        Player offers are off. Nobody at a table sees these. You can still
+        block a nearby merchant so it stays off if the program reopens.
       </p>
       <HostNearbyOffers
         nearby={nearby}

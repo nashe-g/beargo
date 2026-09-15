@@ -28,6 +28,7 @@ import {
   ROUND1_DONE,
   SKIP_WOBBLE_TENTHS,
 } from "@/lib/table-night";
+import { stampDevicesAtHost } from "@/lib/scan-session";
 import {
   CODE_ALPHABET,
   foldKey,
@@ -709,6 +710,13 @@ export async function goNightTable(input: {
     })
     .where(eq(nightTables.id, found.table.id));
 
+  await stampDevicesAtHost(
+    input.paw.hostId,
+    people.map((member) => member.deviceKey),
+    "game_started",
+    input.paw.timezone,
+  );
+
   return reload(found.table.id, input.deviceKey, input.paw);
 }
 
@@ -913,6 +921,12 @@ async function closeTray(
       round2Mode: skipped ? "skip" : table.round2Mode,
     })
     .where(eq(nightTables.id, table.id));
+  await stampDevicesAtHost(
+    paw.hostId,
+    people.map((member) => member.deviceKey),
+    "game_completed",
+    paw.timezone,
+  );
 }
 
 export async function skipTray(input: {
@@ -1042,23 +1056,119 @@ export async function enterRoom(input: {
   return reload(found.table.id, input.deviceKey, input.paw);
 }
 
-export async function hostNightTableStats(hostId: string, serviceDay: string) {
+export type HostNightTableRow = {
+  name: string;
+  joinCode: string;
+  status: NightTableStatus;
+  people: number;
+  round1Rank: number | null;
+  combinedRank: number | null;
+  wobble: number | null;
+  skipped: boolean;
+};
+
+export type HostNightSnapshot = {
+  serviceDay: string;
+  tables: number;
+  people: number;
+  finishedTest: number;
+  finishedTray: number;
+  inRoom: number;
+  bestWobble: number | null;
+  rows: HostNightTableRow[];
+};
+
+export async function hostNightSnapshot(
+  hostId: string,
+  serviceDay: string,
+): Promise<HostNightSnapshot> {
   await ensureNightTables();
-  const rows = await db()
+  const tables = await db()
     .select()
     .from(nightTables)
     .where(
       and(eq(nightTables.hostId, hostId), eq(nightTables.serviceDay, serviceDay)),
     );
-  const played = rows.filter((row) => pastRound1(asStatus(row.status)));
-  const trayDone = rows.filter(
+  const ids = tables.map((row) => row.id);
+  const members =
+    ids.length === 0
+      ? []
+      : await db()
+          .select({
+            tableId: nightTableMembers.tableId,
+          })
+          .from(nightTableMembers)
+          .where(inArray(nightTableMembers.tableId, ids));
+  const peopleByTable = new Map<string, number>();
+  for (const member of members) {
+    peopleByTable.set(member.tableId, (peopleByTable.get(member.tableId) ?? 0) + 1);
+  }
+  const ranked = [...tables]
+    .filter((row) => row.combinedScore != null)
+    .sort((left, right) => compareCombined(left.combinedScore!, right.combinedScore!));
+  const combinedRank = new Map<string, number>();
+  ranked.forEach((row, index) => combinedRank.set(row.id, index + 1));
+  const played = tables.filter((row) => pastRound1(asStatus(row.status)));
+  const trayDone = tables.filter(
+    (row) => row.round2Wobble != null && !row.round2Skipped,
+  );
+  const best = trayDone.map((row) => row.round2Wobble as number);
+  const rows: HostNightTableRow[] = [...tables]
+    .sort((left, right) => {
+      const leftRank = combinedRank.get(left.id) ?? left.round1Rank ?? 999;
+      const rightRank = combinedRank.get(right.id) ?? right.round1Rank ?? 999;
+      if (leftRank !== rightRank) return leftRank - rightRank;
+      return left.name.localeCompare(right.name);
+    })
+    .map((row) => ({
+      name: row.name,
+      joinCode: row.joinCode,
+      status: asStatus(row.status),
+      people: peopleByTable.get(row.id) ?? 0,
+      round1Rank: row.round1Rank,
+      combinedRank: combinedRank.get(row.id) ?? null,
+      wobble: row.round2Wobble,
+      skipped: Boolean(row.round2Skipped),
+    }));
+  return {
+    serviceDay,
+    tables: tables.length,
+    people: members.length,
+    finishedTest: played.length,
+    finishedTray: trayDone.length,
+    inRoom: tables.filter((row) => row.status === "room").length,
+    bestWobble: best.length ? Math.min(...best) : null,
+    rows,
+  };
+}
+
+export async function networkNightStats(serviceDay: string) {
+  await ensureNightTables();
+  const tables = await db()
+    .select()
+    .from(nightTables)
+    .where(eq(nightTables.serviceDay, serviceDay));
+  const all = await db().select({ id: nightTables.id }).from(nightTables);
+  const ids = tables.map((row) => row.id);
+  const members =
+    ids.length === 0
+      ? []
+      : await db()
+          .select({ id: nightTableMembers.id })
+          .from(nightTableMembers)
+          .where(inArray(nightTableMembers.tableId, ids));
+  const played = tables.filter((row) => pastRound1(asStatus(row.status)));
+  const trayDone = tables.filter(
     (row) => row.round2Wobble != null && !row.round2Skipped,
   );
   const best = trayDone.map((row) => row.round2Wobble as number);
   return {
-    tables: rows.length,
+    tables: tables.length,
+    people: members.length,
     finishedTest: played.length,
     finishedTray: trayDone.length,
+    inRoom: tables.filter((row) => row.status === "room").length,
     bestWobble: best.length ? Math.min(...best) : null,
+    tablesAllTime: all.length,
   };
 }

@@ -10,7 +10,10 @@ function badge(
     return { label: "Blocked", className: "bg-ink/10 text-ink-soft" };
   }
   if (item.promotion.id === shownId) {
-    return { label: "Shown after rank", className: "bg-moss text-paper" };
+    return {
+      label: "Paused · would have shown",
+      className: "bg-moss text-paper",
+    };
   }
   return { label: "In range", className: "bg-ink/10 text-ink-soft" };
 }
@@ -25,7 +28,7 @@ export function NearbyOfferCards({
   if (nearby.length === 0) {
     return (
       <p className="mt-4 rounded-3xl border border-ink/10 px-5 py-5 text-ink-soft">
-        None in range. The game still runs.
+        None in range.
       </p>
     );
   }

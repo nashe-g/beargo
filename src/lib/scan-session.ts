@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { cookies } from "next/headers";
 import type { CookieWriter } from "@/lib/http-cookies";
-import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lt, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { scanSessions } from "@/db/schema";
 import { localDateInZone, serviceDayWindow } from "@/lib/dates";
@@ -187,13 +187,57 @@ export async function ensureScanSession(
   )[0];
 }
 
+export async function stampDevicesAtHost(
+  hostId: string,
+  deviceKeys: string[],
+  stamp: "game_started" | "game_completed",
+  timezone: string,
+) {
+  const keys = [...new Set(deviceKeys.filter(Boolean))];
+  if (keys.length === 0) return;
+  await ensureEntrySourceColumn();
+  const window = serviceDayWindow(timezone);
+  const rows = await db()
+    .select({
+      id: scanSessions.id,
+      deviceKey: scanSessions.deviceKey,
+      scannedAt: scanSessions.scannedAt,
+      gameStartedAt: scanSessions.gameStartedAt,
+      gameCompletedAt: scanSessions.gameCompletedAt,
+    })
+    .from(scanSessions)
+    .where(
+      and(
+        eq(scanSessions.hostId, hostId),
+        inArray(scanSessions.deviceKey, keys),
+        gte(scanSessions.scannedAt, window.start),
+        lt(scanSessions.scannedAt, window.end),
+      ),
+    );
+  const latest = new Map<string, (typeof rows)[number]>();
+  for (const row of rows) {
+    if (!row.deviceKey) continue;
+    const prior = latest.get(row.deviceKey);
+    if (!prior || row.scannedAt > prior.scannedAt) latest.set(row.deviceKey, row);
+  }
+  await Promise.all(
+    [...latest.values()].map((row) => {
+      if (stamp === "game_started" && row.gameStartedAt) return Promise.resolve();
+      if (stamp === "game_completed" && row.gameCompletedAt) return Promise.resolve();
+      return stampSession(row.id, stamp);
+    }),
+  );
+}
+
 export async function stampSession(
   sessionId: string,
   stamp: SessionStamp,
   extra: { promotionId?: string; voucherId?: string } = {},
 ) {
   const now = new Date();
-  const patch: Partial<typeof scanSessions.$inferInsert> = { ...extra };
+  const patch: Partial<typeof scanSessions.$inferInsert> = {};
+  if (extra.promotionId) patch.promotionId = extra.promotionId;
+  if (extra.voucherId) patch.voucherId = extra.voucherId;
   if (stamp === "game_started") patch.gameStartedAt = now;
   if (stamp === "game_completed") patch.gameCompletedAt = now;
   if (stamp === "teaser_shown") patch.teaserShownAt = now;

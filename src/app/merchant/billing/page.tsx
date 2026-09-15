@@ -15,8 +15,8 @@ export default async function MerchantBillingPage() {
     <MerchantShell merchant={merchant} current="/merchant/billing">
       <h1 className="font-display text-4xl">Fees</h1>
       <p className="mt-3 max-w-xl text-ink-soft">
-        Accrued at $1 per confirmed redemption. Not billed as a separate card
-        charge each time. Settlement comes later.
+        Player offers are off. Accrued fees below are from the closed $1
+        program, if any. Table nights do not add fees.
       </p>
       <div className="mt-8 grid gap-3 sm:grid-cols-2">
         <Stat

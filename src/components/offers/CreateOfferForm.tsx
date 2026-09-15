@@ -153,7 +153,7 @@ export function CreateOfferForm({
       <p className="text-sm text-ink-soft">
         {role === "merchant"
           ? "Your business name and address stay as BearGo has them, so this offer cannot be placed at another shop. BearGo reviews it before players can see it."
-          : "This is the business players visit. Enter its address so BearGo can place it near host venues."}
+          : "This is the business. Address is used to place the offer near host venues if the program reopens."}
       </p>
       {role === "merchant" ? (
         <div className="rounded-3xl bg-ink/5 px-4 py-4 text-sm">
@@ -314,9 +314,9 @@ export function CreateOfferForm({
         </Field>
       </div>
       <p className="px-1 text-sm text-ink-soft">
-        Date and time are in the business’s local timezone. Players can claim
-        until this moment. Issued vouchers stay valid through this same end,
-        even if the offer is later canceled.
+        Date and time are in the business’s local timezone. Players do not see
+        offers while the program is off. Issued vouchers stay valid through
+        this same end, even if the offer is later canceled.
       </p>
       <Field label="Teaser">
         <select
@@ -345,7 +345,7 @@ export function CreateOfferForm({
         </label>
       ) : null}
       <button type="submit" className="h-12 rounded-full bg-ink px-5 text-paper">
-        {role === "merchant" ? "Submit for review" : "Add live offer"}
+        {role === "merchant" ? "Submit for review" : "Add offer"}
       </button>
       {error ? <p className="text-sm text-clay">{error}</p> : null}
     </form>

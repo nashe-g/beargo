@@ -26,8 +26,8 @@ export default async function MerchantLoginPage({
           <PawMark className="w-24" />
           <h1 className="mt-6 font-display text-4xl">Merchant</h1>
           <p className="mt-3 text-lg text-ink-soft">
-            Players can see your offer and claim a voucher at no charge. BearGo
-            bills $1 when your staff confirms they showed up and redeemed.
+            Player offers are off. Existing voucher records stay. Nothing is
+            billed from a table night.
           </p>
         </div>
         <div className="flex flex-col gap-3">

@@ -1,12 +1,13 @@
+import { and, gte, isNotNull, lt, or } from "drizzle-orm";
 import { db } from "@/db";
 import { scanSessions } from "@/db/schema";
+import { BEARGO_DAY_ZONE } from "@/lib/config";
+import { serviceDayWindow } from "@/lib/dates";
 
 /**
- * Table Spread: how many additional players one player generates. The
- * heuristic from the spec — a different device starting the same venue's
- * challenge within a short window after somebody's completion counts as a
- * probable secondary play. Not perfect table attribution; measured
- * consistently, which is what matters.
+ * Table Spread tonight: a different device hitting GO shortly after someone
+ * at the same venue finishes the tray (or skips). Scoped to the current
+ * 6am service night so leftover solo-era stamps cannot move the number.
  */
 
 export type SpreadRow = {
@@ -74,6 +75,7 @@ export function computeTableSpread(rows: SpreadRow[]): TableSpreadStats {
 }
 
 export async function tableSpreadStats(): Promise<TableSpreadStats> {
+  const window = serviceDayWindow(BEARGO_DAY_ZONE);
   const rows = await db()
     .select({
       hostId: scanSessions.hostId,
@@ -81,6 +83,20 @@ export async function tableSpreadStats(): Promise<TableSpreadStats> {
       gameStartedAt: scanSessions.gameStartedAt,
       gameCompletedAt: scanSessions.gameCompletedAt,
     })
-    .from(scanSessions);
+    .from(scanSessions)
+    .where(
+      or(
+        and(
+          isNotNull(scanSessions.gameStartedAt),
+          gte(scanSessions.gameStartedAt, window.start),
+          lt(scanSessions.gameStartedAt, window.end),
+        ),
+        and(
+          isNotNull(scanSessions.gameCompletedAt),
+          gte(scanSessions.gameCompletedAt, window.start),
+          lt(scanSessions.gameCompletedAt, window.end),
+        ),
+      ),
+    );
   return computeTableSpread(rows);
 }

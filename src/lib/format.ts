@@ -38,8 +38,8 @@ export function offerWindowLabel(input: {
     return input.until ? `Ended ${input.until}` : "Ended";
   }
   return input.until
-    ? `Players can claim until ${input.until}`
-    : "No end date set";
+    ? `Until ${input.until} · not shown to players`
+    : "No end date · not shown to players";
 }
 
 export function formatClock(ms: number) {

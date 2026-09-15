@@ -78,9 +78,16 @@ export function StatusPill({ status }: { status: string }) {
         status === "active" ||
         status === "qualified" ||
         status === "verified" ||
-        status === "published"
+        status === "published" ||
+        status === "room"
       ? "bg-moss text-paper"
-      : status === "paused" || status === "pending_verification"
+      : status === "paused" ||
+          status === "pending_verification" ||
+          status === "open" ||
+          status === "locked" ||
+          status === "revealed" ||
+          status === "tray" ||
+          status === "night"
         ? "bg-ink/10 text-ink-soft"
         : status === "pending"
           ? "bg-ink/10 text-ink-soft"

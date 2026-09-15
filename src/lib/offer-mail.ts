@@ -42,7 +42,7 @@ export async function emailAdminOfferSubmitted(
 
 ${summary.title}
 ${summary.address}
-Players can claim until ${summary.until}
+Window through ${summary.until}. Players do not see offers while the program is off.
 
 Review it:
 ${reviewUrl}`;
@@ -50,7 +50,7 @@ ${reviewUrl}`;
     to: adminInbox(),
     subject: `Offer to review: ${summary.title} · ${summary.merchant}`,
     text,
-    html: `<p>${escapeHtml(summary.merchant)} submitted an offer for review.</p><p><strong>${escapeHtml(summary.title)}</strong><br>${escapeHtml(summary.address)}<br>Players can claim until ${escapeHtml(summary.until)}</p><p><a href="${reviewUrl}">Review offers</a></p>`,
+    html: `<p>${escapeHtml(summary.merchant)} submitted an offer for review.</p><p><strong>${escapeHtml(summary.title)}</strong><br>${escapeHtml(summary.address)}<br>Window through ${escapeHtml(summary.until)}. Players do not see offers while the program is off.</p><p><a href="${reviewUrl}">Review offers</a></p>`,
   });
 }
 
@@ -60,16 +60,16 @@ export async function emailMerchantOfferApproved(
 ) {
   if (to.length === 0) return { ok: false as const };
   const summary = offerSummary(promotion);
-  const text = `Your BearGo offer is live.
+  const text = `Your BearGo offer is on file.
 
 ${summary.title}
-Players nearby can see it after they finish the game, until ${summary.until}.`;
-  const html = `<p>Your BearGo offer is live.</p><p><strong>${escapeHtml(summary.title)}</strong></p><p>Players nearby can see it after they finish the game, until ${escapeHtml(summary.until)}.</p>`;
+Players do not see local offers while the program is off. Window through ${summary.until}.`;
+  const html = `<p>Your BearGo offer is on file.</p><p><strong>${escapeHtml(summary.title)}</strong></p><p>Players do not see local offers while the program is off. Window through ${escapeHtml(summary.until)}.</p>`;
   const results = await Promise.all(
     to.map((email) =>
       sendMail({
         to: email,
-        subject: `Your BearGo offer is live: ${summary.title}`,
+        subject: `Your BearGo offer is on file: ${summary.title}`,
         text,
         html,
       }),

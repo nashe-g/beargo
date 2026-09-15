@@ -18,8 +18,8 @@ export default async function AdminPlayersPage() {
     <AdminShell current="/admin/players">
       <h1 className="font-display text-4xl">Players</h1>
       <p className="mt-3 max-w-2xl text-ink-soft">
-        Contact collected when someone claims an offer. Not shared as a merchant
-        lead. Email must be verified before a voucher is issued.
+        Contact from the closed voucher program, if any. Table nights do not
+        collect email. Not shared as a merchant lead.
       </p>
       {players.length === 0 ? (
         <p className="mt-8 text-ink-soft">None yet.</p>

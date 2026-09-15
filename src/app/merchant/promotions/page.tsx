@@ -36,11 +36,9 @@ export default async function MerchantPromotionsPage() {
     <MerchantShell merchant={merchant} current="/merchant/promotions">
       <h1 className="font-display text-4xl">Offers</h1>
       <p className="mt-3 max-w-2xl text-ink-soft">
-        BearGo shows one nearby offer after the game. Players can see it and
-        claim a voucher at no charge. BearGo bills $1 when your staff confirms
-        the visit in person. Cancel anytime to stop new claims. Vouchers
-        already issued stay valid through the offer end. New offers wait for
-        BearGo review before players can see them.
+        Player offers are off. Records stay. New offers will not show to
+        players until the program reopens. Vouchers already issued stay valid
+        through their end date.
       </p>
       <div className="mt-8">
         {location ? (

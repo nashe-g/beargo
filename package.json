@@ -8,7 +8,8 @@
     "start": "next start",
     "db:push": "drizzle-kit push",
   "db:seed": "tsx src/db/seed.ts",
-  "db:up": "docker compose up -d"
+    "db:up": "docker compose up -d",
+    "test": "tsx --test src/lib/*.test.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

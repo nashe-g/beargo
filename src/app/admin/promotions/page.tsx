@@ -38,10 +38,9 @@ export default async function AdminPromotionsPage() {
     <AdminShell current="/admin/promotions">
       <h1 className="font-display text-4xl">Offers</h1>
       <p className="mt-3 max-w-2xl text-ink-soft">
-        One nearby offer after a completed game. Merchant-submitted offers wait
-        here until you approve. BearGo bills the merchant $1 when staff confirms
-        the visit in person. Cancel stops new claims. Vouchers already issued
-        stay valid through the offer end.
+        Player offers are off. These records stay. Approving an offer does not
+        show it to players until the program reopens. Issued vouchers stay
+        valid through their end date.
       </p>
       <PendingOfferReview
         offers={pending.map((promotion) => ({

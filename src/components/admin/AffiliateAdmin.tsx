@@ -131,7 +131,7 @@ export function AffiliateAdmin({
         <p className="text-sm text-ink-soft">
           Paste an approved CJ tracking URL. Do not invent prices or savings.
           Compliance reviewed + active + joined advertiser are required to
-          show after rank.
+          serve if the flag comes back on. Players do not see these now.
         </p>
         <select name="advertiserId" required className={fieldClass} defaultValue="">
           <option value="" disabled>

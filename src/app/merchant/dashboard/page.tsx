@@ -30,8 +30,8 @@ export default async function MerchantDashboardPage() {
     <MerchantShell merchant={merchant} current="/merchant/dashboard">
       <h1 className="font-display text-4xl">Overview</h1>
       <p className="mt-3 max-w-2xl text-ink-soft">
-        Players can see your offer and claim a voucher at no charge. BearGo
-        bills $1 when your staff confirms the visit in person.
+        Player offers are off. Numbers below are from the closed local-voucher
+        program, if any. Table nights do not create claims or fees.
       </p>
       <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat

@@ -2,7 +2,7 @@ import { and, eq, gte, lt } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { db } from "@/db";
 import { scanSessions } from "@/db/schema";
-import { FEED_HERE_WINDOW_MS } from "@/lib/config";
+import { BEARGO_DAY_ZONE, FEED_HERE_WINDOW_MS } from "@/lib/config";
 import { serviceDayWindow } from "@/lib/dates";
 import type { PawRecord } from "@/lib/paws";
 import { ENTRY_COOKIE, type PlaySource } from "@/lib/play-source";
@@ -55,4 +55,33 @@ export async function peopleHereTonight(paw: PawRecord) {
       .filter((key): key is string => Boolean(key)),
   );
   return keys.size;
+}
+
+export async function scanSourcesTonight(timezone = BEARGO_DAY_ZONE) {
+  await ensureEntrySourceColumn();
+  const window = serviceDayWindow(timezone);
+  const floor = new Date(Date.now() - FEED_HERE_WINDOW_MS);
+  const start = floor > window.start ? floor : window.start;
+  const rows = await db()
+    .select({
+      deviceKey: scanSessions.deviceKey,
+      entrySource: scanSessions.entrySource,
+    })
+    .from(scanSessions)
+    .where(
+      and(
+        gte(scanSessions.scannedAt, start),
+        lt(scanSessions.scannedAt, window.end),
+      ),
+    );
+  const inBar = new Set<string>();
+  const share = new Set<string>();
+  const web = new Set<string>();
+  for (const row of rows) {
+    if (!row.deviceKey) continue;
+    if (row.entrySource === "in_bar") inBar.add(row.deviceKey);
+    else if (row.entrySource === "share_link") share.add(row.deviceKey);
+    else web.add(row.deviceKey);
+  }
+  return { inBar: inBar.size, share: share.size, web: web.size };
 }

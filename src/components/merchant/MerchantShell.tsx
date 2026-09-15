@@ -28,7 +28,7 @@ export function MerchantShell({
             <span className="font-display text-xl">{merchant.displayName}</span>
           </Link>
           <div className="flex items-center gap-5 text-sm text-ink-soft">
-            <span>$1 per redemption</span>
+            <span>Program paused</span>
             <Link href="/merchant">Switch</Link>
             <Link href="/">BearGo</Link>
           </div>

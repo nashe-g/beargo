@@ -33,3 +33,22 @@ export function parseJoinCode(raw: unknown) {
 }
 
 export { CODE_ALPHABET };
+
+export function tableStatusLabel(
+  status:
+    | "open"
+    | "locked"
+    | "live"
+    | "revealed"
+    | "tray"
+    | "night"
+    | "room",
+) {
+  if (status === "open") return "Sitting";
+  if (status === "locked") return "Ready";
+  if (status === "live") return "The Table Test";
+  if (status === "revealed") return "Standings";
+  if (status === "tray") return "The tray";
+  if (status === "night") return "Tonight";
+  return "The room";
+}

@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { getPaw } from "@/lib/paws";
 import { getHost } from "@/lib/hosts";
+import { PLAYER_OFFERS_ENABLED } from "@/lib/config";
 import { selectPromotionForHost } from "@/lib/select-promotion";
 import {
   DEVICE_COOKIE,
@@ -43,12 +44,12 @@ export async function POST(
     body = {};
   }
 
-  const host = await getHost(paw.hostId);
-  const selected = host
-    ? await selectPromotionForHost(host)
-    : null;
-  const promotionId =
-    body.promotionId ?? selected?.promotion.id ?? null;
+  let promotionId: string | null = null;
+  if (PLAYER_OFFERS_ENABLED) {
+    const host = await getHost(paw.hostId);
+    const selected = host ? await selectPromotionForHost(host) : null;
+    promotionId = body.promotionId ?? selected?.promotion.id ?? null;
+  }
   const jar = await cookies();
   const entrySource =
     body.from === undefined
@@ -63,8 +64,10 @@ export async function POST(
   if (promotionId) await attachSessionPromotion(session.id, promotionId);
   const event = (body.event ?? "scanned") as SessionStamp;
   await stampSession(session.id, event, {
-    promotionId: promotionId ?? undefined,
-    voucherId: body.voucherId,
+    ...(promotionId ? { promotionId } : {}),
+    ...(PLAYER_OFFERS_ENABLED && body.voucherId
+      ? { voucherId: body.voucherId }
+      : {}),
   });
 
   void jar.get(DEVICE_COOKIE);
