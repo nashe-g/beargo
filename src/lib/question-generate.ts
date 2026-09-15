@@ -8,6 +8,7 @@ import {
   questionsFromDrafts,
   upsertGeneratedDraft,
 } from "@/lib/question-slate-store";
+import { NIGHT_PACKS, NIGHT_SLATE_SIZE } from "@/lib/question-packs";
 
 type GeneratedPayload = {
   questions?: unknown;
@@ -136,45 +137,15 @@ function draftsFromUnknown(value: unknown): CandidateDraft[] {
   return value.map(asDraft).filter((draft): draft is CandidateDraft => Boolean(draft));
 }
 
-function extractDayDrafts(parsed: unknown, dates: string[]) {
-  const byDate = new Map<string, CandidateDraft[]>();
-  if (!parsed || typeof parsed !== "object") return byDate;
-  const root = parsed as Record<string, unknown>;
-  const days = Array.isArray(root.days) ? root.days : null;
-  if (days) {
-    for (const item of days) {
-      if (!item || typeof item !== "object") continue;
-      const row = item as Record<string, unknown>;
-      const localDate = String(row.localDate ?? row.date ?? "");
-      if (!dates.includes(localDate)) continue;
-      byDate.set(localDate, draftsFromUnknown(row.questions));
-    }
-    return byDate;
-  }
-  for (const date of dates) {
-    const row = root[date];
-    if (!row || typeof row !== "object") continue;
-    const value = row as Record<string, unknown>;
-    if (Array.isArray(value.questions)) {
-      byDate.set(date, draftsFromUnknown(value.questions));
-    } else {
-      byDate.set(
-        date,
-        draftsFromUnknown([value.easy, value.medium, value.hard].filter(Boolean)),
-      );
-    }
-  }
-  return byDate;
-}
-
-function weekUserPrompt(dates: string[], note?: string) {
+function dayUserPrompt(localDate: string, note?: string) {
   return [
-    `Write a fresh trivia slate for these dates: ${dates.join(", ")}.`,
-    "Return JSON as {\"days\":[{\"localDate\":\"YYYY-MM-DD\",\"questions\":[easy, medium, hard]}]}.",
-    "Each day is one easy, one medium, one hard, in that order.",
-    "Treat the week as a mixtape, not a theme night. Categories should jump around: music, movies, food, animals, science, language, history, tech, pop, weird true facts.",
-    "Across the whole week, at most two questions total may be about alcohol, bar equipment, darts, or sports rules. The rest must come from other worlds.",
-    "No two prompts should feel like cousins. If a day has a movie question, the next day should not.",
+    `Write a fresh trivia slate for ${localDate}.`,
+    `Return JSON as {"questions":[...]} with exactly ${NIGHT_SLATE_SIZE} questions.`,
+    `Need exactly ${NIGHT_PACKS} easy, ${NIGHT_PACKS} medium, and ${NIGHT_PACKS} hard.`,
+    "These become seven packs of three (easy, medium, hard) for tables of up to seven.",
+    "Treat the night as a mixtape, not a theme. Categories should jump around: music, movies, food, animals, science, language, history, tech, pop, weird true facts.",
+    "At most three questions may be about alcohol, bar equipment, darts, or sports rules. The rest must come from other worlds.",
+    "No two prompts should feel like cousins.",
     "Never name a city. Never write local history.",
     note ? `Operator note: ${note}` : "",
   ]
@@ -235,46 +206,38 @@ export async function generateWeekSlates(input: {
     return { ok: true as const, created: [] as string[], failed: [] as string[] };
   }
 
-  let pending = [...dates];
   const created: string[] = [];
   const failed: { localDate: string; errors: string[] }[] = [];
 
-  for (let attempt = 0; attempt < 2 && pending.length > 0; attempt += 1) {
-    const result = await completeJson(weekUserPrompt(pending, input.note));
-    if (!result.ok) {
-      if (created.length === 0) {
-        return {
-          ok: false as const,
-          error: result.error,
-          created,
-          failed: pending,
-        };
+  for (const localDate of dates) {
+    let savedOk = false;
+    let lastErrors: string[] = [];
+    for (let attempt = 0; attempt < 2 && !savedOk; attempt += 1) {
+      const result = await completeJson(dayUserPrompt(localDate, input.note));
+      if (!result.ok) {
+        lastErrors = [result.error];
+        continue;
       }
-      return { ok: true as const, created, failed: pending };
-    }
-    const byDate = extractDayDrafts(result.parsed, pending);
-    const stillMissing: string[] = [];
-    for (const localDate of pending) {
-      const drafts = byDate.get(localDate) ?? [];
+      const parsed = result.parsed as GeneratedPayload;
+      const drafts = draftsFromUnknown(
+        Array.isArray(parsed.questions) ? parsed.questions : [],
+      );
       const built = questionsFromDrafts(localDate, drafts);
       if (!built.ok) {
-        stillMissing.push(localDate);
-        if (attempt === 1) {
-          failed.push({ localDate, errors: built.errors });
-        }
+        lastErrors = built.errors;
         continue;
       }
       const saved = await upsertGeneratedDraft(localDate, built.questions);
       if (!saved.ok) {
-        stillMissing.push(localDate);
-        if (attempt === 1) {
-          failed.push({ localDate, errors: saved.errors });
-        }
+        lastErrors = saved.errors;
         continue;
       }
       created.push(localDate);
+      savedOk = true;
     }
-    pending = stillMissing;
+    if (!savedOk) {
+      failed.push({ localDate, errors: lastErrors });
+    }
   }
 
   if (created.length === 0 && failed.length > 0) {

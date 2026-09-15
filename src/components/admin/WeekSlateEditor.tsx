@@ -108,7 +108,7 @@ export function WeekSlateEditor({
       } else {
         const count = payload.published?.length ?? 0;
         setMessage(
-          `Published ${count} day${count === 1 ? "" : "s"}. Every host plays these.`,
+          `Published ${count} day${count === 1 ? "" : "s"}. Every host gets these 21 questions.`,
         );
         router.refresh();
       }
@@ -164,7 +164,7 @@ export function WeekSlateEditor({
         <p className="mt-2 text-ink-soft">
           {publishedCount}/7 published · {draftCount} draft · {emptyCount} empty.
           Generate writes unpublished days (empty and drafts). Published days
-          stay live. Publish makes that day the same three questions at every
+          stay live. Publish makes that night 21 questions (seven packs) at every
           host.
         </p>
         {!configured ? (
@@ -234,7 +234,7 @@ export function WeekSlateEditor({
                   {questions.map((question, index) => (
                     <li key={question.id || `${day.localDate}-${index}`}>
                       <p className="text-sm uppercase tracking-[0.16em] text-ink-soft">
-                        {question.difficulty}
+                        Pack {Math.floor(index / 3) + 1} · {question.difficulty}
                       </p>
                       {locked ? (
                         <>

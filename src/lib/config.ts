@@ -11,8 +11,7 @@ export const LEGACY_LOCAL_COUPON_PUBLIC_ENABLED = PLAYER_OFFERS_ENABLED;
 export const AFFILIATE_POSTGAME_ENABLED = false;
 
 /**
- * Public night: Scan lands in the room. The House posts dares.
- * Tray and trivia play from those posts.
+ * Public night: Scan sits a table. The room is the reward after the games.
  */
 export const TRIVIA_ENABLED = true;
 export const POUR_ENABLED = false;
@@ -25,6 +24,9 @@ export const FEED_ROOM_ENABLED = true;
  */
 export const FEED_MODERATION_SHADOW = true;
 export const FEED_POST_MAX = 400;
+export const TABLE_NAME_MAX = 28;
+export const TABLE_NICK_MAX = 14;
+export const TABLE_CODE_LENGTH = 4;
 export const FEED_POSTS_PER_HOUR = 5;
 export const FEED_POSTS_PER_HOUR_NEW = 3;
 export const FEED_REPLIES_PER_HOUR = 20;

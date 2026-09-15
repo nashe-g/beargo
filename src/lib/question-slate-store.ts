@@ -8,11 +8,18 @@ import {
   formatWeekday,
   localDateInZone,
 } from "@/lib/dates";
-import type { Question, QuestionDifficulty } from "@/lib/questions";
+import {
+  NIGHT_PACKS,
+  NIGHT_SLATE_SIZE,
+  QUESTIONS_PER_CHALLENGE,
+  isFullNightSlate,
+  takePacksFromDrafts,
+} from "@/lib/question-packs";
 import {
   validateQuestionDraft,
   type CandidateDraft,
 } from "@/lib/questions-pipeline";
+import type { Question, QuestionDifficulty } from "@/lib/questions";
 
 const SLOTS: QuestionDifficulty[] = ["easy", "medium", "hard"];
 
@@ -97,68 +104,48 @@ export async function getPublishedSlate(localDate: string) {
     .limit(1);
   if (!row) return null;
   const questionsForDay = asQuestions(row.snapshot);
-  if (questionsForDay.length !== 3) return null;
+  if (questionsForDay.length !== 3 && !isFullNightSlate(questionsForDay)) {
+    return null;
+  }
   return questionsForDay;
-}
-
-function slateQuestionId(localDate: string, difficulty: QuestionDifficulty) {
-  return `slate-${localDate}-${difficulty}`;
 }
 
 export function questionsFromDrafts(
   localDate: string,
   drafts: CandidateDraft[],
 ): { ok: true; questions: Question[] } | { ok: false; errors: string[] } {
-  const remaining = [...drafts];
-  const picked: Question[] = [];
   const errors: string[] = [];
-
-  for (const difficulty of SLOTS) {
-    const index = remaining.findIndex((draft) => draft.difficulty === difficulty);
-    const draft =
-      index >= 0
-        ? remaining.splice(index, 1)[0]
-        : remaining.shift();
-    if (!draft) {
-      errors.push(`Missing ${difficulty} question.`);
-      continue;
-    }
-    const normalized: CandidateDraft = { ...draft, difficulty };
-    const draftErrors = validateQuestionDraft(normalized);
+  for (const [index, draft] of drafts.entries()) {
+    const draftErrors = validateQuestionDraft(draft);
     if (draftErrors.length) {
-      errors.push(`${difficulty}: ${draftErrors.join(" ")}`);
-      continue;
+      errors.push(`Q${index + 1}: ${draftErrors.join(" ")}`);
     }
-    picked.push({
-      id: slateQuestionId(localDate, difficulty),
-      prompt: normalized.prompt.trim(),
-      choices: normalized.choices.map((choice) => ({
-        id: choice.id,
-        label: choice.label.trim(),
-      })),
-      correctId: normalized.correctId,
-      explanation: normalized.explanation.trim(),
-      difficulty,
-      category: normalized.category ?? "general",
-      conversationHook: normalized.conversationHook?.trim() || undefined,
-    });
   }
-
-  if (errors.length || picked.length !== 3) {
+  const packed = takePacksFromDrafts(localDate, drafts);
+  if (!packed.ok) {
+    errors.push(
+      `Need ${NIGHT_PACKS} easy, ${NIGHT_PACKS} medium, and ${NIGHT_PACKS} hard. Missing ${packed.missing.join(", ")}.`,
+    );
     return { ok: false, errors };
   }
-  return { ok: true, questions: picked };
+  if (errors.length) return { ok: false, errors };
+  return { ok: true, questions: packed.questions };
 }
 
 export function validateSlateQuestions(questionsForDay: Question[]) {
   const errors: string[] = [];
-  if (questionsForDay.length !== 3) {
-    errors.push("Each day needs one easy, one medium, and one hard question.");
+  if (!isFullNightSlate(questionsForDay)) {
+    errors.push(
+      `Each night needs ${NIGHT_SLATE_SIZE} questions (${NIGHT_PACKS} packs of ${QUESTIONS_PER_CHALLENGE}).`,
+    );
     return errors;
   }
   for (const difficulty of SLOTS) {
-    if (!questionsForDay.some((question) => question.difficulty === difficulty)) {
-      errors.push(`Missing ${difficulty} question.`);
+    const count = questionsForDay.filter(
+      (question) => question.difficulty === difficulty,
+    ).length;
+    if (count !== NIGHT_PACKS) {
+      errors.push(`Need ${NIGHT_PACKS} ${difficulty} questions, got ${count}.`);
     }
   }
   for (const question of questionsForDay) {

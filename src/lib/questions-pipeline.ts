@@ -275,7 +275,7 @@ What "interesting" means here:
 Draw from a wide world. Across a week you should wander, not camp. Mix among:
 music and lyrics people misremember; movies and TV details; food and cooking arguments (not just bar drinks); animals and the natural world; space, bodies, weather, everyday science; words, phrases, and idioms; inventions and tech everyone uses; history that isn't a dates quiz; pop culture, celebrity-adjacent facts that aren't gossip; odd true things that sound fake; sports only when the question is a fun misremembered rule, not a stats dump.
 
-Variety is mandatory. Do not let drink, beer, whiskey, darts, or sports-rules questions dominate. In any set of three, at most one may be about alcohol, bar gear, or sports. Across seven days, those themes should be the exception, not the default. If you notice you are about to write another pint / IBU / dartboard / innings question, pick a completely different domain.
+Variety is mandatory. Do not let drink, beer, whiskey, darts, or sports-rules questions dominate. In a 21-question night, at most three may be about alcohol, bar gear, or sports. Across seven days, those themes should be the exception, not the default. If you notice you are about to write another pint / IBU / dartboard / innings question, pick a completely different domain.
 
 Never:
 - brands, apps, sponsors, or anything promotional

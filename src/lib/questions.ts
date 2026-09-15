@@ -17,6 +17,9 @@ export type Question = {
 };
 
 export const QUESTIONS_PER_CHALLENGE = 3;
+/** Unique packs for the first 7 people at a table. Same 21 for the venue tonight. */
+export const NIGHT_PACKS = 7;
+export const NIGHT_SLATE_SIZE = NIGHT_PACKS * QUESTIONS_PER_CHALLENGE;
 
 export const SEED_QUESTIONS: Question[] = [
   {

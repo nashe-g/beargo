@@ -51,7 +51,7 @@ function draftSet(hostId: string, localDate: string, pool: Question[]): Question
   return questions;
 }
 
-export async function getDailyChallenge(
+export async function getTonightSlate(
   hostId: string,
   timezone: string,
   at = new Date(),
@@ -114,6 +114,19 @@ export async function getDailyChallenge(
     localDate,
     questions: (frozen?.snapshot as Question[] | undefined) ?? questions,
     source: "host",
+  };
+}
+
+/** Legacy solo `/play` still takes the first pack (easy / medium / hard). */
+export async function getDailyChallenge(
+  hostId: string,
+  timezone: string,
+  at = new Date(),
+): Promise<DailyChallenge> {
+  const night = await getTonightSlate(hostId, timezone, at);
+  return {
+    ...night,
+    questions: night.questions.slice(0, QUESTIONS_PER_CHALLENGE),
   };
 }
 

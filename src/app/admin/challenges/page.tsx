@@ -23,7 +23,7 @@ export default async function AdminChallengesPage() {
       <h1 className="font-display text-4xl">Challenges</h1>
       <p className="mt-3 max-w-2xl text-ink-soft">
         Each week, generate the next 7 days, edit the drafts, then publish.
-        Published days are the same three questions at every host.
+        Published nights are 21 questions — seven packs of three — at every host.
       </p>
       <p className="mt-4 text-sm text-ink-soft">
         Next 7 days: {ready}/7 published
@@ -37,7 +37,7 @@ export default async function AdminChallengesPage() {
       <h2 className="mt-16 font-display text-3xl">Today by host</h2>
       <p className="mt-3 max-w-2xl text-ink-soft">
         {networkLive
-          ? "A published slate is live, so every host below should show the same three questions."
+          ? "A published slate is live, so every host below should show the same 21 questions."
           : "No network slate for today. Each host is still drawing from the approved pool."}
       </p>
 
@@ -55,7 +55,8 @@ export default async function AdminChallengesPage() {
               {row.challenge.questions.map((question, index) => (
                 <li key={question.id}>
                   <p className="text-sm uppercase tracking-[0.16em] text-ink-soft">
-                    Q{index + 1} · {question.difficulty}
+                    Pack {Math.floor(index / 3) + 1} · Q{(index % 3) + 1} ·{" "}
+                    {question.difficulty}
                   </p>
                   <p className="mt-2">{question.prompt}</p>
                   <p className="mt-2 text-sm text-moss">

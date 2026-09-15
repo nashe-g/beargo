@@ -1,12 +1,12 @@
 import { HostShell } from "@/components/host/HostShell";
-import { getDailyChallenge } from "@/lib/daily-challenge";
+import { getTonightSlate } from "@/lib/daily-challenge";
 import { requireHost } from "@/lib/host-auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function HostChallengesPage() {
   const host = await requireHost();
-  const challenge = await getDailyChallenge(host.id, host.timezone);
+  const challenge = await getTonightSlate(host.id, host.timezone);
 
   return (
     <HostShell host={host} current="/host/challenges">
@@ -14,8 +14,8 @@ export default async function HostChallengesPage() {
       <p className="mt-3 text-ink-soft">
         {challenge.localDate}.{" "}
         {challenge.source === "network"
-          ? "Same three questions at every BearGo host today."
-          : "Same three questions for every player here today. Drawn from the pool until a network week is published."}{" "}
+          ? "Same 21 questions at every BearGo host tonight — seven packs of three."
+          : "Drawn from the pool until a 21-question night is published."}{" "}
         You can look — you can’t change the live answers.
       </p>
 
@@ -26,7 +26,8 @@ export default async function HostChallengesPage() {
             className="rounded-3xl border border-ink/10 px-5 py-5"
           >
             <p className="text-sm tracking-[0.16em] uppercase text-ink-soft">
-              Question {index + 1} · {question.difficulty}
+              Pack {Math.floor(index / 3) + 1} · Q{(index % 3) + 1} ·{" "}
+              {question.difficulty}
             </p>
             <h2 className="mt-2 font-display text-2xl">{question.prompt}</h2>
             <ul className="mt-4 space-y-2">

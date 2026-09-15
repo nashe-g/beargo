@@ -1,6 +1,4 @@
-import { RoomFeed } from "@/components/scanner/RoomFeed";
-import { serviceDayInZone } from "@/lib/dates";
-import { roomSnapshot } from "@/lib/feed-room";
+import { TableNight } from "@/components/scanner/TableNight";
 import { getPaw } from "@/lib/paws";
 
 export const dynamic = "force-dynamic";
@@ -13,13 +11,5 @@ export default async function PawIntroPage({
   const query = await searchParams;
   const fromRaw = Array.isArray(query.from) ? query.from[0] : query.from;
   const paw = await getPaw(pawToken);
-  const initial = await roomSnapshot(paw);
-  return (
-    <RoomFeed
-      paw={paw}
-      initial={initial}
-      from={fromRaw ?? null}
-      serviceDay={serviceDayInZone(paw.timezone)}
-    />
-  );
+  return <TableNight paw={paw} from={fromRaw ?? null} />;
 }

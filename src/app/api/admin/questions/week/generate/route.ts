@@ -5,7 +5,7 @@ import { audit } from "@/lib/audit";
 import { generateWeekSlates, llmConfigured } from "@/lib/question-generate";
 import { listHorizonSlates } from "@/lib/question-slate-store";
 
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 export async function POST(request: Request) {
   const admin = (await cookies()).get(ADMIN_COOKIE)?.value === "1";

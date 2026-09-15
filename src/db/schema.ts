@@ -437,6 +437,59 @@ export const feedPosts = pgTable("feed_posts", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const nightTables = pgTable(
+  "night_tables",
+  {
+    id: text("id").primaryKey(),
+    hostId: text("host_id").notNull(),
+    pawToken: text("paw_token").notNull(),
+    serviceDay: text("service_day").notNull(),
+    name: text("name").notNull(),
+    nameKey: text("name_key").notNull(),
+    joinCode: text("join_code").notNull(),
+    status: text("status").notNull().default("open"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    lockedAt: timestamp("locked_at", { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex("night_tables_host_day_code").on(
+      table.hostId,
+      table.serviceDay,
+      table.joinCode,
+    ),
+    uniqueIndex("night_tables_host_day_name").on(
+      table.hostId,
+      table.serviceDay,
+      table.nameKey,
+    ),
+  ],
+);
+
+export const nightTableMembers = pgTable(
+  "night_table_members",
+  {
+    id: text("id").primaryKey(),
+    tableId: text("table_id")
+      .notNull()
+      .references(() => nightTables.id),
+    deviceKey: text("device_key").notNull(),
+    nickname: text("nickname").notNull(),
+    nicknameKey: text("nickname_key").notNull(),
+    isCreator: boolean("is_creator").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("night_table_members_table_device").on(
+      table.tableId,
+      table.deviceKey,
+    ),
+    uniqueIndex("night_table_members_table_nick").on(
+      table.tableId,
+      table.nicknameKey,
+    ),
+  ],
+);
+
 export const houseNights = pgTable(
   "house_nights",
   {

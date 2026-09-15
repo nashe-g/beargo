@@ -1,5 +1,5 @@
 import { listHosts, pawsForHost } from "@/lib/catalog";
-import { getDailyChallenge } from "@/lib/daily-challenge";
+import { getTonightSlate } from "@/lib/daily-challenge";
 import { localDateInZone } from "@/lib/dates";
 import { hostTodayStats } from "@/lib/host-stats";
 import type { Play } from "@/lib/rank";
@@ -15,7 +15,7 @@ export async function adminHostRows(plays: Play[]) {
       today: hostTodayStats(host, plays),
       nearby: await listNearbyOffersForHost(host, { includeBlocked: true }),
       paws: await pawsForHost(host.id),
-      challenge: await getDailyChallenge(host.id, host.timezone),
+      challenge: await getTonightSlate(host.id, host.timezone),
     })),
   );
 }
