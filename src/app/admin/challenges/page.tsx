@@ -35,14 +35,14 @@ export default async function AdminChallengesPage() {
       <p className="mt-3 max-w-2xl text-ink-soft">
         Each night is 21 questions. Generate the next two empty days, edit,
         then publish. Same slate at every host. Questions follow the Chicago
-        calendar date ({slateDate}
+        calendar date (
         {slateDate !== serviceDay
-          ? `; tables are still on service night ${serviceDay}`
-          : ""}
+          ? `${slateDate}; tables are still on service night ${serviceDay}`
+          : slateDate}
         ).
       </p>
       <p className="mt-4 text-sm text-ink-soft">
-        Next 7 days: {ready}/7 published
+        Next 7 days: {ready}/7 published with 21
         {networkLive
           ? " · today’s network slate is live"
           : " · today’s 21 are not published yet"}

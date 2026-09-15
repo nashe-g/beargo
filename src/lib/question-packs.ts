@@ -10,8 +10,25 @@ export { NIGHT_PACKS, NIGHT_SLATE_SIZE, QUESTIONS_PER_CHALLENGE };
 
 const DIFFICULTIES: QuestionDifficulty[] = ["easy", "medium", "hard"];
 
+export function asQuestions(value: unknown): Question[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is Question => {
+    if (!item || typeof item !== "object") return false;
+    const row = item as Question;
+    return Boolean(row.id && row.prompt && Array.isArray(row.choices));
+  });
+}
+
 export function isFullNightSlate(questions: Question[]) {
   return questions.length === NIGHT_SLATE_SIZE;
+}
+
+export function chunkNightPacks(questions: Question[]): Question[][] {
+  const packs: Question[][] = [];
+  for (let index = 0; index < questions.length; index += QUESTIONS_PER_CHALLENGE) {
+    packs.push(questions.slice(index, index + QUESTIONS_PER_CHALLENGE));
+  }
+  return packs;
 }
 
 export function nightPacksFromSlate(questions: Question[]): Question[][] | null {

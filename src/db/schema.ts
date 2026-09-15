@@ -453,6 +453,7 @@ export const nightTables = pgTable(
     round1GoAt: timestamp("round1_go_at", { withTimezone: true }),
     packMap: jsonb("pack_map").$type<Record<string, number>>(),
     slateDate: text("slate_date"),
+    slateSnapshot: jsonb("slate_snapshot").$type<unknown>(),
     round1Rank: integer("round1_rank"),
     round2Mode: text("round2_mode"),
     championDeviceKey: text("champion_device_key"),

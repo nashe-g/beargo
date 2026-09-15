@@ -6,7 +6,7 @@ import {
   questionsFromDrafts,
   upsertGeneratedDraft,
 } from "@/lib/question-slate-store";
-import { NIGHT_PACKS, NIGHT_SLATE_SIZE } from "@/lib/question-packs";
+import { NIGHT_PACKS } from "@/lib/question-packs";
 
 type GeneratedPayload = {
   questions?: unknown;
@@ -19,7 +19,10 @@ function asDraft(value: unknown): CandidateDraft | null {
   const choices = choicesRaw.map((choice, index) => {
     const item = (choice ?? {}) as Record<string, unknown>;
     return {
-      id: String(item.id ?? ["a", "b", "c", "d"][index] ?? "a"),
+      id: String(item.id ?? ["a", "b", "c", "d"][index] ?? "a")
+        .trim()
+        .toLowerCase()
+        .slice(0, 1),
       label: String(item.label ?? item.text ?? ""),
     };
   });
@@ -135,20 +138,62 @@ function draftsFromUnknown(value: unknown): CandidateDraft[] {
   return value.map(asDraft).filter((draft): draft is CandidateDraft => Boolean(draft));
 }
 
-function dayUserPrompt(localDate: string, note?: string) {
+function difficultyUserPrompt(
+  localDate: string,
+  difficulty: "easy" | "medium" | "hard",
+  used: string[],
+  note?: string,
+) {
   return [
-    `Write a fresh trivia slate for ${localDate}.`,
-    `Return JSON as {"questions":[...]} with exactly ${NIGHT_SLATE_SIZE} questions.`,
-    `Need exactly ${NIGHT_PACKS} easy, ${NIGHT_PACKS} medium, and ${NIGHT_PACKS} hard.`,
-    "These become seven packs of three (easy, medium, hard) for tables of up to seven.",
-    "Treat the night as a mixtape, not a theme. Categories should jump around: music, movies, food, animals, science, language, history, tech, pop, weird true facts.",
-    "At most three questions may be about alcohol, bar equipment, darts, or sports rules. The rest must come from other worlds.",
-    "No two prompts should feel like cousins.",
-    "Never name a city. Never write local history.",
+    `Write exactly ${NIGHT_PACKS} ${difficulty} trivia questions for ${localDate}.`,
+    `Return JSON as {"questions":[...]} with exactly ${NIGHT_PACKS} questions.`,
+    `Every question's difficulty field must be "${difficulty}".`,
+    "Prompt: 12–220 characters. Explanation: 8–220 characters.",
+    'Choices must be objects {id:"a"|"b"|"c"|"d", label:string}. correctId must be a, b, c, or d.',
+    "Mixtape, not a theme. Jump categories. No named cities. No local history.",
+    "At most one of these seven may be about alcohol, bar gear, darts, or sports.",
+    used.length
+      ? `Already written tonight — do not repeat or cousin these prompts:\n- ${used.join("\n- ")}`
+      : "",
     note ? `Operator note: ${note}` : "",
   ]
     .filter(Boolean)
     .join("\n");
+}
+
+async function generateDifficultyBatch(
+  localDate: string,
+  difficulty: "easy" | "medium" | "hard",
+  used: string[],
+  note?: string,
+): Promise<{ ok: true; drafts: CandidateDraft[] } | { ok: false; errors: string[] }> {
+  let lastErrors = ["Could not write that set."];
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const result = await completeJson(
+      [
+        difficultyUserPrompt(localDate, difficulty, used, note),
+        attempt
+          ? `Previous attempt failed: ${lastErrors.join(" ")} Write the ${NIGHT_PACKS} ${difficulty} questions again.`
+          : "",
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    );
+    if (!result.ok) {
+      lastErrors = [result.error];
+      continue;
+    }
+    const parsed = result.parsed as GeneratedPayload;
+    const drafts = draftsFromUnknown(
+      Array.isArray(parsed.questions) ? parsed.questions : [],
+    ).map((draft) => ({ ...draft, difficulty }));
+    if (drafts.length < NIGHT_PACKS) {
+      lastErrors = [`Need ${NIGHT_PACKS} ${difficulty} questions, got ${drafts.length}.`];
+      continue;
+    }
+    return { ok: true, drafts: drafts.slice(0, NIGHT_PACKS) };
+  }
+  return { ok: false, errors: lastErrors };
 }
 
 export async function generateWeekSlates(input: {
@@ -157,49 +202,62 @@ export async function generateWeekSlates(input: {
 }) {
   const dates = input.dates;
   if (dates.length === 0) {
-    return { ok: true as const, created: [] as string[], failed: [] as string[] };
+    return {
+      ok: true as const,
+      created: [] as string[],
+      failed: [] as string[],
+      failedErrors: [] as { localDate: string; errors: string[] }[],
+    };
   }
 
   const created: string[] = [];
   const failed: { localDate: string; errors: string[] }[] = [];
+  const difficulties = ["easy", "medium", "hard"] as const;
 
   for (const localDate of dates) {
-    let savedOk = false;
-    let lastErrors: string[] = [];
-    for (let attempt = 0; attempt < 2 && !savedOk; attempt += 1) {
-      const result = await completeJson(dayUserPrompt(localDate, input.note));
-      if (!result.ok) {
-        lastErrors = [result.error];
-        continue;
-      }
-      const parsed = result.parsed as GeneratedPayload;
-      const drafts = draftsFromUnknown(
-        Array.isArray(parsed.questions) ? parsed.questions : [],
+    const used: string[] = [];
+    const drafts: CandidateDraft[] = [];
+    let dayErrors: string[] = [];
+    for (const difficulty of difficulties) {
+      const batch = await generateDifficultyBatch(
+        localDate,
+        difficulty,
+        used,
+        input.note,
       );
-      const built = questionsFromDrafts(localDate, drafts);
-      if (!built.ok) {
-        lastErrors = built.errors;
-        continue;
+      if (!batch.ok) {
+        dayErrors = batch.errors;
+        break;
       }
-      const saved = await upsertGeneratedDraft(localDate, built.questions);
-      if (!saved.ok) {
-        lastErrors = saved.errors;
-        continue;
-      }
-      created.push(localDate);
-      savedOk = true;
+      drafts.push(...batch.drafts);
+      used.push(...batch.drafts.map((draft) => draft.prompt.trim()));
     }
-    if (!savedOk) {
-      failed.push({ localDate, errors: lastErrors });
+    if (dayErrors.length) {
+      failed.push({ localDate, errors: dayErrors });
+      continue;
     }
+    const built = questionsFromDrafts(localDate, drafts);
+    if (!built.ok) {
+      failed.push({ localDate, errors: built.errors });
+      continue;
+    }
+    const saved = await upsertGeneratedDraft(localDate, built.questions);
+    if (!saved.ok) {
+      failed.push({ localDate, errors: saved.errors });
+      continue;
+    }
+    created.push(localDate);
   }
 
   if (created.length === 0 && failed.length > 0) {
     return {
       ok: false as const,
-      error: "Could not generate a valid slate for any empty day.",
+      error:
+        failed[0]?.errors.join(" ") ??
+        "Could not generate a valid 21-question night.",
       created,
       failed: failed.map((row) => row.localDate),
+      failedErrors: failed,
     };
   }
 
@@ -207,5 +265,6 @@ export async function generateWeekSlates(input: {
     ok: true as const,
     created,
     failed: failed.map((row) => row.localDate),
+    failedErrors: failed,
   };
 }

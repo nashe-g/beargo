@@ -51,6 +51,7 @@ export async function POST(request: Request) {
         error: result.error,
         created: result.created,
         failed: result.failed,
+        failedErrors: "failedErrors" in result ? result.failedErrors : undefined,
       },
       { status: 400 },
     );

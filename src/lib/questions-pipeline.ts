@@ -41,7 +41,7 @@ export function validateQuestionDraft(draft: CandidateDraft): string[] {
   const errors: string[] = [];
   const prompt = draft.prompt?.trim() ?? "";
   if (prompt.length < 12) errors.push("Prompt is too short.");
-  if (prompt.length > 240) errors.push("Prompt is too long.");
+  if (prompt.length > 280) errors.push("Prompt is too long.");
   if (!Array.isArray(draft.choices) || draft.choices.length !== 4) {
     errors.push("Exactly four choices are required.");
   }

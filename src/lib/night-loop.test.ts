@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { NIGHT_SLATE_SIZE } from "./questions";
-import { isFullNightSlate } from "./question-packs";
+import { chunkNightPacks, isFullNightSlate } from "./question-packs";
+import {
+  horizonReadyCount,
+  nextEmptyDates,
+  type DaySlate,
+} from "./question-slate-store";
 import {
   SKIP_WOBBLE_TENTHS,
   combinedNightScore,
@@ -125,4 +130,43 @@ test("computeTableSpread: follow-on is another device at the same host", () => {
   assert.equal(stats.followOn10m, 1);
   assert.equal(stats.spread5m, 1 / 3);
   assert.equal(computeTableSpread([]).spread5m, null);
+});
+
+function slate(partial: Partial<DaySlate> & Pick<DaySlate, "localDate">): DaySlate {
+  return {
+    label: partial.localDate,
+    status: "empty",
+    questions: [],
+    ...partial,
+  };
+}
+
+test("nextEmptyDates skips full 21-question nights, including old published 3", () => {
+  const twentyOne = Array.from({ length: 21 }, () => ({}) as never);
+  const three = Array.from({ length: 3 }, () => ({}) as never);
+  const dates = nextEmptyDates(
+    [
+      slate({ localDate: "2026-09-15", status: "published", questions: three }),
+      slate({ localDate: "2026-09-16", status: "published", questions: twentyOne }),
+      slate({ localDate: "2026-09-17", status: "empty" }),
+      slate({ localDate: "2026-09-18", status: "draft", questions: twentyOne }),
+      slate({ localDate: "2026-09-19", status: "empty" }),
+    ],
+    2,
+  );
+  assert.deepEqual(dates, ["2026-09-15", "2026-09-17"]);
+});
+
+test("horizonReadyCount only counts published 21", () => {
+  const twentyOne = Array.from({ length: 21 }, () => ({}) as never);
+  const three = Array.from({ length: 3 }, () => ({}) as never);
+  assert.equal(
+    horizonReadyCount([
+      slate({ localDate: "a", status: "published", questions: three }),
+      slate({ localDate: "b", status: "published", questions: twentyOne }),
+      slate({ localDate: "c", status: "draft", questions: twentyOne }),
+    ]),
+    1,
+  );
+  assert.equal(chunkNightPacks(twentyOne).length, 7);
 });

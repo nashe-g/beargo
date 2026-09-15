@@ -12,6 +12,7 @@ import {
   NIGHT_PACKS,
   NIGHT_SLATE_SIZE,
   QUESTIONS_PER_CHALLENGE,
+  asQuestions,
   isFullNightSlate,
   takePacksFromDrafts,
 } from "@/lib/question-packs";
@@ -54,15 +55,6 @@ export function horizonDates(at = new Date()) {
   return dateRange(localDateInZone(BEARGO_DAY_ZONE, at), SLATE_HORIZON_DAYS);
 }
 
-function asQuestions(value: unknown): Question[] {
-  if (!Array.isArray(value)) return [];
-  return value.filter((item): item is Question => {
-    if (!item || typeof item !== "object") return false;
-    const row = item as Question;
-    return Boolean(row.id && row.prompt && Array.isArray(row.choices));
-  });
-}
-
 function mapRow(
   localDate: string,
   row?: typeof questionSlates.$inferSelect,
@@ -92,9 +84,19 @@ export async function listHorizonSlates(at = new Date()) {
 
 export function nextEmptyDates(days: DaySlate[], count: number) {
   return days
-    .filter((day) => day.status === "empty")
+    .filter((day) => !isFullNightSlate(day.questions))
     .slice(0, Math.max(0, count))
     .map((day) => day.localDate);
+}
+
+export async function getAnySlate(localDate: string) {
+  await ensureQuestionSlatesTable();
+  const [row] = await db()
+    .select()
+    .from(questionSlates)
+    .where(eq(questionSlates.localDate, localDate))
+    .limit(1);
+  return row ? asQuestions(row.snapshot) : [];
 }
 
 export async function getPublishedSlate(localDate: string) {
@@ -111,9 +113,7 @@ export async function getPublishedSlate(localDate: string) {
     .limit(1);
   if (!row) return null;
   const questionsForDay = asQuestions(row.snapshot);
-  if (questionsForDay.length !== 3 && !isFullNightSlate(questionsForDay)) {
-    return null;
-  }
+  if (!isFullNightSlate(questionsForDay)) return null;
   return questionsForDay;
 }
 
@@ -216,7 +216,7 @@ export async function saveDraftSlate(localDate: string, questionsForDay: Questio
     .from(questionSlates)
     .where(eq(questionSlates.localDate, localDate))
     .limit(1);
-  if (existing?.status === "published") {
+  if (existing?.status === "published" && isFullNightSlate(asQuestions(existing.snapshot))) {
     return {
       ok: false as const,
       errors: ["Published days are locked. Generate the next empty days instead."],
@@ -239,7 +239,7 @@ export async function upsertGeneratedDraft(
     .from(questionSlates)
     .where(eq(questionSlates.localDate, localDate))
     .limit(1);
-  if (existing?.status === "published") {
+  if (existing?.status === "published" && isFullNightSlate(asQuestions(existing.snapshot))) {
     return { ok: false as const, errors: ["Published days are locked."] };
   }
   return writeSlate({
@@ -324,5 +324,30 @@ export async function publishDates(dates: string[]) {
 }
 
 export function horizonReadyCount(days: DaySlate[]) {
-  return days.filter((day) => day.status === "published").length;
+  return days.filter(
+    (day) => day.status === "published" && isFullNightSlate(day.questions),
+  ).length;
+}
+
+export async function freezeInProgressTablesFromSlates() {
+  await ensureQuestionSlatesTable();
+  await db().execute(sql`
+    ALTER TABLE night_tables ADD COLUMN IF NOT EXISTS slate_snapshot jsonb
+  `);
+  await db().execute(sql`
+    UPDATE night_tables t
+    SET
+      slate_snapshot = s.snapshot,
+      slate_date = COALESCE(t.slate_date, t.service_day)
+    FROM question_slates s
+    WHERE s.local_date = COALESCE(t.slate_date, t.service_day)
+      AND t.status IN ('live', 'revealed', 'tray', 'night', 'room')
+      AND (t.slate_snapshot IS NULL OR jsonb_array_length(t.slate_snapshot) = 0)
+  `);
+}
+
+export async function clearCalendarSlates() {
+  await freezeInProgressTablesFromSlates();
+  await ensureQuestionSlatesTable();
+  await db().execute(sql`DELETE FROM question_slates`);
 }

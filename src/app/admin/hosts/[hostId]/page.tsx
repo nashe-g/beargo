@@ -135,20 +135,30 @@ export default async function AdminHostPage({
           </Link>
         </p>
         {slateLive ? (
-          <ol className="mt-4 grid gap-4 lg:grid-cols-3">
-            {row.challenge.questions.map((question, index) => (
-              <li
-                key={question.id}
-                className="rounded-3xl border border-ink/10 px-5 py-4"
-              >
+          <div className="mt-4 space-y-6">
+            {Array.from({ length: Math.ceil(row.challenge.questions.length / 3) }, (_, pack) => (
+              <div key={pack}>
                 <p className="text-sm uppercase tracking-[0.16em] text-ink-soft">
-                  Pack {Math.floor(index / 3) + 1} · Q{(index % 3) + 1} ·{" "}
-                  {question.difficulty}
+                  Pack {pack + 1} of 7
                 </p>
-                <p className="mt-2">{question.prompt}</p>
-              </li>
+                <ol className="mt-3 grid gap-4 lg:grid-cols-3">
+                  {row.challenge.questions
+                    .slice(pack * 3, pack * 3 + 3)
+                    .map((question) => (
+                      <li
+                        key={question.id}
+                        className="rounded-3xl border border-ink/10 px-5 py-4"
+                      >
+                        <p className="text-sm uppercase tracking-[0.16em] text-ink-soft">
+                          {question.difficulty}
+                        </p>
+                        <p className="mt-2">{question.prompt}</p>
+                      </li>
+                    ))}
+                </ol>
+              </div>
             ))}
-          </ol>
+          </div>
         ) : null}
       </section>
 

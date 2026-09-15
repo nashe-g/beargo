@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { SLATE_GENERATE_DAYS } from "@/lib/config";
+import { isFullNightSlate } from "@/lib/question-packs";
 import { listHorizonSlates } from "@/lib/question-slate-store";
 import { emailAdminWeekReminder } from "@/lib/question-week-mail";
 
@@ -19,7 +20,9 @@ export async function GET(request: Request) {
 
   const days = await listHorizonSlates();
   const upcoming = days.slice(0, SLATE_GENERATE_DAYS);
-  const needsWork = upcoming.some((day) => day.status !== "published");
+  const needsWork = upcoming.some(
+    (day) => !(day.status === "published" && isFullNightSlate(day.questions)),
+  );
   if (!needsWork) {
     return NextResponse.json({ ok: true, sent: false, reason: "ahead_published" });
   }

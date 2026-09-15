@@ -47,6 +47,7 @@ export async function ensureNightTables() {
       ADD COLUMN IF NOT EXISTS round1_finished_at timestamptz;
     ALTER TABLE night_tables ADD COLUMN IF NOT EXISTS round1_rank integer;
     ALTER TABLE night_tables ADD COLUMN IF NOT EXISTS slate_date text;
+    ALTER TABLE night_tables ADD COLUMN IF NOT EXISTS slate_snapshot jsonb;
     ALTER TABLE night_tables ADD COLUMN IF NOT EXISTS round2_mode text;
     ALTER TABLE night_tables ADD COLUMN IF NOT EXISTS champion_device_key text;
     ALTER TABLE night_tables ADD COLUMN IF NOT EXISTS round2_wobble integer;

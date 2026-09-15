@@ -16,8 +16,12 @@ import type {
   NightTrayMode,
   NightTrayView,
 } from "@/lib/night-table-types";
-import { getPublishedSlate } from "@/lib/question-slate-store";
-import { packsForNight, isFullNightSlate } from "@/lib/question-packs";
+import { getAnySlate, getPublishedSlate } from "@/lib/question-slate-store";
+import {
+  asQuestions,
+  packsForNight,
+  isFullNightSlate,
+} from "@/lib/question-packs";
 import type { PawRecord } from "@/lib/paws";
 import type { Question } from "@/lib/questions";
 import { scoreStackRound, seedStackRound } from "@/lib/stack";
@@ -91,8 +95,20 @@ async function membersFor(tableId: string) {
 async function packsForTable(
   table: typeof nightTables.$inferSelect,
 ): Promise<Question[][]> {
+  const stored = asQuestions(table.slateSnapshot);
+  if (stored.length) return packsForNight(stored);
   const date = table.slateDate ?? table.serviceDay;
-  const questions = (await getPublishedSlate(date)) ?? [];
+  const questions =
+    (await getPublishedSlate(date)) ?? (await getAnySlate(date));
+  if (questions.length && table.round1GoAt) {
+    await db()
+      .update(nightTables)
+      .set({
+        slateSnapshot: questions,
+        slateDate: date,
+      })
+      .where(eq(nightTables.id, table.id));
+  }
   return packsForNight(questions);
 }
 
@@ -707,6 +723,7 @@ export async function goNightTable(input: {
       round1GoAt: new Date(),
       packMap,
       slateDate,
+      slateSnapshot: questions,
     })
     .where(eq(nightTables.id, found.table.id));
 
