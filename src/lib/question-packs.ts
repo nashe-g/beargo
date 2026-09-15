@@ -24,6 +24,16 @@ export function nightPacksFromSlate(questions: Question[]): Question[][] | null 
   );
 }
 
+/** Full 21 → seven packs. A 3-question host pool is one shared pack. */
+export function packsForNight(questions: Question[]): Question[][] {
+  const full = nightPacksFromSlate(questions);
+  if (full) return full;
+  if (questions.length >= QUESTIONS_PER_CHALLENGE) {
+    return [questions.slice(0, QUESTIONS_PER_CHALLENGE)];
+  }
+  return [];
+}
+
 export function slateQuestionId(
   localDate: string,
   pack: number,

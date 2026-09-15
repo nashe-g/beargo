@@ -36,6 +36,15 @@ export async function ensureNightTables() {
       ON night_table_members (table_id, device_key);
     CREATE UNIQUE INDEX IF NOT EXISTS night_table_members_table_nick
       ON night_table_members (table_id, nickname_key);
+
+    ALTER TABLE night_tables ADD COLUMN IF NOT EXISTS round1_go_at timestamptz;
+    ALTER TABLE night_tables ADD COLUMN IF NOT EXISTS pack_map jsonb;
+    ALTER TABLE night_table_members ADD COLUMN IF NOT EXISTS ready_at timestamptz;
+    ALTER TABLE night_table_members ADD COLUMN IF NOT EXISTS pack_index integer;
+    ALTER TABLE night_table_members
+      ADD COLUMN IF NOT EXISTS round1_answers jsonb NOT NULL DEFAULT '[]'::jsonb;
+    ALTER TABLE night_table_members
+      ADD COLUMN IF NOT EXISTS round1_finished_at timestamptz;
   `);
   tablesReady = true;
 }

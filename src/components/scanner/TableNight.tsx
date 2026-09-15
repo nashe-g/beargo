@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { JoinQr } from "@/components/scanner/JoinQr";
 import { ScannerShell } from "@/components/scanner/ScannerShell";
 import { StampSession } from "@/components/scanner/StampSession";
+import { TableTest } from "@/components/scanner/TableTest";
 import { TABLE_CODE_LENGTH, TABLE_NAME_MAX, TABLE_NICK_MAX } from "@/lib/config";
 import type { NightTableView } from "@/lib/night-table-types";
 import type { PawRecord } from "@/lib/paws";
@@ -79,7 +80,7 @@ export function TableNight({
           const preview = (await response.json()) as NightTableView;
           setName(preview.name);
           setCode(preview.joinCode);
-          if (preview.status === "locked") {
+          if (preview.status !== "open") {
             setPreviewLocked(true);
             setError("They already started.");
           }
@@ -108,7 +109,7 @@ export function TableNight({
   }, [joinCode, router, token]);
 
   useEffect(() => {
-    if (!joinCode || tableStatus === "locked") return;
+    if (!joinCode || tableStatus === "revealed") return;
     const poll = window.setInterval(async () => {
       const response = await fetch(
         withDeviceHint(
@@ -116,7 +117,17 @@ export function TableNight({
         ),
       );
       if (!response.ok) return;
-      setTable((await response.json()) as NightTableView);
+      const next = (await response.json()) as NightTableView;
+      setTable((current) => {
+        if (
+          current?.play &&
+          next.play &&
+          next.play.answers.length < current.play.answers.length
+        ) {
+          return current;
+        }
+        return next;
+      });
     }, 1500);
     return () => window.clearInterval(poll);
   }, [joinCode, tableStatus, token]);
@@ -206,6 +217,58 @@ export function TableNight({
     setBusy(false);
   }
 
+  async function readyUp() {
+    if (!table || busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch(
+        `/api/p/${encodeURIComponent(token)}/tables/${encodeURIComponent(table.joinCode)}/ready`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ deviceHint: deviceHint() }),
+        },
+      );
+      const payload = (await response.json()) as NightTableView & { error?: string };
+      if (!response.ok) {
+        setError(payload.error || "Couldn’t ready up.");
+        setBusy(false);
+        return;
+      }
+      setTable(payload);
+    } catch {
+      setError("Couldn’t ready up.");
+    }
+    setBusy(false);
+  }
+
+  async function go() {
+    if (!table || busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch(
+        `/api/p/${encodeURIComponent(token)}/tables/${encodeURIComponent(table.joinCode)}/go`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ deviceHint: deviceHint() }),
+        },
+      );
+      const payload = (await response.json()) as NightTableView & { error?: string };
+      if (!response.ok) {
+        setError(payload.error || "Couldn’t GO.");
+        setBusy(false);
+        return;
+      }
+      setTable(payload);
+    } catch {
+      setError("Couldn’t GO.");
+    }
+    setBusy(false);
+  }
+
   const peopleLine = useMemo(() => {
     if (!table) return "";
     const n = table.members.length;
@@ -217,11 +280,17 @@ export function TableNight({
   return (
     <ScannerShell>
       <StampSession pawToken={token} event="scanned" from={from} />
+      {table?.status === "live" ? (
+        <StampSession pawToken={token} event="game_started" />
+      ) : null}
       {loading ? (
         <div className="flex min-h-0 flex-1 items-center justify-center">
           <p className="text-sm text-paper/50">Tonight…</p>
         </div>
       ) : table ? (
+        table.status === "live" || table.status === "revealed" ? (
+          <TableTest pawToken={token} table={table} onTable={setTable} />
+        ) : (
         <div className="flex min-h-0 flex-1 flex-col">
           <header className="shrink-0 pb-2">
             <p className="text-sm tracking-[0.18em] text-honey uppercase">
@@ -265,9 +334,27 @@ export function TableNight({
               </ul>
             </div>
           ) : (
-            <div className="flex min-h-0 flex-1 flex-col justify-center text-center">
-              <p className="font-display text-2xl">You’re in.</p>
-              <p className="mt-2 text-paper/65">The test is next.</p>
+            <div className="min-h-0 flex-1 overflow-y-auto pt-3">
+              <p className="font-display text-3xl leading-tight">The Table Test</p>
+              <p className="mt-2 text-sm text-paper/65">
+                Everyone at once. Your phone, your three.
+              </p>
+              <ul className="mt-5 space-y-2">
+                {table.members.map((member) => (
+                  <li
+                    key={member.nickname}
+                    className="flex items-center justify-between text-sm"
+                  >
+                    <span className={member.mine ? "text-honey" : "text-paper/85"}>
+                      {member.nickname}
+                      {member.mine ? " · you" : ""}
+                    </span>
+                    <span className="text-xs text-paper/45">
+                      {member.ready ? "ready" : "…"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
           <div className="shrink-0 pt-3">
@@ -287,9 +374,32 @@ export function TableNight({
                   ? `${starterName} starts when everyone’s here.`
                   : "They start when everyone’s here."}
               </p>
-            ) : null}
+            ) : table.allReady ? (
+              <button
+                type="button"
+                onClick={() => void go()}
+                disabled={busy}
+                className="btn-honey flex h-16 w-full items-center justify-center rounded-full bg-honey font-display text-3xl text-ink disabled:opacity-40"
+              >
+                {busy ? "…" : "GO"}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => void readyUp()}
+                disabled={busy || Boolean(table.members.find((member) => member.mine)?.ready)}
+                className="btn-honey flex h-12 w-full items-center justify-center rounded-full bg-honey text-base font-semibold text-ink disabled:opacity-40"
+              >
+                {table.members.find((member) => member.mine)?.ready
+                  ? "You’re ready"
+                  : busy
+                    ? "…"
+                    : "Ready"}
+              </button>
+            )}
           </div>
         </div>
+        )
       ) : previewLocked ? (
         <div className="flex min-h-0 flex-1 flex-col justify-center text-center">
           <p className="text-sm tracking-[0.18em] text-honey uppercase">

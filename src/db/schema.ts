@@ -450,6 +450,8 @@ export const nightTables = pgTable(
     status: text("status").notNull().default("open"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     lockedAt: timestamp("locked_at", { withTimezone: true }),
+    round1GoAt: timestamp("round1_go_at", { withTimezone: true }),
+    packMap: jsonb("pack_map").$type<Record<string, number>>(),
   },
   (table) => [
     uniqueIndex("night_tables_host_day_code").on(
@@ -476,6 +478,13 @@ export const nightTableMembers = pgTable(
     nickname: text("nickname").notNull(),
     nicknameKey: text("nickname_key").notNull(),
     isCreator: boolean("is_creator").notNull().default(false),
+    readyAt: timestamp("ready_at", { withTimezone: true }),
+    packIndex: integer("pack_index"),
+    round1Answers: jsonb("round1_answers")
+      .$type<{ questionId: string; choiceId: string; responseMs: number }[]>()
+      .notNull()
+      .default([]),
+    round1FinishedAt: timestamp("round1_finished_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
