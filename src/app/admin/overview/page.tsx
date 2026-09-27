@@ -68,8 +68,8 @@ export default async function AdminOverviewPage() {
       <h1 className="mt-2 font-display text-4xl">Network</h1>
       <p className="mt-3 max-w-2xl text-ink-soft">
         Tables sit until 6am Chicago. Questions flip at midnight. Scan sits a
-        table. The Table Test, then the tray. The room opens after, as the
-        table. Sponsorships are off.
+        table. The Table Test, then the tray. A live chat is open after, under
+        a bar name. Sponsorships are off.
       </p>
 
       <h2 className="mt-10 font-display text-2xl">Tonight</h2>

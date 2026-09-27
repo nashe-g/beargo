@@ -10,8 +10,8 @@ export default function ForHostsPage() {
           <div className="public-prose mt-6 max-w-xl">
             <p>
               Put a Paw where people already pause. They scan it, sit a table,
-              and play tonight’s games. Chat is the reward after, posted as the
-              table, not a second app.
+              and play tonight’s games. A live chat is there if they want to
+              talk, under a bar name, not as the table.
             </p>
           </div>
         </div>

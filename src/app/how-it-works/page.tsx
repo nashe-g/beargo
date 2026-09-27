@@ -11,12 +11,16 @@ const STEPS = [
     body: "Name it. Friends join with a code. Solo is a table of one.",
   },
   {
-    title: "Play the night.",
-    body: "The Table Test, then the tray. Everyone at once.",
+    title: "Trivia.",
+    body: "Each player gets three unique questions. The table is scored against the others here on accuracy and response time.",
   },
   {
-    title: "The room is the reward.",
-    body: "After the games, talk as this table. Chat hides at 6am.",
+    title: "The tray.",
+    body: "One person carries a tray of glasses on their phone. Steadier moves the table up.",
+  },
+  {
+    title: "A live chat.",
+    body: "Open here tonight if you want to talk. A bar name, not your real one. It isn’t the prize.",
   },
 ];
 
@@ -25,8 +29,8 @@ export default function HowItWorksPage() {
     <PublicShell>
       <PublicHeading kicker="THE NIGHT" title="How it works" />
       <p className="mt-5 max-w-xl text-lg leading-relaxed text-ink-soft">
-        No account. Scan, sit a table, play tonight’s games. The room opens
-        after — as this table, not an anonymous chat.
+        No account. Scan, sit a table, and play tonight’s games. A live chat
+        is here if you want to talk. Your real name stays off it.
       </p>
       <ol className="mt-10 grid gap-4 sm:grid-cols-2">
         {STEPS.map((step, index) => (

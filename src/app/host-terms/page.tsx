@@ -7,8 +7,9 @@ export default function HostTermsPage() {
         <PublicHeading kicker="POLICY" title="Host terms" />
         <div className="public-prose mt-8">
           <p>
-            You host the physical Paw. Players sit a table, play tonight’s
-            games, then talk in your room as that table.
+            You host the physical Paw. Players sit a table and play tonight’s
+            games. They can join a live chat under a bar name, not as the
+            table.
           </p>
           <p>
             We do not currently run sponsored offers in your room. If we add

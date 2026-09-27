@@ -13,7 +13,7 @@ export default function PrivacyPage() {
           <p>
             BearGo records that someone scanned or played at a venue: the paw
             token, host, challenge, score, and timing needed to rank that
-            night. We use this to run the room and the boards. We do
+            night. We use this to run the games, the chat, and the boards. We do
             not ask for your name, email, or phone to play.
           </p>
           <p>

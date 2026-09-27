@@ -7,8 +7,8 @@ export default function TermsPage() {
         <PublicHeading kicker="POLICY" title="Terms" />
         <div className="public-prose mt-8">
           <p>
-            BearGo is a venue night: a chat for the room, and two games. Rank is
-            entertainment.
+            BearGo is a venue night: two games, and a live chat if people want
+            to talk. Rank is entertainment.
           </p>
           <p>
             We do not currently show sponsored or affiliate offers. If we add

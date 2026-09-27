@@ -11,7 +11,7 @@ export const LEGACY_LOCAL_COUPON_PUBLIC_ENABLED = PLAYER_OFFERS_ENABLED;
 export const AFFILIATE_POSTGAME_ENABLED = false;
 
 /**
- * Public night: Scan sits a table. The room is the reward after the games.
+ * Public night: Scan sits a table, plays the games, and may join a live chat.
  */
 export const FEED_ROOM_ENABLED = true;
 /**

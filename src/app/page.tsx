@@ -11,12 +11,17 @@ const BEATS = [
   {
     n: "02",
     title: "Sit a table.",
-    body: "Name it. Join your people. Everyone plays at once.",
+    body: "Name it. Friends scan a code to join.",
   },
   {
     n: "03",
-    title: "The room is the reward.",
-    body: "Trivia, then the tray. Chat comes after, as this table.",
+    title: "Two games.",
+    body: "Three unique questions each. Then one person carries a tray of glasses.",
+  },
+  {
+    n: "04",
+    title: "A live chat.",
+    body: "Here, tonight, if you want to talk. A bar name. Your real name stays off.",
   },
 ];
 
@@ -32,7 +37,7 @@ export default function Home() {
             Scan the paw. Sit a table.
           </h1>
           <p className="mt-6 max-w-md text-lg leading-relaxed text-ink-soft sm:text-xl">
-            Name your table, play the night, then talk. No account.
+            Name your table. Play trivia, then a tray game. Talk in a live chat if you want. No account.
           </p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <Link
@@ -85,8 +90,8 @@ export default function Home() {
           Put a Paw where people already pause.
         </h2>
         <p className="mt-4 max-w-lg text-lg leading-relaxed text-paper/70">
-          Hosts keep the physical mark. Tables play the night. The room talks
-          after. Players are yours until 6am.
+          Hosts keep the physical mark. Tables play the night. A live chat is
+          open for people here. Players are yours until 6am.
         </p>
         <Link
           href="/for-hosts"

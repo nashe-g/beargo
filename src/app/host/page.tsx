@@ -16,7 +16,7 @@ export default async function HostLoginPage() {
           <PawMark className="w-24" />
           <h1 className="mt-6 font-display text-4xl">Host</h1>
           <p className="mt-3 text-lg text-ink-soft">
-            See tonight’s room, your Paw, and the boards.
+            See tonight’s tables, your Paw, and the boards.
           </p>
         </div>
         <div className="space-y-4">

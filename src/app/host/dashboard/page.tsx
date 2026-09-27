@@ -26,7 +26,7 @@ export default async function HostDashboardPage() {
       </p>
       <h1 className="mt-2 font-display text-4xl">Today</h1>
       <p className="mt-3 text-ink-soft">
-        Tables sit, play the test, then the tray. The room opens after.{" "}
+        Tables sit, play the test, then the tray. A live chat is open after.{" "}
         {live
           ? "Tonight’s 21 are published."
           : "Tonight’s 21 aren’t published yet — tables wait at GO."}
