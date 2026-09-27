@@ -7,9 +7,7 @@ import { nightPulseFor } from "@/lib/feed-night";
 import { canPostToRoom, roomPlaySource } from "@/lib/feed-presence";
 import { listRoomPosts } from "@/lib/feed-store";
 import type { RoomSnapshot } from "@/lib/feed-types";
-import { tableForDeviceTonight } from "@/lib/night-tables";
 import type { PawRecord } from "@/lib/paws";
-import { deviceKeyFromCookies } from "@/lib/scan-session";
 
 export type { RoomSnapshot };
 
@@ -19,10 +17,6 @@ export async function roomSnapshot(
 ): Promise<RoomSnapshot> {
   const resolved =
     identity === undefined ? await getFeedIdentityIfPresent() : identity;
-  const deviceKey = resolved?.deviceKey ?? (await deviceKeyFromCookies());
-  const table = deviceKey
-    ? await tableForDeviceTonight(paw, deviceKey)
-    : null;
   const [canPost, pulse, posts, nearby, source] = await Promise.all([
     canPostToRoom(paw),
     nightPulseFor(paw),
@@ -31,7 +25,7 @@ export async function roomSnapshot(
     roomPlaySource(paw),
   ]);
   return {
-    handle: table?.name || resolved?.publicHandle || "",
+    handle: resolved?.publicHandle || "",
     canPost,
     peopleHere: pulse.peopleHere,
     pulse,

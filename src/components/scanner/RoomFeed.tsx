@@ -73,16 +73,14 @@ export function RoomFeed({
   initial,
   from,
   asReward = false,
-  tableName,
 }: {
   paw: PawRecord;
   initial: RoomSnapshot;
   from?: string | null;
   asReward?: boolean;
-  tableName?: string;
 }) {
   const [room, setRoom] = useState(initial);
-  const [handle, setHandle] = useState(tableName || initial.handle);
+  const [handle, setHandle] = useState(initial.handle);
   const [body, setBody] = useState("");
   const [replyTo, setReplyTo] = useState<FeedPostView | null>(null);
   const [error, setError] = useState("");
@@ -105,9 +103,8 @@ export function RoomFeed({
     if (!response.ok) return;
     const next = (await response.json()) as RoomSnapshot;
     setRoom(next);
-    if (tableName) setHandle(tableName);
-    else if (next.handle) setHandle(next.handle);
-  }, [paw.token, tableName]);
+    if (next.handle) setHandle(next.handle);
+  }, [paw.token]);
 
   useEffect(() => {
     void refresh();
@@ -360,7 +357,9 @@ export function RoomFeed({
               {posts.length === 0 ? (
                 <p className="px-2 py-8 text-center text-sm text-paper/55">
                   {asReward
-                    ? `Chat for this bar. Post as ${tableName || handle || "your table"}.`
+                    ? handle
+                      ? `Chat for this bar. You’re ${handle}. Your real name stays off this screen.`
+                      : "Chat for this bar. You post under a bar name, not your own."
                     : "Say something."}
                 </p>
               ) : null}

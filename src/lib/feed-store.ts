@@ -38,7 +38,6 @@ import {
   type FeedReportReason,
 } from "@/lib/feed-types";
 import type { PawRecord } from "@/lib/paws";
-import { tableForDeviceTonight } from "@/lib/night-tables";
 
 export { FEED_REPORT_REASONS, type FeedPostView, type FeedReportReason };
 
@@ -258,8 +257,7 @@ export async function createRoomPost(input: {
   await ensureFeedTables();
   const identity = await getOrCreateFeedIdentity();
   await maybePromoteIdentity(identity);
-  const sitting = await tableForDeviceTonight(input.paw, identity.deviceKey);
-  const byline = sitting?.name || identity.publicHandle;
+  const byline = identity.publicHandle;
 
   if (!(await canPostToRoom(input.paw))) {
     return {

@@ -54,6 +54,7 @@ export function TableNight({
   const [joinUrl, setJoinUrl] = useState("");
   const [previewLocked, setPreviewLocked] = useState(false);
   const [triviaGate, setTriviaGate] = useState<"pending" | "show" | "skip">("pending");
+  const [inChat, setInChat] = useState(false);
 
   const token = paw.token;
 
@@ -147,6 +148,28 @@ export function TableNight({
       setTriviaGate("show");
     }
   }, [tableId, tableStatus]);
+
+  useEffect(() => {
+    if (!tableId) return;
+    try {
+      if (sessionStorage.getItem(`beargo:chat:${tableId}`) === "1") {
+        setInChat(true);
+      }
+    } catch {
+      // This phone can still open the chat from the results.
+    }
+  }, [tableId]);
+
+  function openChat() {
+    if (tableId) {
+      try {
+        sessionStorage.setItem(`beargo:chat:${tableId}`, "1");
+      } catch {
+        // Opening the chat still works for this visit.
+      }
+    }
+    setInChat(true);
+  }
 
   function dismissTriviaBrief() {
     if (tableId) {
@@ -323,16 +346,13 @@ export function TableNight({
           <TableTest pawToken={token} table={table} onTable={setTable} />
         ) : table.status === "tray" ? (
           <TableTray pawToken={token} table={table} onTable={setTable} />
-        ) : table.status === "revealed" || table.status === "night" ? (
-          <TableStandings pawToken={token} table={table} onTable={setTable} />
-        ) : table.status === "room" ? (
+        ) : inChat && (table.status === "night" || table.status === "room") ? (
           <RoomFeed
             paw={paw}
             from={from}
             asReward
-            tableName={table.name}
             initial={{
-              handle: table.name,
+              handle: "",
               canPost: true,
               peopleHere: 0,
               pulse: {
@@ -345,6 +365,15 @@ export function TableNight({
               nearby: [],
               source: "in_bar",
             }}
+          />
+        ) : table.status === "revealed" ||
+          table.status === "night" ||
+          table.status === "room" ? (
+          <TableStandings
+            pawToken={token}
+            table={table}
+            onTable={setTable}
+            onOpenChat={openChat}
           />
         ) : (
         <div className="flex min-h-0 flex-1 flex-col">
@@ -394,13 +423,14 @@ export function TableNight({
           ) : showTriviaBrief ? (
             <div className="min-h-0 flex-1 overflow-y-auto pt-3">
               <p className="font-display text-3xl leading-tight">
-                Trivia. Three questions on your phone.
+                How sharp is {table.name} against the other tables here today?
               </p>
               <p className="mt-3 text-sm leading-relaxed text-paper/75">
-                Not the same questions as the person next to you.
+                Each person gets three questions. Not the same ones as the
+                person next to you.
               </p>
               <p className="mt-2 text-sm leading-relaxed text-paper/75">
-                Right answers and speed become {table.name}&apos;s score.
+                Right answers and speed are how this table is judged.
               </p>
             </div>
           ) : (
