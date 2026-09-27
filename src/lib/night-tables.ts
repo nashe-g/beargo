@@ -510,7 +510,7 @@ export async function createNightTable(input: {
   }
   const nickname = parseNickname(input.nickname);
   if (!nickname) {
-    return { ok: false, status: 400, error: "What do they call you?" };
+    return { ok: false, status: 400, error: "Enter your name." };
   }
 
   const serviceDay = serviceDayInZone(input.paw.timezone);
@@ -586,7 +586,7 @@ export async function joinNightTable(input: {
 
   const nickname = parseNickname(input.nickname);
   if (!nickname) {
-    return { ok: false, status: 400, error: "What do they call you?" };
+    return { ok: false, status: 400, error: "Enter your name." };
   }
 
   const [row] = await db()

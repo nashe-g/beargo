@@ -562,7 +562,7 @@ export function TableNight({
               )}
               <label className="block">
                 <span className="text-xs tracking-[0.16em] text-paper/45 uppercase">
-                  What do they call you
+                  Your name
                 </span>
                 <input
                   value={nickname}
@@ -583,7 +583,13 @@ export function TableNight({
                 disabled={busy}
                 className="btn-honey flex h-12 w-full items-center justify-center rounded-full bg-honey text-base font-semibold text-ink disabled:opacity-40"
               >
-                {busy ? "Sitting…" : joining ? "Join" : "Sit down"}
+                {busy
+                  ? joining
+                    ? "Joining…"
+                    : "Creating…"
+                  : joining
+                    ? "Join"
+                    : "Create the table"}
               </button>
               <button
                 type="button"
