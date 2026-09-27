@@ -10,7 +10,6 @@ import {
   type KeyboardEvent,
 } from "react";
 import Link from "next/link";
-import { ScannerShell } from "@/components/scanner/ScannerShell";
 import { StampSession, type StampResult } from "@/components/scanner/StampSession";
 import { FEED_POST_MAX } from "@/lib/config";
 import {
@@ -300,17 +299,16 @@ export function RoomFeed({
   const posts = [...room.posts].reverse();
 
   return (
-    <ScannerShell>
+    <div
+      className="flex min-h-0 flex-1 flex-col"
+      style={keyboardInset ? { paddingBottom: keyboardInset } : undefined}
+    >
       <StampSession
         pawToken={paw.token}
         event="scanned"
         from={from}
         onStamped={onStamped}
       />
-      <div
-        className="flex min-h-0 flex-1 flex-col"
-        style={keyboardInset ? { paddingBottom: keyboardInset } : undefined}
-      >
         <header className="flex shrink-0 items-baseline justify-between gap-3 pb-2">
           <div className="min-w-0">
             <p className="truncate text-sm tracking-[0.18em] text-honey uppercase">
@@ -464,8 +462,7 @@ export function RoomFeed({
           )}
           {error ? <p className="mt-1.5 text-sm text-clay">{error}</p> : null}
         </div>
-      </div>
-    </ScannerShell>
+    </div>
   );
 }
 

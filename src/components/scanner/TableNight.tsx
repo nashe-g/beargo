@@ -423,14 +423,15 @@ export function TableNight({
           ) : showTriviaBrief ? (
             <div className="min-h-0 flex-1 overflow-y-auto pt-3">
               <p className="font-display text-3xl leading-tight">
-                How sharp is {table.name} against the other tables here today?
+                How does {table.name} stack up against the other tables here
+                tonight?
               </p>
               <p className="mt-3 text-sm leading-relaxed text-paper/75">
-                Each person gets three questions. Not the same ones as the
-                person next to you.
+                Each player at your table gets three unique questions.
               </p>
               <p className="mt-2 text-sm leading-relaxed text-paper/75">
-                Right answers and speed are how this table is judged.
+                {table.name} is scored against the other tables on accuracy and
+                response time.
               </p>
             </div>
           ) : (

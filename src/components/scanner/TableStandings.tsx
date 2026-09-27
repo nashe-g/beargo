@@ -33,7 +33,7 @@ export function TableStandings({
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [scoreBeat, setScoreBeat] = useState<"score" | "tray">("score");
-  const [nightBeat, setNightBeat] = useState<"result" | "chat">("result");
+  const [nightBeat, setNightBeat] = useState<"result" | "chat" | "rules">("result");
   const [openPerson, setOpenPerson] = useState<string | null>(null);
   const [scoreLit, setScoreLit] = useState(false);
   const [alias, setAlias] = useState("");
@@ -45,7 +45,8 @@ export function TableStandings({
     setScoreLit(false);
   }, [table.id, table.status]);
 
-  const wantsAlias = Boolean(table.night) && nightBeat === "chat";
+  const wantsAlias =
+    Boolean(table.night) && (nightBeat === "chat" || nightBeat === "rules");
   useEffect(() => {
     if (!wantsAlias || alias) return;
     let cancelled = false;
@@ -93,23 +94,20 @@ export function TableStandings({
   }
 
   const night = table.night;
-  if (night && nightBeat === "chat") {
+  if (night && nightBeat === "rules") {
     return (
       <div className="flex min-h-0 flex-1 flex-col">
-        <div className="min-h-0 flex-1">
-          <h1 className="font-display text-3xl leading-tight">The bar can talk now.</h1>
-          <p className="mt-3 text-sm leading-relaxed text-paper/75">
-            You don&apos;t post as {table.name}. Your real name stays off the
-            chat.
-          </p>
-          <p className="mt-6 text-xs tracking-[0.16em] text-paper/45 uppercase">
-            Your name tonight
-          </p>
-          <p className="mt-2 font-display text-4xl leading-tight text-honey">
-            {alias || "…"}
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <h1 className="font-display text-3xl leading-tight">Three rules.</h1>
+          <ul className="mt-4 space-y-3 text-sm leading-relaxed text-paper/80">
+            <li>No phone numbers, emails, or other ways to contact someone.</li>
+            <li>No threats.</li>
+            <li>Nothing sexual involving anyone under 18.</li>
+          </ul>
+          <p className="mt-4 text-sm leading-relaxed text-paper/60">
+            Posts that break these are blocked.
           </p>
         </div>
-        {error ? <p className="pt-2 text-sm text-clay">{error}</p> : null}
         <div className="shrink-0 space-y-2 pt-3">
           <button
             type="button"
@@ -118,6 +116,45 @@ export function TableStandings({
             className="btn-honey flex h-12 w-full items-center justify-center rounded-full bg-honey text-base font-semibold text-ink disabled:opacity-40"
           >
             Open the chat
+          </button>
+          <button
+            type="button"
+            className="flex h-10 w-full items-center justify-center text-sm text-paper/50"
+            onClick={() => setNightBeat("chat")}
+          >
+            Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (night && nightBeat === "chat") {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="min-h-0 flex-1">
+          <h1 className="font-display text-3xl leading-tight">
+            Live chat. Here. Tonight.
+          </h1>
+          <p className="mt-4 font-display text-2xl leading-tight text-honey">
+            Your real name stays off the chat.
+          </p>
+          <p className="mt-6 text-xs tracking-[0.16em] text-paper/45 uppercase">
+            Your name tonight
+          </p>
+          <p className="mt-2 font-display text-4xl leading-tight text-paper">
+            {alias || "…"}
+          </p>
+        </div>
+        {error ? <p className="pt-2 text-sm text-clay">{error}</p> : null}
+        <div className="shrink-0 space-y-2 pt-3">
+          <button
+            type="button"
+            disabled={!alias}
+            onClick={() => setNightBeat("rules")}
+            className="btn-honey flex h-12 w-full items-center justify-center rounded-full bg-honey text-base font-semibold text-ink disabled:opacity-40"
+          >
+            The rules
           </button>
           <button
             type="button"
@@ -193,11 +230,13 @@ export function TableStandings({
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="min-h-0 flex-1 overflow-y-auto">
           <h1 className="font-display text-3xl leading-tight">
-            Pick one person to carry the tray.
+            Next game. One person carries a tray of glasses on their phone.
           </h1>
           <p className="mt-3 text-sm leading-relaxed text-paper/75">
-            Steadier is better. It can move {table.name} up or down tonight.
+            The glasses tip. They tap to steady them. Steadier is better, and
+            it can move {table.name} up or down tonight.
           </p>
+          <p className="mt-4 text-sm text-paper/80">Pick who plays.</p>
           <div className="mt-5 space-y-2">
             {table.members.map((member) => (
               <button
