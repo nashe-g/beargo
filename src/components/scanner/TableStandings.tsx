@@ -100,9 +100,9 @@ export function TableStandings({
         <div className="min-h-0 flex-1 overflow-y-auto">
           <h1 className="font-display text-3xl leading-tight">Three rules.</h1>
           <ul className="mt-4 space-y-3 text-sm leading-relaxed text-paper/80">
-            <li>No phone numbers, emails, or other ways to contact someone.</li>
-            <li>No threats.</li>
-            <li>Nothing sexual involving anyone under 18.</li>
+            <li>Keep people anonymous. No names, contact info, or anything that gives someone away.</li>
+            <li>Keep it fun. No threats, harassment, or personal attacks.</li>
+            <li>See something that crosses the line? Report it.</li>
           </ul>
           <p className="mt-4 text-sm leading-relaxed text-paper/60">
             Posts that break these are blocked.
