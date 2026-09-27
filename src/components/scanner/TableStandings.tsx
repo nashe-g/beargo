@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { NightTableView } from "@/lib/night-table-types";
 import { jumpedCopy, playingTonightLine } from "@/lib/table-night";
 import { formatSeconds } from "@/lib/table-test";
@@ -31,6 +31,18 @@ export function TableStandings({
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [picking, setPicking] = useState(false);
+  const [scoreBeat, setScoreBeat] = useState<"score" | "tray">("score");
+  const [nightBeat, setNightBeat] = useState<"result" | "chat">("result");
+  const [openPerson, setOpenPerson] = useState<string | null>(null);
+  const [scoreLit, setScoreLit] = useState(false);
+
+  useEffect(() => {
+    setScoreBeat("score");
+    setNightBeat("result");
+    setOpenPerson(null);
+    setScoreLit(false);
+    setPicking(false);
+  }, [table.id, table.status]);
 
   async function post(path: string, extra: Record<string, unknown> = {}) {
     if (busy) return;
@@ -59,10 +71,41 @@ export function TableStandings({
   }
 
   const night = table.night;
+  if (night && nightBeat === "chat") {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="min-h-0 flex-1">
+          <h1 className="font-display text-3xl leading-tight">The bar can talk now.</h1>
+          <p className="mt-3 text-sm leading-relaxed text-paper/75">
+            You post as {table.name}. Say whatever you want.
+          </p>
+        </div>
+        {error ? <p className="pt-2 text-sm text-clay">{error}</p> : null}
+        <div className="shrink-0 space-y-2 pt-3">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void post("/room")}
+            className="btn-honey flex h-12 w-full items-center justify-center rounded-full bg-honey text-base font-semibold text-ink disabled:opacity-40"
+          >
+            {busy ? "…" : "Open the chat"}
+          </button>
+          <button
+            type="button"
+            className="flex h-10 w-full items-center justify-center text-sm text-paper/50"
+            onClick={() => setNightBeat("result")}
+          >
+            Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (night) {
     return (
       <div className="flex min-h-0 flex-1 flex-col">
-        <p className="text-sm tracking-[0.18em] text-honey uppercase">Tonight</p>
+        <p className="text-sm tracking-[0.18em] text-honey uppercase">{table.name}</p>
         <h1 className="mt-2 font-display text-3xl leading-tight">
           #{night.rank}
           <span className="ml-2 font-sans text-lg font-normal text-paper/55">
@@ -73,14 +116,16 @@ export function TableStandings({
         {night.jumped !== 0 ? (
           <p className="mt-1 text-sm text-paper/45">Was #{night.rank + night.jumped}</p>
         ) : null}
-        <p className="mt-1 text-sm text-paper/55">
+        <p className="mt-1 text-sm text-paper/75">
           {night.skipped
-            ? "Skipped the tray"
-            : `Wobble ${formatWobble(night.wobble)}`}
-          {" · "}
-          {playingTonightLine(night.tableCount)}
+            ? "Skipped the tray."
+            : `Steadiness ${formatWobble(night.wobble)}. Lower is better.`}
         </p>
-        <ol className="mt-6 min-h-0 flex-1 space-y-2 overflow-y-auto">
+        <p className="mt-1 text-sm text-paper/55">{playingTonightLine(night.tableCount)}</p>
+        <p className="mt-6 text-xs tracking-[0.16em] text-paper/45 uppercase">
+          Steadiness · lower is better
+        </p>
+        <ol className="mt-2 min-h-0 flex-1 space-y-2 overflow-y-auto">
           {night.rows.map((row) => (
             <li
               key={row.name}
@@ -99,11 +144,10 @@ export function TableStandings({
         {error ? <p className="pt-2 text-sm text-clay">{error}</p> : null}
         <button
           type="button"
-          disabled={busy}
-          onClick={() => void post("/room")}
-          className="btn-honey mt-4 flex h-12 w-full items-center justify-center rounded-full bg-honey text-base font-semibold text-ink disabled:opacity-40"
+          onClick={() => setNightBeat("chat")}
+          className="btn-honey mt-4 flex h-12 w-full items-center justify-center rounded-full bg-honey text-base font-semibold text-ink"
         >
-          {busy ? "…" : "The room"}
+          Next
         </button>
       </div>
     );
@@ -111,40 +155,161 @@ export function TableStandings({
 
   const reveal = table.reveal;
   const board = table.board;
+  const scoreLine = reveal
+    ? `${formatSeconds(reveal.averageMs)} average answer time. Faster is better. A wrong answer counts as 20 sec.`
+    : "";
+
+  if (scoreBeat === "tray") {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <h1 className="font-display text-3xl leading-tight">
+            Next, carry a tray of glasses on your phone.
+          </h1>
+          <p className="mt-3 text-sm leading-relaxed text-paper/75">
+            Steadier is better. It can move {table.name} up or down tonight.
+          </p>
+        </div>
+        {error ? <p className="pt-2 text-sm text-clay">{error}</p> : null}
+        {picking ? (
+          <div className="shrink-0 space-y-2 pt-3">
+            <p className="text-sm text-paper/75">Who carries?</p>
+            {table.members.map((member) => (
+              <button
+                key={member.nickname}
+                type="button"
+                disabled={busy}
+                onClick={() =>
+                  void post("/tray", { mode: "champion", champion: member.nickname })
+                }
+                className="flex h-12 w-full items-center justify-center rounded-full border border-paper/20 text-base disabled:opacity-40"
+              >
+                {member.nickname}
+                {member.mine ? " · you" : ""}
+              </button>
+            ))}
+            <button
+              type="button"
+              className="flex h-10 w-full items-center justify-center text-sm text-paper/50"
+              onClick={() => setPicking(false)}
+            >
+              Back
+            </button>
+          </div>
+        ) : (
+          <div className="shrink-0 space-y-2 pt-3">
+            {table.members.length === 1 ? (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void post("/tray", { mode: "everyone" })}
+                className="btn-honey flex h-12 w-full items-center justify-center rounded-full bg-honey text-base font-semibold text-ink disabled:opacity-40"
+              >
+                {busy ? "…" : "Carry the tray"}
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => setPicking(true)}
+                  className="btn-honey flex h-12 w-full items-center justify-center rounded-full bg-honey text-base font-semibold text-ink disabled:opacity-40"
+                >
+                  One person carries
+                </button>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void post("/tray", { mode: "everyone" })}
+                  className="flex min-h-12 w-full items-center justify-center rounded-full border border-paper/20 px-4 text-center text-base leading-snug disabled:opacity-40"
+                >
+                  Everyone carries. We use the average.
+                </button>
+              </>
+            )}
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void post("/tray/skip")}
+              className="flex h-10 w-full items-center justify-center text-sm text-paper/50"
+            >
+              Skip this one
+            </button>
+            <button
+              type="button"
+              className="flex h-10 w-full items-center justify-center text-sm text-paper/50"
+              onClick={() => {
+                setPicking(false);
+                setScoreBeat("score");
+              }}
+            >
+              Back
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <p className="text-sm tracking-[0.18em] text-honey uppercase">
-        The Table Test
-      </p>
       {reveal ? (
         <>
-          <h1 className="mt-2 font-display text-3xl leading-tight">
-            {reveal.correctCount}/{reveal.asked} correct
-          </h1>
-          <p className="mt-2 text-lg text-paper/80">
-            {formatSeconds(reveal.averageMs)} average
-          </p>
-          <p className="mt-1 text-sm text-honey">
-            #{reveal.rank} tonight
-            {reveal.tableCount > 1 ? ` · ${reveal.tableCount} tables` : ""}
+          <button
+            type="button"
+            onClick={() => setScoreLit((open) => !open)}
+            className={`rounded-2xl px-1 py-1 text-left ${scoreLit ? "bg-honey/10" : ""}`}
+            aria-expanded={scoreLit}
+          >
+            <h1 className="font-display text-3xl leading-tight">
+              {table.name} got {reveal.correctCount} of {reveal.asked}.
+            </h1>
+            <p
+              className={`mt-3 text-sm leading-relaxed ${scoreLit ? "text-honey" : "text-paper/80"}`}
+            >
+              {scoreLine}
+            </p>
+          </button>
+          <p className="mt-3 px-1 text-sm text-honey">
+            #{reveal.rank} of the tables here tonight
           </p>
           <ul className="mt-4 space-y-2">
-            {reveal.people.map((person) => (
-              <li
-                key={person.nickname}
-                className="flex items-baseline justify-between gap-3 text-sm"
-              >
-                <span className={person.mine ? "text-honey" : "text-paper/85"}>
-                  {person.nickname}
-                  {person.mine ? " · you" : ""}
-                  {person.carried ? " · carried" : ""}
-                </span>
-                <span className="tabular-nums text-paper/55">
-                  {person.correctCount}/{person.asked} ·{" "}
-                  {formatSeconds(person.averageMs)}
-                </span>
-              </li>
-            ))}
+            {reveal.people.map((person) => {
+              const open = openPerson === person.nickname;
+              return (
+                <li key={person.nickname}>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setOpenPerson((current) =>
+                        current === person.nickname ? null : person.nickname,
+                      )
+                    }
+                    className="flex w-full items-baseline justify-between gap-3 text-left text-sm"
+                    aria-expanded={open}
+                  >
+                    <span className={person.mine ? "text-honey" : "text-paper/85"}>
+                      {person.nickname}
+                      {person.mine ? " · you" : ""}
+                      {person.carried ? " · best at the table" : ""}
+                    </span>
+                    <span className="tabular-nums text-paper/55">
+                      {person.correctCount}/{person.asked} ·{" "}
+                      {formatSeconds(person.averageMs)}
+                    </span>
+                  </button>
+                  {open ? (
+                    <p className="mt-1 text-sm leading-relaxed text-paper/70">
+                      {person.nickname}: {person.correctCount} of {person.asked} in{" "}
+                      {formatSeconds(person.averageMs)}.
+                      {person.carried
+                        ? " Best at the table — most right, then fastest."
+                        : ""}
+                    </p>
+                  ) : null}
+                </li>
+              );
+            })}
           </ul>
         </>
       ) : null}
@@ -173,86 +338,14 @@ export function TableStandings({
         <div className="flex-1" />
       )}
 
-      <details className="shrink-0 pt-3 text-sm text-paper/45">
-        <summary className="cursor-pointer text-paper/55">How we score</summary>
-        <p className="mt-2 leading-relaxed">
-          You have to pick. Right is your real time. Wrong is 20.0 sec and
-          doesn’t count. Tables rank by correct rate, then by the average of
-          each person’s time.
-        </p>
-      </details>
-
       {error ? <p className="pt-2 text-sm text-clay">{error}</p> : null}
-
-      {picking ? (
-        <div className="shrink-0 space-y-2 pt-3">
-          <p className="text-sm text-paper/65">Who’s the steadiest?</p>
-          {table.members.map((member) => (
-            <button
-              key={member.nickname}
-              type="button"
-              disabled={busy}
-              onClick={() =>
-                void post("/tray", { mode: "champion", champion: member.nickname })
-              }
-              className="flex h-12 w-full items-center justify-center rounded-full border border-paper/20 text-base disabled:opacity-40"
-            >
-              {member.nickname}
-              {member.mine ? " · you" : ""}
-            </button>
-          ))}
-          <button
-            type="button"
-            className="flex h-10 w-full items-center justify-center text-sm text-paper/50"
-            onClick={() => setPicking(false)}
-          >
-            Back
-          </button>
-        </div>
-      ) : (
-        <div className="shrink-0 space-y-2 pt-3">
-          <p className="pb-1 text-center text-sm text-paper/55">
-            Send your steadiest, or everyone runs it and we average.
-          </p>
-          {table.members.length === 1 ? (
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void post("/tray", { mode: "everyone" })}
-              className="btn-honey flex h-12 w-full items-center justify-center rounded-full bg-honey text-base font-semibold text-ink disabled:opacity-40"
-            >
-              {busy ? "…" : "Carry the tray"}
-            </button>
-          ) : (
-            <>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => setPicking(true)}
-                className="btn-honey flex h-12 w-full items-center justify-center rounded-full bg-honey text-base font-semibold text-ink disabled:opacity-40"
-              >
-                Send our steadiest
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void post("/tray", { mode: "everyone" })}
-                className="flex h-12 w-full items-center justify-center rounded-full border border-paper/20 text-base disabled:opacity-40"
-              >
-                Everyone runs it
-              </button>
-            </>
-          )}
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void post("/tray/skip")}
-            className="flex h-10 w-full items-center justify-center text-sm text-paper/50"
-          >
-            Tray’s broken — skip
-          </button>
-        </div>
-      )}
+      <button
+        type="button"
+        onClick={() => setScoreBeat("tray")}
+        className="btn-honey mt-4 flex h-12 w-full shrink-0 items-center justify-center rounded-full bg-honey text-base font-semibold text-ink"
+      >
+        Next
+      </button>
     </div>
   );
 }

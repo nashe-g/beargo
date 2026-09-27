@@ -320,7 +320,7 @@ export function RoomFeed({
               {paw.hostDisplayName}
             </p>
             <p className="mt-0.5 text-xs text-paper/50">
-              {hereLine(room.peopleHere)}
+              Chat · {hereLine(room.peopleHere)}
             </p>
           </div>
           <p className="shrink-0 text-xs text-paper/45">
@@ -359,7 +359,9 @@ export function RoomFeed({
             <div className="flex min-h-full flex-col justify-end gap-0.5 pb-2">
               {posts.length === 0 ? (
                 <p className="px-2 py-8 text-center text-sm text-paper/55">
-                  {asReward ? "The room is yours." : "Say something."}
+                  {asReward
+                    ? `Chat for this bar. Post as ${tableName || handle || "your table"}.`
+                    : "Say something."}
                 </p>
               ) : null}
               {posts.map((post, index) => {
@@ -444,7 +446,7 @@ export function RoomFeed({
                 rows={1}
                 enterKeyHint="send"
                 autoComplete="off"
-                placeholder={replyTo ? "Reply…" : "Message"}
+                placeholder={replyTo ? "Reply…" : "Say something"}
                 className="max-h-32 min-h-11 flex-1 resize-none rounded-[1.35rem] border border-paper/20 bg-paper/8 px-4 py-2.5 text-base leading-snug text-paper outline-none placeholder:text-paper/35 focus:border-honey"
               />
               <button

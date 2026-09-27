@@ -53,6 +53,7 @@ export function TableNight({
   const [busy, setBusy] = useState(false);
   const [joinUrl, setJoinUrl] = useState("");
   const [previewLocked, setPreviewLocked] = useState(false);
+  const [triviaGate, setTriviaGate] = useState<"pending" | "show" | "skip">("pending");
 
   const token = paw.token;
 
@@ -134,6 +135,29 @@ export function TableNight({
     }, 1500);
     return () => window.clearInterval(poll);
   }, [joinCode, tableStatus, token]);
+
+  const tableId = table?.id;
+  useEffect(() => {
+    if (!tableId || tableStatus !== "locked") return;
+    try {
+      setTriviaGate(
+        sessionStorage.getItem(`beargo:trivia:${tableId}`) === "1" ? "skip" : "show",
+      );
+    } catch {
+      setTriviaGate("show");
+    }
+  }, [tableId, tableStatus]);
+
+  function dismissTriviaBrief() {
+    if (tableId) {
+      try {
+        sessionStorage.setItem(`beargo:trivia:${tableId}`, "1");
+      } catch {
+        // This phone can still continue. The brief just shows again next load.
+      }
+    }
+    setTriviaGate("skip");
+  }
 
   async function create(event: FormEvent) {
     event.preventDefault();
@@ -279,6 +303,7 @@ export function TableNight({
     return `${n} here`;
   }, [table]);
   const starterName = table?.members.find((member) => member.isCreator)?.nickname;
+  const showTriviaBrief = table?.status === "locked" && triviaGate !== "skip";
 
   return (
     <ScannerShell>
@@ -333,15 +358,17 @@ export function TableNight({
           {table.status === "open" ? (
             <div className="min-h-0 flex-1 overflow-y-auto pt-2">
               {table.mineCreator && joinUrl ? (
-                <div className="rounded-[1.4rem] border border-paper/12 bg-paper/6 py-4">
-                  <JoinQr value={joinUrl} label={`Join ${table.name}`} />
-                  <p className="mt-3 text-center font-condensed text-4xl tracking-[0.32em] text-honey drop-shadow-[0_0_18px_rgba(245,196,76,0.45)]">
-                    {table.joinCode}
+                <>
+                  <p className="text-sm leading-relaxed text-paper/80">
+                    Friends at {table.name} scan this to join. Or type the code.
                   </p>
-                  <p className="mt-1 text-center text-xs text-paper/45">
-                    Friends scan this or type the code
-                  </p>
-                </div>
+                  <div className="mt-3 rounded-[1.4rem] border border-paper/12 bg-paper/6 py-4">
+                    <JoinQr value={joinUrl} label={`Join ${table.name}`} />
+                    <p className="mt-3 text-center font-condensed text-4xl tracking-[0.32em] text-honey drop-shadow-[0_0_18px_rgba(245,196,76,0.45)]">
+                      {table.joinCode}
+                    </p>
+                  </div>
+                </>
               ) : (
                 <p className="rounded-[1.4rem] border border-paper/12 bg-paper/6 px-4 py-3 text-sm text-paper/70">
                   Waiting for the table to sit down.
@@ -364,11 +391,22 @@ export function TableNight({
                 ))}
               </ul>
             </div>
+          ) : showTriviaBrief ? (
+            <div className="min-h-0 flex-1 overflow-y-auto pt-3">
+              <p className="font-display text-3xl leading-tight">
+                Trivia. Three questions on your phone.
+              </p>
+              <p className="mt-3 text-sm leading-relaxed text-paper/75">
+                Not the same questions as the person next to you.
+              </p>
+              <p className="mt-2 text-sm leading-relaxed text-paper/75">
+                Right answers and speed become {table.name}&apos;s score.
+              </p>
+            </div>
           ) : (
             <div className="min-h-0 flex-1 overflow-y-auto pt-3">
-              <p className="font-display text-3xl leading-tight">The Table Test</p>
-              <p className="mt-2 text-sm text-paper/65">
-                Everyone at once. Your phone, your pack.
+              <p className="text-sm leading-relaxed text-paper/75">
+                Tap ready. Trivia starts together.
               </p>
               <ul className="mt-5 space-y-2">
                 {table.members.map((member) => (
@@ -391,13 +429,26 @@ export function TableNight({
           <div className="shrink-0 pt-3">
             {error ? <p className="mb-2 text-sm text-clay">{error}</p> : null}
             {table.status === "open" && table.mineCreator ? (
+              <>
+                <p className="pb-2 text-center text-sm text-paper/70">
+                  Start when every name is in the list.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void lock()}
+                  disabled={busy}
+                  className="btn-honey flex h-12 w-full items-center justify-center rounded-full bg-honey text-base font-semibold text-ink disabled:opacity-40"
+                >
+                  {busy ? "Sitting…" : "Everyone’s here"}
+                </button>
+              </>
+            ) : showTriviaBrief ? (
               <button
                 type="button"
-                onClick={() => void lock()}
-                disabled={busy}
-                className="btn-honey flex h-12 w-full items-center justify-center rounded-full bg-honey text-base font-semibold text-ink disabled:opacity-40"
+                onClick={dismissTriviaBrief}
+                className="btn-honey flex h-12 w-full items-center justify-center rounded-full bg-honey text-base font-semibold text-ink"
               >
-                {busy ? "Sitting…" : "Everyone’s here"}
+                Ready up
               </button>
             ) : table.status === "open" ? (
               <p className="pb-2 text-center text-sm text-paper/50">

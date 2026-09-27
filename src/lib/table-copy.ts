@@ -50,5 +50,5 @@ export function tableStatusLabel(
   if (status === "revealed") return "Standings";
   if (status === "tray") return "The tray";
   if (status === "night") return "Tonight";
-  return "The room";
+  return "Chat";
 }
